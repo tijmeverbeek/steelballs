@@ -46,8 +46,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
     data: {
       ...(body.topscorerActief !== undefined && { topscorerActief: body.topscorerActief }),
       ...(body.geleKaartenActief !== undefined && { geleKaartenActief: body.geleKaartenActief }),
+      ...(body.toernooiwinaarActief !== undefined && { toernooiwinaarActief: body.toernooiwinaarActief }),
       ...(body.topscorerResultaat !== undefined && { topscorerResultaat: body.topscorerResultaat || null }),
       ...(body.geleKaartenResultaat !== undefined && { geleKaartenResultaat: body.geleKaartenResultaat || null }),
+      ...(body.toernooiwinaarResultaat !== undefined && { toernooiwinaarResultaat: body.toernooiwinaarResultaat || null }),
     },
   });
 

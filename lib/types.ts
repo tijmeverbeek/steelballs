@@ -27,6 +27,7 @@ export interface Deelnemer {
   voorspellingen: Voorspelling[];
   topscorerVoorspelling?: string | null;
   geleKaartenVoorspelling?: string | null;
+  toernooiwinaarVoorspelling?: string | null;
 }
 
 export interface Poule {
@@ -39,6 +40,8 @@ export interface Poule {
   organisatorId?: string | null;
   topscorerActief: boolean;
   geleKaartenActief: boolean;
+  toernooiwinaarActief: boolean;
   topscorerResultaat?: string | null;
   geleKaartenResultaat?: string | null;
+  toernooiwinaarResultaat?: string | null;
 }

@@ -2,17 +2,28 @@ import { Voorspelling } from "./types";
 
 export const TOPSCORER_PUNTEN = 5;
 export const GELE_KAARTEN_PUNTEN = 5;
+export const TOERNOOIWINNAAR_PUNTEN = 20;
 
-// Exacte score: 3 pt, juiste uitslag: 1 pt, topscorer/geleKaarten correct: 5 pt
+function matchNaam(a: string, b: string) {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+// Exacte score: 3 pt, juiste uitslag: 1 pt, bonuscategorieën: vaste punten per categorie
 export function berekenPunten(
   voorspellingen: Voorspelling[],
   resultaten: Record<string, { thuis: number; uit: number }>,
-  deelnemer?: { topscorerVoorspelling?: string | null; geleKaartenVoorspelling?: string | null },
+  deelnemer?: {
+    topscorerVoorspelling?: string | null;
+    geleKaartenVoorspelling?: string | null;
+    toernooiwinaarVoorspelling?: string | null;
+  },
   poule?: {
     topscorerActief?: boolean;
     geleKaartenActief?: boolean;
+    toernooiwinaarActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
+    toernooiwinaarResultaat?: string | null;
   }
 ): number {
   let punten = 0;
@@ -27,21 +38,17 @@ export function berekenPunten(
       if (uitslag === vpUitslag) punten += 1;
     }
   }
-  if (
-    poule?.topscorerActief &&
-    poule.topscorerResultaat &&
-    deelnemer?.topscorerVoorspelling &&
-    poule.topscorerResultaat.trim().toLowerCase() === deelnemer.topscorerVoorspelling.trim().toLowerCase()
-  ) {
+  if (poule?.topscorerActief && poule.topscorerResultaat && deelnemer?.topscorerVoorspelling
+    && matchNaam(poule.topscorerResultaat, deelnemer.topscorerVoorspelling)) {
     punten += TOPSCORER_PUNTEN;
   }
-  if (
-    poule?.geleKaartenActief &&
-    poule.geleKaartenResultaat &&
-    deelnemer?.geleKaartenVoorspelling &&
-    poule.geleKaartenResultaat.trim().toLowerCase() === deelnemer.geleKaartenVoorspelling.trim().toLowerCase()
-  ) {
+  if (poule?.geleKaartenActief && poule.geleKaartenResultaat && deelnemer?.geleKaartenVoorspelling
+    && matchNaam(poule.geleKaartenResultaat, deelnemer.geleKaartenVoorspelling)) {
     punten += GELE_KAARTEN_PUNTEN;
+  }
+  if (poule?.toernooiwinaarActief && poule.toernooiwinaarResultaat && deelnemer?.toernooiwinaarVoorspelling
+    && matchNaam(poule.toernooiwinaarResultaat, deelnemer.toernooiwinaarVoorspelling)) {
+    punten += TOERNOOIWINNAAR_PUNTEN;
   }
   return punten;
 }

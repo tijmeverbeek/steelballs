@@ -7,7 +7,7 @@ import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { wedstrijden, getGroepen } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
-import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN } from "@/lib/storage";
+import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN } from "@/lib/storage";
 
 type ScoreMap = Record<string, { thuis: number | null; uit: number | null }>;
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -62,12 +62,14 @@ export default function VoorspellingenPagina() {
   const [scores, setScores] = useState<ScoreMap>({});
   const [topscorerInput, setTopscorerInput] = useState("");
   const [geleKaartenInput, setGeleKaartenInput] = useState("");
+  const [toernooiwinaarInput, setToernooiwinaarInput] = useState("");
   const [actieveGroep, setActieveGroep] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deelnemerRef = useRef<string | null>(null);
   const topscorerRef = useRef("");
   const geleKaartenRef = useRef("");
+  const toernooiwinaarRef = useRef("");
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
   const groepen = useMemo(() => getGroepen(), []);
 
@@ -100,17 +102,20 @@ export default function VoorspellingenPagina() {
 
       const ts = deelnemer.topscorerVoorspelling ?? "";
       const gk = deelnemer.geleKaartenVoorspelling ?? "";
+      const tw = deelnemer.toernooiwinaarVoorspelling ?? "";
       setTopscorerInput(ts);
       setGeleKaartenInput(gk);
+      setToernooiwinaarInput(tw);
       topscorerRef.current = ts;
       geleKaartenRef.current = gk;
+      toernooiwinaarRef.current = tw;
     }
     load();
     setActieveGroep(groepen[0] ?? null);
   }, [code, router, groepen]);
 
   const doAutoSave = useCallback(
-    async (latestScores: ScoreMap, topscorer?: string, geleKaarten?: string) => {
+    async (latestScores: ScoreMap, topscorer?: string, geleKaarten?: string, toernooiwinnaar?: string) => {
       const id = deelnemerRef.current;
       if (!id) return;
       setSaveStatus("saving");
@@ -121,10 +126,12 @@ export default function VoorspellingenPagina() {
       }));
       const ts = topscorer !== undefined ? topscorer : topscorerRef.current;
       const gk = geleKaarten !== undefined ? geleKaarten : geleKaartenRef.current;
+      const tw = toernooiwinnaar !== undefined ? toernooiwinnaar : toernooiwinaarRef.current;
       try {
         await saveVoorspellingen(code, id, vps, {
           topscorerVoorspelling: ts || null,
           geleKaartenVoorspelling: gk || null,
+          toernooiwinaarVoorspelling: tw || null,
         });
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
@@ -179,14 +186,21 @@ export default function VoorspellingenPagina() {
     setGeleKaartenInput(waarde);
     geleKaartenRef.current = waarde;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doAutoSave(scores, topscorerRef.current, waarde), 700);
+    saveTimer.current = setTimeout(() => doAutoSave(scores, topscorerRef.current, waarde, toernooiwinaarRef.current), 700);
+  }
+
+  function updateToernooiwinnaar(waarde: string) {
+    setToernooiwinaarInput(waarde);
+    toernooiwinaarRef.current = waarde;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => doAutoSave(scores, topscorerRef.current, geleKaartenRef.current, waarde), 700);
   }
 
   const totalIngevuld = Object.values(scores).filter(
     (v) => v.thuis !== null && v.uit !== null
   ).length;
 
-  const heeftBonusCategorieen = poule?.topscorerActief || poule?.geleKaartenActief;
+  const heeftBonusCategorieen = poule?.topscorerActief || poule?.geleKaartenActief || poule?.toernooiwinaarActief;
 
   if (!deelnemerid) {
     return (
@@ -301,6 +315,21 @@ export default function VoorspellingenPagina() {
                     value={geleKaartenInput}
                     onChange={(e) => updateGeleKaarten(e.target.value)}
                     placeholder="Naam van de speler met de meeste gele kaarten..."
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  />
+                </div>
+              )}
+              {poule?.toernooiwinaarActief && (
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-semibold text-white">Winnaar van het toernooi</label>
+                    <span className="text-xs text-yellow-500 font-semibold">{TOERNOOIWINNAAR_PUNTEN} pt</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={toernooiwinaarInput}
+                    onChange={(e) => updateToernooiwinnaar(e.target.value)}
+                    placeholder="Welk land wint het WK 2026?..."
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   />
                 </div>

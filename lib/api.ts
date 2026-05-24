@@ -35,7 +35,11 @@ export async function saveVoorspellingen(
   code: string,
   deelnemerId: string,
   voorspellingen: Voorspelling[],
-  speciale?: { topscorerVoorspelling?: string | null; geleKaartenVoorspelling?: string | null }
+  speciale?: {
+    topscorerVoorspelling?: string | null;
+    geleKaartenVoorspelling?: string | null;
+    toernooiwinaarVoorspelling?: string | null;
+  }
 ): Promise<void> {
   const res = await fetch(`/api/poules/${code}/deelnemers/${deelnemerId}/voorspellingen`, {
     method: "PUT",
@@ -50,8 +54,10 @@ export async function updatePouleInstellingen(
   instellingen: {
     topscorerActief?: boolean;
     geleKaartenActief?: boolean;
+    toernooiwinaarActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
+    toernooiwinaarResultaat?: string | null;
   }
 ): Promise<void> {
   const res = await fetch(`/api/poules/${code}`, {

@@ -4,7 +4,7 @@ import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, updatePouleInstellingen } from "@/lib/api";
-import { berekenPunten, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN } from "@/lib/storage";
+import { berekenPunten, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN } from "@/lib/storage";
 import { wedstrijden } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule } from "@/lib/types";
@@ -68,6 +68,7 @@ function PoulePagina() {
   const [fout, setFout] = useState<string | null>(null);
   const [topscorerResultaatInput, setTopscorerResultaatInput] = useState("");
   const [geleKaartenResultaatInput, setGeleKaartenResultaatInput] = useState("");
+  const [toernooiwinaarResultaatInput, setToernooiwinaarResultaatInput] = useState("");
   const [instellingenOpgeslagen, setInstellingenOpgeslagen] = useState(false);
 
   useEffect(() => {
@@ -80,6 +81,7 @@ function PoulePagina() {
       setPoule(p);
       setTopscorerResultaatInput(p.topscorerResultaat ?? "");
       setGeleKaartenResultaatInput(p.geleKaartenResultaat ?? "");
+      setToernooiwinaarResultaatInput(p.toernooiwinaarResultaat ?? "");
     }).catch((err) => {
       setFout(String(err));
     });
@@ -104,7 +106,7 @@ function PoulePagina() {
     }
   }
 
-  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief", waarde: boolean) {
+  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief" | "toernooiwinaarActief", waarde: boolean) {
     if (!poule) return;
     setPoule({ ...poule, [key]: waarde });
     try {
@@ -114,7 +116,7 @@ function PoulePagina() {
     }
   }
 
-  async function slaResultaatOp(key: "topscorerResultaat" | "geleKaartenResultaat", waarde: string) {
+  async function slaResultaatOp(key: "topscorerResultaat" | "geleKaartenResultaat" | "toernooiwinaarResultaat", waarde: string) {
     if (!poule) return;
     const prev = poule[key];
     setPoule({ ...poule, [key]: waarde || null });
@@ -151,7 +153,7 @@ function PoulePagina() {
   const aantalWedstrijden = wedstrijden.length;
   const jouwIngevuld = huidigDeelnemer?.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length ?? 0;
 
-  const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief;
+  const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief;
 
   const stand = poule.deelnemers
     .map((d) => ({
@@ -268,6 +270,25 @@ function PoulePagina() {
                   </Link>
                 </div>
               )}
+              {poule.toernooiwinaarActief && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Winnaar van het toernooi</p>
+                    <p className="text-xs text-zinc-500">
+                      {huidigDeelnemer.toernooiwinaarVoorspelling
+                        ? <span className="text-zinc-300">{huidigDeelnemer.toernooiwinaarVoorspelling}</span>
+                        : "Nog niet ingevuld"}
+                      {" · "}{TOERNOOIWINNAAR_PUNTEN} pt
+                    </p>
+                  </div>
+                  <Link
+                    href={`/poule/${code}/voorspellingen`}
+                    className="text-xs text-green-400 hover:text-green-300 font-medium"
+                  >
+                    {huidigDeelnemer.toernooiwinaarVoorspelling ? "Wijzig →" : "Invullen →"}
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -381,6 +402,36 @@ function PoulePagina() {
                     />
                     <button
                       onClick={() => slaResultaatOp("geleKaartenResultaat", geleKaartenResultaatInput)}
+                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      Opslaan
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-zinc-800" />
+
+              {/* Toernooiwinnaar toggle */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Winnaar van het toernooi</p>
+                    <p className="text-xs text-zinc-500">Deelnemers raden welk land het WK wint ({TOERNOOIWINNAAR_PUNTEN} pt)</p>
+                  </div>
+                  <Toggle aan={poule.toernooiwinaarActief} onChange={(v) => toggleInstelling("toernooiwinaarActief", v)} />
+                </div>
+                {poule.toernooiwinaarActief && (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={toernooiwinaarResultaatInput}
+                      onChange={(e) => setToernooiwinaarResultaatInput(e.target.value)}
+                      placeholder="Vul de winnaar in zodra bekend..."
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={() => slaResultaatOp("toernooiwinaarResultaat", toernooiwinaarResultaatInput)}
                       className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
                     >
                       Opslaan

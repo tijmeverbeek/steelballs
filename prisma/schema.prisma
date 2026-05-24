@@ -22,10 +22,12 @@ model Poule {
   code                 String      @unique
   aangemaaktOp         DateTime    @default(now())
   organisatorId        String?
-  topscorerActief      Boolean     @default(false)
-  geleKaartenActief    Boolean     @default(false)
-  topscorerResultaat   String?
-  geleKaartenResultaat String?
+  topscorerActief           Boolean     @default(false)
+  geleKaartenActief         Boolean     @default(false)
+  toernooiwinaarActief      Boolean     @default(false)
+  topscorerResultaat        String?
+  geleKaartenResultaat      String?
+  toernooiwinaarResultaat   String?
   deelnemers           Deelnemer[]
 }
 
@@ -36,8 +38,9 @@ model Deelnemer {
   pouleId                 String
   poule                   Poule          @relation(fields: [pouleId], references: [id])
   voorspellingen          Voorspelling[]
-  topscorerVoorspelling   String?
-  geleKaartenVoorspelling String?
+  topscorerVoorspelling      String?
+  geleKaartenVoorspelling    String?
+  toernooiwinaarVoorspelling String?
 
   @@unique([userId, pouleId])
 }
