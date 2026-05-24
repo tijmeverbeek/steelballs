@@ -255,7 +255,7 @@ function PoulePagina() {
           <div className="divide-y divide-zinc-800">
             {eersteWedstrijden.map((w) => {
               const vpThuis = huidigDeelnemer?.voorspellingen.find((v) => v.wedstrijdId === w.id);
-              const heeftVp = vpThuis?.thuis !== null && vpThuis?.uit !== null;
+              const heeftVp = vpThuis?.thuis != null && vpThuis?.uit != null;
               return (
                 <div key={w.id} className="px-5 py-3.5 flex items-center gap-3">
                   <div className="flex-1">
