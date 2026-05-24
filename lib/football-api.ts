@@ -1,4 +1,4 @@
-const BASE_URL = "https://api-football-v1.p.rapidapi.com/v3";
+const BASE_URL = "https://v3.football.api-sports.io";
 
 export const WK_LEAGUE_ID = parseInt(process.env.FOOTBALL_LEAGUE_ID ?? "1");
 export const WK_SEASON = parseInt(process.env.FOOTBALL_SEASON ?? "2026");
@@ -70,8 +70,7 @@ export interface ApiSpelerStat {
 
 function headers() {
   return {
-    "x-rapidapi-key": process.env.FOOTBALL_API_KEY!,
-    "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
+    "x-apisports-key": process.env.FOOTBALL_API_KEY!,
   };
 }
 
