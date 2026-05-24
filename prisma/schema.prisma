@@ -61,3 +61,9 @@ model Resultaat {
   thuis       Int
   uit         Int
 }
+
+model TournamentStat {
+  type         String   @id
+  waarde       String
+  bijgewerktOp DateTime @updatedAt
+}

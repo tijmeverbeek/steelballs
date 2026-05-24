@@ -362,21 +362,28 @@ function PoulePagina() {
                   <Toggle aan={poule.topscorerActief} onChange={(v) => toggleInstelling("topscorerActief", v)} />
                 </div>
                 {poule.topscorerActief && (
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="text"
-                      value={topscorerResultaatInput}
-                      onChange={(e) => setTopscorerResultaatInput(e.target.value)}
-                      placeholder="Vul de echte topscorer in zodra bekend..."
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={() => slaResultaatOp("topscorerResultaat", topscorerResultaatInput)}
-                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Opslaan
-                    </button>
-                  </div>
+                  <>
+                    {poule.liveStats?.topscorer && (
+                      <p className="text-xs text-blue-400 mt-2">
+                        Live leider: <span className="font-semibold">{poule.liveStats.topscorer}</span>
+                      </p>
+                    )}
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="text"
+                        value={topscorerResultaatInput}
+                        onChange={(e) => setTopscorerResultaatInput(e.target.value)}
+                        placeholder="Definitieve topscorer invullen..."
+                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={() => slaResultaatOp("topscorerResultaat", topscorerResultaatInput)}
+                        className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                      >
+                        Opslaan
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -392,21 +399,28 @@ function PoulePagina() {
                   <Toggle aan={poule.geleKaartenActief} onChange={(v) => toggleInstelling("geleKaartenActief", v)} />
                 </div>
                 {poule.geleKaartenActief && (
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="text"
-                      value={geleKaartenResultaatInput}
-                      onChange={(e) => setGeleKaartenResultaatInput(e.target.value)}
-                      placeholder="Vul de speler met de meeste gele kaarten in..."
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={() => slaResultaatOp("geleKaartenResultaat", geleKaartenResultaatInput)}
-                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Opslaan
-                    </button>
-                  </div>
+                  <>
+                    {poule.liveStats?.geleKaarten && (
+                      <p className="text-xs text-blue-400 mt-2">
+                        Live leider: <span className="font-semibold">{poule.liveStats.geleKaarten}</span>
+                      </p>
+                    )}
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="text"
+                        value={geleKaartenResultaatInput}
+                        onChange={(e) => setGeleKaartenResultaatInput(e.target.value)}
+                        placeholder="Definitieve speler invullen..."
+                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={() => slaResultaatOp("geleKaartenResultaat", geleKaartenResultaatInput)}
+                        className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                      >
+                        Opslaan
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -422,12 +436,12 @@ function PoulePagina() {
                   <Toggle aan={poule.toernooiwinaarActief} onChange={(v) => toggleInstelling("toernooiwinaarActief", v)} />
                 </div>
                 {poule.toernooiwinaarActief && (
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-2 flex gap-2">
                     <input
                       type="text"
                       value={toernooiwinaarResultaatInput}
                       onChange={(e) => setToernooiwinaarResultaatInput(e.target.value)}
-                      placeholder="Vul de winnaar in zodra bekend..."
+                      placeholder="Winnaar invullen zodra bekend..."
                       className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                     <button

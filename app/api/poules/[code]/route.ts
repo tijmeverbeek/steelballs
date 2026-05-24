@@ -19,13 +19,20 @@ export async function GET(_req: Request, { params }: { params: Promise<{ code: s
 
   if (!poule) return NextResponse.json({ error: "Niet gevonden" }, { status: 404 });
 
-  const resultaten = await prisma.resultaat.findMany();
+  const [resultaten, tournamentStats] = await Promise.all([
+    prisma.resultaat.findMany(),
+    prisma.tournamentStat.findMany(),
+  ]);
+
   const resultatenMap: Record<string, { thuis: number; uit: number }> = {};
   resultaten.forEach((r) => {
     resultatenMap[r.wedstrijdId] = { thuis: r.thuis, uit: r.uit };
   });
 
-  return NextResponse.json({ ...poule, resultaten: resultatenMap });
+  const liveStats: Record<string, string> = {};
+  tournamentStats.forEach((s) => { liveStats[s.type] = s.waarde; });
+
+  return NextResponse.json({ ...poule, resultaten: resultatenMap, liveStats });
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ code: string }> }) {
