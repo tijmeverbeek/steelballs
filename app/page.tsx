@@ -71,6 +71,7 @@ interface UserPoule {
 
 export default function Home() {
   const router = useRouter();
+  const [ingelogd, setIngelogd] = useState<boolean | null>(null);
   const [gebruikersnaam, setGebruikersnaam] = useState<string | null>(null);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
@@ -83,7 +84,8 @@ export default function Home() {
     async function load() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setIngelogd(false); return; }
+      setIngelogd(true);
 
       const [userRes, poulesRes] = await Promise.all([
         fetch("/api/user"),
@@ -140,6 +142,61 @@ export default function Home() {
   }
 
   const aantalWedstrijden = wedstrijden.length;
+
+  if (ingelogd === null) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-zinc-700 border-t-green-400 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!ingelogd) {
+    return (
+      <div className="min-h-screen flex flex-col bg-zinc-950 text-white">
+        <main className="flex-1 max-w-2xl mx-auto w-full px-6 flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex justify-center mb-6">
+            <SteelBallsLogo size={120} />
+          </div>
+          <h1 className="text-5xl font-black tracking-tight mb-3 text-white">STEELBALLS</h1>
+          <p className="text-xl font-semibold text-zinc-200 mb-2">Strijd met je vrienden.</p>
+          <p className="text-base text-zinc-400 mb-8">Kom erachter wie de staalste ballen heeft.</p>
+
+          <div className="inline-flex items-center gap-3 bg-white/5 border border-white/10 rounded-full px-5 py-2 text-sm text-zinc-400 mb-12">
+            <span className="text-green-400 font-medium">⚽ WK 2026</span>
+            <span className="text-zinc-600">·</span>
+            <span>11 juni – 19 juli</span>
+            <span className="text-zinc-600">·</span>
+            <span>VS · Canada · Mexico</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-12">
+            {[
+              { nr: "01", titel: "Maak een poule", tekst: "Maak een poule aan en deel de uitnodigingslink met je vrienden." },
+              { nr: "02", titel: "Voorspel de uitslagen", tekst: "Iedereen voorspelt de uitslag van elke WK wedstrijd vóór de aftrap." },
+              { nr: "03", titel: "Wie heeft stalen ballen?", tekst: "Exacte score = 3 pt · Juiste uitslag = 1 pt · Wie wint de poule?" },
+            ].map(({ nr, titel, tekst }) => (
+              <div key={nr} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 text-left">
+                <div className="text-3xl font-black text-zinc-800 mb-2">{nr}</div>
+                <div className="font-bold text-white mb-1 text-sm">{titel}</div>
+                <div className="text-xs text-zinc-500 leading-relaxed">{tekst}</div>
+              </div>
+            ))}
+          </div>
+
+          <Link
+            href="/login"
+            className="bg-green-500 hover:bg-green-400 text-black font-black text-lg px-10 py-4 rounded-2xl transition-colors"
+          >
+            Inloggen / Meedoen →
+          </Link>
+        </main>
+        <footer className="text-center text-xs text-zinc-700 py-6 border-t border-zinc-900">
+          Steelballs · FIFA World Cup 2026 · USA · Canada · Mexico
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-950 text-white">
