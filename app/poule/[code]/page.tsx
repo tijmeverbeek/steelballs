@@ -33,6 +33,7 @@ export default function PoulePagina() {
   const [poule, setPoule] = useState<Poule | null>(null);
   const [mijnUserId, setMijnUserId] = useState<string | null>(null);
   const [gedeeld, setGedeeld] = useState(false);
+  const [fout, setFout] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -42,6 +43,8 @@ export default function PoulePagina() {
     getPoule(code).then((p) => {
       if (!p) { router.push("/"); return; }
       setPoule(p);
+    }).catch((err) => {
+      setFout(String(err));
     });
   }, [code, router]);
 
@@ -62,6 +65,17 @@ export default function PoulePagina() {
       setGedeeld(true);
       setTimeout(() => setGedeeld(false), 2500);
     }
+  }
+
+  if (fout) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-red-400 font-bold mb-2">Fout bij laden</p>
+          <p className="text-zinc-500 text-sm break-all">{fout}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!poule) {
