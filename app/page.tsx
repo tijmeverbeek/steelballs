@@ -72,16 +72,19 @@ export default function Home() {
   const [joinForm, setJoinForm] = useState({ naam: "", code: "" });
   const [joinError, setJoinError] = useState("");
   const [loading, setLoading] = useState<"create" | "join" | null>(null);
+  const [createError, setCreateError] = useState("");
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!createForm.naam.trim() || !createForm.poulenaam.trim()) return;
     setLoading("create");
+    setCreateError("");
     try {
       const { code, deelnemerId } = await createPoule(createForm.poulenaam.trim(), createForm.naam.trim());
       saveSessie({ code, deelnemerId });
       router.push(`/poule/${code}`);
-    } catch {
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Er ging iets mis. Probeer het opnieuw.");
       setLoading(null);
     }
   }
@@ -197,6 +200,7 @@ export default function Home() {
                 >
                   {loading === "create" ? "Aanmaken..." : "Maak poule aan →"}
                 </button>
+                {createError && <p className="text-red-400 text-xs mt-3">{createError}</p>}
               </form>
             </div>
 

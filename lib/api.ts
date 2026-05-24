@@ -9,7 +9,10 @@ export async function createPoule(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ naam, deelnemerNaam }),
   });
-  if (!res.ok) throw new Error("Aanmaken mislukt");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Aanmaken mislukt (${res.status})`);
+  }
   return res.json();
 }
 
