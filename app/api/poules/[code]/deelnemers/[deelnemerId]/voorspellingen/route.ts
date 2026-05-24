@@ -11,7 +11,15 @@ export async function PUT(
   if (!authUser) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
 
   const { deelnemerId } = await params;
-  const { voorspellingen }: { voorspellingen: Voorspelling[] } = await req.json();
+  const {
+    voorspellingen,
+    topscorerVoorspelling,
+    geleKaartenVoorspelling,
+  }: {
+    voorspellingen: Voorspelling[];
+    topscorerVoorspelling?: string | null;
+    geleKaartenVoorspelling?: string | null;
+  } = await req.json();
 
   const deelnemer = await prisma.deelnemer.findUnique({ where: { id: deelnemerId } });
   if (!deelnemer) return NextResponse.json({ error: "Deelnemer niet gevonden" }, { status: 404 });
@@ -29,6 +37,13 @@ export async function PUT(
       })
     )
   );
+
+  const specialeUpdate: { topscorerVoorspelling?: string | null; geleKaartenVoorspelling?: string | null } = {};
+  if (topscorerVoorspelling !== undefined) specialeUpdate.topscorerVoorspelling = topscorerVoorspelling || null;
+  if (geleKaartenVoorspelling !== undefined) specialeUpdate.geleKaartenVoorspelling = geleKaartenVoorspelling || null;
+  if (Object.keys(specialeUpdate).length > 0) {
+    await prisma.deelnemer.update({ where: { id: deelnemerId }, data: specialeUpdate });
+  }
 
   return NextResponse.json({ success: true });
 }

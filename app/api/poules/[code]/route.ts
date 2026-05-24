@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getAuthUser } from "@/lib/supabase/server";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -25,4 +26,30 @@ export async function GET(_req: Request, { params }: { params: Promise<{ code: s
   });
 
   return NextResponse.json({ ...poule, resultaten: resultatenMap });
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ code: string }> }) {
+  const authUser = await getAuthUser();
+  if (!authUser) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+
+  const { code } = await params;
+  const poule = await prisma.poule.findUnique({ where: { code } });
+  if (!poule) return NextResponse.json({ error: "Niet gevonden" }, { status: 404 });
+
+  if (poule.organisatorId !== authUser.id) {
+    return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const updated = await prisma.poule.update({
+    where: { code },
+    data: {
+      ...(body.topscorerActief !== undefined && { topscorerActief: body.topscorerActief }),
+      ...(body.geleKaartenActief !== undefined && { geleKaartenActief: body.geleKaartenActief }),
+      ...(body.topscorerResultaat !== undefined && { topscorerResultaat: body.topscorerResultaat || null }),
+      ...(body.geleKaartenResultaat !== undefined && { geleKaartenResultaat: body.geleKaartenResultaat || null }),
+    },
+  });
+
+  return NextResponse.json({ success: true, poule: updated });
 }

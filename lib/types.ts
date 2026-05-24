@@ -25,6 +25,8 @@ export interface Deelnemer {
   userId: string;
   user: { gebruikersnaam: string | null; email: string };
   voorspellingen: Voorspelling[];
+  topscorerVoorspelling?: string | null;
+  geleKaartenVoorspelling?: string | null;
 }
 
 export interface Poule {
@@ -34,4 +36,9 @@ export interface Poule {
   deelnemers: Deelnemer[];
   aangemaaktOp: string;
   resultaten: Record<string, { thuis: number; uit: number }>;
+  organisatorId?: string | null;
+  topscorerActief: boolean;
+  geleKaartenActief: boolean;
+  topscorerResultaat?: string | null;
+  geleKaartenResultaat?: string | null;
 }

@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     data: {
       naam,
       code,
+      organisatorId: authUser.id,
       deelnemers: {
         create: { userId: authUser.id },
       },

@@ -6,7 +6,8 @@ import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { wedstrijden, getGroepen } from "@/lib/matches";
-import { Voorspelling } from "@/lib/types";
+import { Voorspelling, Poule } from "@/lib/types";
+import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN } from "@/lib/storage";
 
 type ScoreMap = Record<string, { thuis: number | null; uit: number | null }>;
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -55,13 +56,18 @@ function Stepper({
 export default function VoorspellingenPagina() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
+  const [poule, setPoule] = useState<Poule | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
   const [deelnemerid, setDeelnemerid] = useState<string | null>(null);
   const [scores, setScores] = useState<ScoreMap>({});
+  const [topscorerInput, setTopscorerInput] = useState("");
+  const [geleKaartenInput, setGeleKaartenInput] = useState("");
   const [actieveGroep, setActieveGroep] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deelnemerRef = useRef<string | null>(null);
+  const topscorerRef = useRef("");
+  const geleKaartenRef = useRef("");
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
   const groepen = useMemo(() => getGroepen(), []);
 
@@ -71,12 +77,13 @@ export default function VoorspellingenPagina() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/"); return; }
 
-      const poule = await getPoule(code);
-      if (!poule) { router.push("/"); return; }
+      const geladen = await getPoule(code);
+      if (!geladen) { router.push("/"); return; }
 
-      setPoulenaam(poule.naam);
+      setPoule(geladen);
+      setPoulenaam(geladen.naam);
 
-      const deelnemer = poule.deelnemers.find((d) => d.userId === user.id);
+      const deelnemer = geladen.deelnemers.find((d) => d.userId === user.id);
       if (!deelnemer) {
         router.push(`/poule/${code}`);
         return;
@@ -90,13 +97,20 @@ export default function VoorspellingenPagina() {
         map[v.wedstrijdId] = { thuis: v.thuis, uit: v.uit };
       });
       setScores(map);
+
+      const ts = deelnemer.topscorerVoorspelling ?? "";
+      const gk = deelnemer.geleKaartenVoorspelling ?? "";
+      setTopscorerInput(ts);
+      setGeleKaartenInput(gk);
+      topscorerRef.current = ts;
+      geleKaartenRef.current = gk;
     }
     load();
     setActieveGroep(groepen[0] ?? null);
   }, [code, router, groepen]);
 
   const doAutoSave = useCallback(
-    async (latestScores: ScoreMap) => {
+    async (latestScores: ScoreMap, topscorer?: string, geleKaarten?: string) => {
       const id = deelnemerRef.current;
       if (!id) return;
       setSaveStatus("saving");
@@ -105,8 +119,13 @@ export default function VoorspellingenPagina() {
         thuis: latestScores[w.id]?.thuis ?? null,
         uit: latestScores[w.id]?.uit ?? null,
       }));
+      const ts = topscorer !== undefined ? topscorer : topscorerRef.current;
+      const gk = geleKaarten !== undefined ? geleKaarten : geleKaartenRef.current;
       try {
-        await saveVoorspellingen(code, id, vps);
+        await saveVoorspellingen(code, id, vps, {
+          topscorerVoorspelling: ts || null,
+          geleKaartenVoorspelling: gk || null,
+        });
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
       } catch {
@@ -149,9 +168,25 @@ export default function VoorspellingenPagina() {
     });
   }
 
+  function updateTopscorer(waarde: string) {
+    setTopscorerInput(waarde);
+    topscorerRef.current = waarde;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => doAutoSave(scores, waarde, geleKaartenRef.current), 700);
+  }
+
+  function updateGeleKaarten(waarde: string) {
+    setGeleKaartenInput(waarde);
+    geleKaartenRef.current = waarde;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => doAutoSave(scores, topscorerRef.current, waarde), 700);
+  }
+
   const totalIngevuld = Object.values(scores).filter(
     (v) => v.thuis !== null && v.uit !== null
   ).length;
+
+  const heeftBonusCategorieen = poule?.topscorerActief || poule?.geleKaartenActief;
 
   if (!deelnemerid) {
     return (
@@ -231,6 +266,49 @@ export default function VoorspellingenPagina() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+
+        {/* ── Bonus voorspellingen ── */}
+        {heeftBonusCategorieen && (
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-700 overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="font-bold text-white">Bonus voorspellingen</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Correct = extra punten bovenop je wedstrijdpunten</p>
+            </div>
+            <div className="divide-y divide-zinc-800">
+              {poule?.topscorerActief && (
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-semibold text-white">Topscorer</label>
+                    <span className="text-xs text-yellow-500 font-semibold">{TOPSCORER_PUNTEN} pt</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={topscorerInput}
+                    onChange={(e) => updateTopscorer(e.target.value)}
+                    placeholder="Naam van de topscorer..."
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  />
+                </div>
+              )}
+              {poule?.geleKaartenActief && (
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-semibold text-white">Meeste gele kaarten</label>
+                    <span className="text-xs text-yellow-500 font-semibold">{GELE_KAARTEN_PUNTEN} pt</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={geleKaartenInput}
+                    onChange={(e) => updateGeleKaarten(e.target.value)}
+                    placeholder="Naam van de speler met de meeste gele kaarten..."
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {groepen.map((groep) => {
           const groepWedstrijden = wedstrijden.filter((w) => w.groep === groep);
           const ingevuld = groepWedstrijden.filter(

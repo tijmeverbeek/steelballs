@@ -17,20 +17,27 @@ model User {
 }
 
 model Poule {
-  id           String      @id @default(cuid())
-  naam         String
-  code         String      @unique
-  aangemaaktOp DateTime    @default(now())
-  deelnemers   Deelnemer[]
+  id                   String      @id @default(cuid())
+  naam                 String
+  code                 String      @unique
+  aangemaaktOp         DateTime    @default(now())
+  organisatorId        String?
+  topscorerActief      Boolean     @default(false)
+  geleKaartenActief    Boolean     @default(false)
+  topscorerResultaat   String?
+  geleKaartenResultaat String?
+  deelnemers           Deelnemer[]
 }
 
 model Deelnemer {
-  id             String         @id @default(cuid())
-  userId         String
-  user           User           @relation(fields: [userId], references: [id])
-  pouleId        String
-  poule          Poule          @relation(fields: [pouleId], references: [id])
-  voorspellingen Voorspelling[]
+  id                      String         @id @default(cuid())
+  userId                  String
+  user                    User           @relation(fields: [userId], references: [id])
+  pouleId                 String
+  poule                   Poule          @relation(fields: [pouleId], references: [id])
+  voorspellingen          Voorspelling[]
+  topscorerVoorspelling   String?
+  geleKaartenVoorspelling String?
 
   @@unique([userId, pouleId])
 }

@@ -3,8 +3,8 @@
 import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getPoule } from "@/lib/api";
-import { berekenPunten } from "@/lib/storage";
+import { getPoule, updatePouleInstellingen } from "@/lib/api";
+import { berekenPunten, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN } from "@/lib/storage";
 import { wedstrijden } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule } from "@/lib/types";
@@ -45,6 +45,20 @@ function deelnemerNaam(d: { user: { gebruikersnaam: string | null; email: string
   return d.user.gebruikersnaam ?? d.user.email.split("@")[0];
 }
 
+function Toggle({ aan, onChange }: { aan: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!aan)}
+      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${aan ? "bg-green-500" : "bg-zinc-700"}`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${aan ? "translate-x-5" : ""}`}
+      />
+    </button>
+  );
+}
+
 function PoulePagina() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
@@ -52,6 +66,9 @@ function PoulePagina() {
   const [mijnUserId, setMijnUserId] = useState<string | null>(null);
   const [gedeeld, setGedeeld] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
+  const [topscorerResultaatInput, setTopscorerResultaatInput] = useState("");
+  const [geleKaartenResultaatInput, setGeleKaartenResultaatInput] = useState("");
+  const [instellingenOpgeslagen, setInstellingenOpgeslagen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,6 +78,8 @@ function PoulePagina() {
     getPoule(code).then((p) => {
       if (!p) { router.push("/"); return; }
       setPoule(p);
+      setTopscorerResultaatInput(p.topscorerResultaat ?? "");
+      setGeleKaartenResultaatInput(p.geleKaartenResultaat ?? "");
     }).catch((err) => {
       setFout(String(err));
     });
@@ -85,6 +104,29 @@ function PoulePagina() {
     }
   }
 
+  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief", waarde: boolean) {
+    if (!poule) return;
+    setPoule({ ...poule, [key]: waarde });
+    try {
+      await updatePouleInstellingen(code, { [key]: waarde });
+    } catch {
+      setPoule({ ...poule, [key]: !waarde });
+    }
+  }
+
+  async function slaResultaatOp(key: "topscorerResultaat" | "geleKaartenResultaat", waarde: string) {
+    if (!poule) return;
+    const prev = poule[key];
+    setPoule({ ...poule, [key]: waarde || null });
+    try {
+      await updatePouleInstellingen(code, { [key]: waarde || null });
+      setInstellingenOpgeslagen(true);
+      setTimeout(() => setInstellingenOpgeslagen(false), 2000);
+    } catch {
+      setPoule({ ...poule, [key]: prev });
+    }
+  }
+
   if (fout) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
@@ -104,15 +146,18 @@ function PoulePagina() {
     );
   }
 
+  const isOrganisator = mijnUserId !== null && poule.organisatorId === mijnUserId;
   const huidigDeelnemer = poule.deelnemers.find((d) => d.userId === mijnUserId);
   const aantalWedstrijden = wedstrijden.length;
   const jouwIngevuld = huidigDeelnemer?.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length ?? 0;
+
+  const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief;
 
   const stand = poule.deelnemers
     .map((d) => ({
       ...d,
       displayNaam: deelnemerNaam(d),
-      punten: berekenPunten(d.voorspellingen, poule.resultaten),
+      punten: berekenPunten(d.voorspellingen, poule.resultaten, d, poule),
       ingevuld: d.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length,
     }))
     .sort((a, b) => b.punten - a.punten || b.ingevuld - a.ingevuld);
@@ -180,6 +225,53 @@ function PoulePagina() {
           </div>
         )}
 
+        {/* ── Bonus categorieën overzicht (voor deelnemers) ── */}
+        {heeftBonusCategorieen && huidigDeelnemer && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <p className="text-xs font-semibold uppercase tracking-widest text-yellow-500 mb-3">Bonus voorspellingen</p>
+            <div className="space-y-3">
+              {poule.topscorerActief && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Topscorer</p>
+                    <p className="text-xs text-zinc-500">
+                      {huidigDeelnemer.topscorerVoorspelling
+                        ? <span className="text-zinc-300">{huidigDeelnemer.topscorerVoorspelling}</span>
+                        : "Nog niet ingevuld"}
+                      {" · "}{TOPSCORER_PUNTEN} pt
+                    </p>
+                  </div>
+                  <Link
+                    href={`/poule/${code}/voorspellingen`}
+                    className="text-xs text-green-400 hover:text-green-300 font-medium"
+                  >
+                    {huidigDeelnemer.topscorerVoorspelling ? "Wijzig →" : "Invullen →"}
+                  </Link>
+                </div>
+              )}
+              {poule.geleKaartenActief && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Meeste gele kaarten</p>
+                    <p className="text-xs text-zinc-500">
+                      {huidigDeelnemer.geleKaartenVoorspelling
+                        ? <span className="text-zinc-300">{huidigDeelnemer.geleKaartenVoorspelling}</span>
+                        : "Nog niet ingevuld"}
+                      {" · "}{GELE_KAARTEN_PUNTEN} pt
+                    </p>
+                  </div>
+                  <Link
+                    href={`/poule/${code}/voorspellingen`}
+                    className="text-xs text-green-400 hover:text-green-300 font-medium"
+                  >
+                    {huidigDeelnemer.geleKaartenVoorspelling ? "Wijzig →" : "Invullen →"}
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── Stand ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800">
@@ -224,6 +316,82 @@ function PoulePagina() {
             )}
           </div>
         </div>
+
+        {/* ── Organizer instellingen ── */}
+        {isOrganisator && (
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+              <div>
+                <h2 className="font-bold text-white">Poule-instellingen</h2>
+                <p className="text-xs text-zinc-500 mt-0.5">Alleen zichtbaar voor jou als organisator</p>
+              </div>
+              {instellingenOpgeslagen && (
+                <span className="text-xs text-green-400 font-medium">✓ Opgeslagen</span>
+              )}
+            </div>
+            <div className="p-5 space-y-5">
+
+              {/* Topscorer toggle */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Topscorer</p>
+                    <p className="text-xs text-zinc-500">Deelnemers raden de topscorer van het toernooi ({TOPSCORER_PUNTEN} pt)</p>
+                  </div>
+                  <Toggle aan={poule.topscorerActief} onChange={(v) => toggleInstelling("topscorerActief", v)} />
+                </div>
+                {poule.topscorerActief && (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={topscorerResultaatInput}
+                      onChange={(e) => setTopscorerResultaatInput(e.target.value)}
+                      placeholder="Vul de echte topscorer in zodra bekend..."
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={() => slaResultaatOp("topscorerResultaat", topscorerResultaatInput)}
+                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      Opslaan
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-zinc-800" />
+
+              {/* Gele kaarten toggle */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Meeste gele kaarten</p>
+                    <p className="text-xs text-zinc-500">Deelnemers raden wie de meeste gele kaarten krijgt ({GELE_KAARTEN_PUNTEN} pt)</p>
+                  </div>
+                  <Toggle aan={poule.geleKaartenActief} onChange={(v) => toggleInstelling("geleKaartenActief", v)} />
+                </div>
+                {poule.geleKaartenActief && (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="text"
+                      value={geleKaartenResultaatInput}
+                      onChange={(e) => setGeleKaartenResultaatInput(e.target.value)}
+                      placeholder="Vul de speler met de meeste gele kaarten in..."
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={() => slaResultaatOp("geleKaartenResultaat", geleKaartenResultaatInput)}
+                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      Opslaan
+                    </button>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* ── Uitnodigen ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
