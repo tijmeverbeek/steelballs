@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Poule {
+  id           String      @id @default(cuid())
+  naam         String
+  code         String      @unique
+  aangemaaktOp DateTime    @default(now())
+  deelnemers   Deelnemer[]
+}
+
+model Deelnemer {
+  id             String         @id @default(cuid())
+  naam           String
+  pouleId        String
+  poule          Poule          @relation(fields: [pouleId], references: [id])
+  voorspellingen Voorspelling[]
+}
+
+model Voorspelling {
+  id          String    @id @default(cuid())
+  wedstrijdId String
+  thuis       Int?
+  uit         Int?
+  deelnemerId String
+  deelnemer   Deelnemer @relation(fields: [deelnemerId], references: [id])
+
+  @@unique([deelnemerId, wedstrijdId])
+}
+
+model Resultaat {
+  wedstrijdId String @id
+  thuis       Int
+  uit         Int
+}
