@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { getAfgelopenEnLiveWedstrijden, API_NAAM_NAAR_CODE } from "@/lib/football-api";
 import { wedstrijden } from "@/lib/matches";
 
+export const dynamic = "force-dynamic";
+
 function isGeautoriseerd(req: Request): boolean {
   // Vercel cron stuurt automatisch: Authorization: Bearer <CRON_SECRET>
   const authHeader = req.headers.get("authorization");
