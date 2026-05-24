@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { WK_LEAGUE_ID, WK_SEASON } from "@/lib/football-api";
 
+export const dynamic = "force-dynamic";
+
 function isGeautoriseerd(req: Request): boolean {
   const authHeader = req.headers.get("authorization");
   if (authHeader === `Bearer ${process.env.CRON_SECRET}`) return true;

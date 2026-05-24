@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getTopscorers, getTopGeleKaarten } from "@/lib/football-api";
 
+export const dynamic = "force-dynamic";
+
 function isGeautoriseerd(req: Request): boolean {
   const authHeader = req.headers.get("authorization");
   if (authHeader === `Bearer ${process.env.CRON_SECRET}`) return true;
