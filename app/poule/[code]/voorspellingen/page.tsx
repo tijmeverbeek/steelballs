@@ -117,6 +117,22 @@ export default function VoorspellingenPagina() {
     [code]
   );
 
+  function autoFill() {
+    setScores((prev) => {
+      const updated = { ...prev };
+      for (const w of wedstrijden) {
+        if (updated[w.id]?.thuis != null && updated[w.id]?.uit != null) continue;
+        const goals = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4];
+        const thuis = goals[Math.floor(Math.random() * goals.length)];
+        const uit = goals[Math.floor(Math.random() * goals.length)];
+        updated[w.id] = { thuis, uit };
+      }
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => doAutoSave(updated), 700);
+      return updated;
+    });
+  }
+
   function updateScore(wedstrijdId: string, kant: "thuis" | "uit", waarde: number) {
     setScores((prev) => {
       const updated = {
@@ -162,10 +178,18 @@ export default function VoorspellingenPagina() {
             </div>
             <div className="text-xs text-zinc-500">voorspeld</div>
           </div>
-          <div className="w-20 text-right text-xs">
-            {saveStatus === "saving" && <span className="text-zinc-400">Opslaan...</span>}
-            {saveStatus === "saved" && <span className="text-green-400 font-medium">✓ Opgeslagen</span>}
-            {saveStatus === "error" && <span className="text-red-400 font-medium">Fout — probeer opnieuw</span>}
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-right w-20">
+              {saveStatus === "saving" && <span className="text-zinc-400">Opslaan...</span>}
+              {saveStatus === "saved" && <span className="text-green-400 font-medium">✓ Opgeslagen</span>}
+              {saveStatus === "error" && <span className="text-red-400 font-medium">Fout — probeer opnieuw</span>}
+            </div>
+            <button
+              onClick={autoFill}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors whitespace-nowrap"
+            >
+              Auto-fill
+            </button>
           </div>
         </div>
 
