@@ -166,13 +166,12 @@ function EindstandModal({
             <h2 className="text-xl font-black text-white">Toernooi afgerond</h2>
             {winnaar && (
               <p className="text-zinc-400 text-sm mt-1">
-                <Link
-                  href={`/speler/${encodeURIComponent(winnaar.userId)}`}
-                  className="text-yellow-400 font-semibold hover:text-yellow-300 transition-colors"
-                  onClick={onSluit}
+                <span
+                  className="text-yellow-400 font-semibold cursor-pointer"
+                  onClick={() => { onSluit(); window.location.href = `/speler/${encodeURIComponent(winnaar.userId)}`; }}
                 >
                   {winnaar.displayNaam}
-                </Link>{" "}heeft gewonnen
+                </span>{" "}heeft gewonnen
               </p>
             )}
           </div>
@@ -207,13 +206,12 @@ function EindstandModal({
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">
-                      <Link
-                        href={`/speler/${encodeURIComponent(d.userId)}`}
-                        className="hover:text-zinc-300 transition-colors"
-                        onClick={onSluit}
+                      <span
+                        className="hover:text-zinc-300 transition-colors cursor-pointer"
+                        onClick={() => { onSluit(); window.location.href = `/speler/${encodeURIComponent(d.userId)}`; }}
                       >
                         {d.displayNaam}
-                      </Link>
+                      </span>
                       {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>}
                     </p>
                     {poule.eersteDoelpuntenminuutActief && d.eersteDoelpuntenminuutVoorspelling != null && poule.eersteDoelpuntenminuutResultaat != null && (
@@ -621,7 +619,7 @@ function PoulePagina() {
             {stand.map((d, i) => (
               <div
                 key={d.id}
-                onClick={() => router.push(`/speler/${encodeURIComponent(d.userId)}`)}
+                onClick={() => { window.location.href = `/speler/${encodeURIComponent(d.userId)}`; }}
                 className={`px-5 py-4 flex items-center gap-3 active:bg-zinc-800 transition-colors cursor-pointer ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
               >
                 <span className="text-lg w-7 text-center flex-shrink-0">
