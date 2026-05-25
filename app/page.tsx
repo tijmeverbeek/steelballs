@@ -237,7 +237,10 @@ export default function Home() {
           <div>
             {gebruikersnaam ? (
               <p className="text-sm text-zinc-500">
-                Ingelogd als <span className="text-white font-medium">{gebruikersnaam}</span>
+                Ingelogd als{" "}
+                <Link href={`/speler/${encodeURIComponent(gebruikersnaam)}`} className="text-white font-medium hover:text-zinc-300 transition-colors">
+                  {gebruikersnaam}
+                </Link>
               </p>
             ) : (
               <div />

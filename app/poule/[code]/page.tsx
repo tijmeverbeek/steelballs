@@ -211,7 +211,7 @@ function EindstandModal({
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">
-                      {d.gebruikersnaam && d.userId !== mijnUserId ? (
+                      {d.gebruikersnaam ? (
                         <Link
                           href={`/speler/${encodeURIComponent(d.gebruikersnaam)}`}
                           className="hover:text-zinc-300 transition-colors"
@@ -635,7 +635,7 @@ function PoulePagina() {
                 <Initialen naam={d.displayNaam} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white text-sm truncate">
-                    {d.gebruikersnaam && d.userId !== mijnUserId ? (
+                    {d.gebruikersnaam ? (
                       <Link
                         href={`/speler/${encodeURIComponent(d.gebruikersnaam)}`}
                         className="hover:text-zinc-300 transition-colors"
