@@ -106,14 +106,7 @@ function genereerMatches(): Wedstrijd[] {
   return matches.sort((a, b) => `${a.datum}${a.tijd}`.localeCompare(`${b.datum}${b.tijd}`));
 }
 
-const WK_WEDSTRIJDEN: Wedstrijd[] = genereerMatches();
-const CL_FINALE_WEDSTRIJDEN: Wedstrijd[] = [CL_FINALE];
-
-export const wedstrijden: Wedstrijd[] = [CL_FINALE, ...WK_WEDSTRIJDEN];
-
-export function getWedstrijdenVoorSoort(soort: string): Wedstrijd[] {
-  return soort === "cl_finale" ? CL_FINALE_WEDSTRIJDEN : WK_WEDSTRIJDEN;
-}
+export const wedstrijden: Wedstrijd[] = [CL_FINALE, ...genereerMatches()];
 
 export function getWedstrijd(id: string): Wedstrijd | undefined {
   return wedstrijden.find((w) => w.id === id);
