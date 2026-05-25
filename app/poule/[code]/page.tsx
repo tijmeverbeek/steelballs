@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, rondeAfPoule } from "@/lib/api";
 import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
-import { wedstrijden, CL_FINALE } from "@/lib/matches";
+import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer } from "@/lib/types";
 import { slaMatchResultaatOp, updatePouleInstellingen } from "@/lib/api";
