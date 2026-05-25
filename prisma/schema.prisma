@@ -21,6 +21,7 @@ model Poule {
   id                   String      @id @default(cuid())
   naam                 String
   code                 String      @unique
+  soort                String      @default("wk")
   aangemaaktOp         DateTime    @default(now())
   organisatorId        String?
   topscorerActief                    Boolean  @default(false)

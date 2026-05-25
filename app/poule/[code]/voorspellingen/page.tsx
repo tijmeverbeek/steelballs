@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { wedstrijden, getGroepen } from "@/lib/matches";
+import { getWedstrijdenVoorSoort } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 
@@ -75,7 +75,8 @@ export default function VoorspellingenPagina() {
   const eersteDoelpuntenmakerRef = useRef("");
   const eersteDoelpuntenminuutRef = useRef<number | null>(null);
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
-  const groepen = useMemo(() => getGroepen(), []);
+  const wedstrijden = useMemo(() => getWedstrijdenVoorSoort(poule?.soort ?? "wk"), [poule?.soort]);
+  const groepen = useMemo(() => [...new Set(wedstrijden.map((w) => w.groep))].sort(), [wedstrijden]);
 
   useEffect(() => {
     async function load() {

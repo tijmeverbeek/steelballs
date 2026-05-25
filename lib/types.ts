@@ -36,6 +36,7 @@ export interface Poule {
   id: string;
   naam: string;
   code: string;
+  soort: string;
   deelnemers: Deelnemer[];
   aangemaaktOp: string;
   resultaten: Record<string, { thuis: number; uit: number }>;

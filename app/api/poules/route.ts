@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const authUser = await getAuthUser();
   if (!authUser) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
 
-  const { naam } = await req.json();
+  const { naam, soort } = await req.json();
   if (!naam) return NextResponse.json({ error: "Naam is verplicht" }, { status: 400 });
 
   let code = generateCode();
@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     data: {
       naam,
       code,
+      soort: soort === "cl_finale" ? "cl_finale" : "wk",
       organisatorId: authUser.id,
       deelnemers: {
         create: { userId: authUser.id },

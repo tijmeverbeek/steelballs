@@ -1,10 +1,10 @@
 import { Poule, Voorspelling } from "./types";
 
-export async function createPoule(naam: string): Promise<{ code: string; deelnemerId: string }> {
+export async function createPoule(naam: string, soort: string = "wk"): Promise<{ code: string; deelnemerId: string }> {
   const res = await fetch("/api/poules", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ naam }),
+    body: JSON.stringify({ naam, soort }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
