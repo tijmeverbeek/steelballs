@@ -619,9 +619,10 @@ function PoulePagina() {
           </div>
           <div className="divide-y divide-zinc-800">
             {stand.map((d, i) => (
-              <div
+              <Link
                 key={d.id}
-                className={`px-5 py-4 flex items-center gap-3 ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
+                href={`/speler/${encodeURIComponent(d.userId)}`}
+                className={`px-5 py-4 flex items-center gap-3 active:bg-zinc-800 transition-colors ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
               >
                 <span className="text-lg w-7 text-center flex-shrink-0">
                   {poule.afgerond && i === 0 ? "🏆" : i < 3 ? MEDAILLES[i] : <span className="text-sm text-zinc-600 font-bold">{i + 1}</span>}
@@ -629,12 +630,7 @@ function PoulePagina() {
                 <Initialen naam={d.displayNaam} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white text-sm truncate">
-                    <Link
-                      href={`/speler/${encodeURIComponent(d.userId)}`}
-                      className="hover:text-zinc-300 transition-colors"
-                    >
-                      {d.displayNaam}
-                    </Link>
+                    {d.displayNaam}
                     {d.userId === mijnUserId && (
                       <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
                     )}
@@ -659,7 +655,7 @@ function PoulePagina() {
                   <span className="text-xl font-black text-white">{d.punten}</span>
                   <span className="text-xs text-zinc-600 ml-1">pt</span>
                 </div>
-              </div>
+              </Link>
             ))}
             {stand.length === 0 && (
               <p className="px-5 py-4 text-sm text-zinc-600">Nog geen deelnemers.</p>
