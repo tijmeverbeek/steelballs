@@ -16,11 +16,15 @@ export async function PUT(
     topscorerVoorspelling,
     geleKaartenVoorspelling,
     toernooiwinaarVoorspelling,
+    eersteDoelpuntenmakerVoorspelling,
+    eersteDoelpuntenminuutVoorspelling,
   }: {
     voorspellingen: Voorspelling[];
     topscorerVoorspelling?: string | null;
     geleKaartenVoorspelling?: string | null;
     toernooiwinaarVoorspelling?: string | null;
+    eersteDoelpuntenmakerVoorspelling?: string | null;
+    eersteDoelpuntenminuutVoorspelling?: number | null;
   } = await req.json();
 
   const deelnemer = await prisma.deelnemer.findUnique({ where: { id: deelnemerId } });
@@ -44,10 +48,14 @@ export async function PUT(
     topscorerVoorspelling?: string | null;
     geleKaartenVoorspelling?: string | null;
     toernooiwinaarVoorspelling?: string | null;
+    eersteDoelpuntenmakerVoorspelling?: string | null;
+    eersteDoelpuntenminuutVoorspelling?: number | null;
   } = {};
   if (topscorerVoorspelling !== undefined) specialeUpdate.topscorerVoorspelling = topscorerVoorspelling || null;
   if (geleKaartenVoorspelling !== undefined) specialeUpdate.geleKaartenVoorspelling = geleKaartenVoorspelling || null;
   if (toernooiwinaarVoorspelling !== undefined) specialeUpdate.toernooiwinaarVoorspelling = toernooiwinaarVoorspelling || null;
+  if (eersteDoelpuntenmakerVoorspelling !== undefined) specialeUpdate.eersteDoelpuntenmakerVoorspelling = eersteDoelpuntenmakerVoorspelling || null;
+  if (eersteDoelpuntenminuutVoorspelling !== undefined) specialeUpdate.eersteDoelpuntenminuutVoorspelling = eersteDoelpuntenminuutVoorspelling ?? null;
   if (Object.keys(specialeUpdate).length > 0) {
     await prisma.deelnemer.update({ where: { id: deelnemerId }, data: specialeUpdate });
   }

@@ -28,6 +28,8 @@ export interface Deelnemer {
   topscorerVoorspelling?: string | null;
   geleKaartenVoorspelling?: string | null;
   toernooiwinaarVoorspelling?: string | null;
+  eersteDoelpuntenmakerVoorspelling?: string | null;
+  eersteDoelpuntenminuutVoorspelling?: number | null;
 }
 
 export interface Poule {
@@ -41,8 +43,14 @@ export interface Poule {
   topscorerActief: boolean;
   geleKaartenActief: boolean;
   toernooiwinaarActief: boolean;
+  eersteDoelpuntenmakerActief: boolean;
+  eersteDoelpuntenminuutActief: boolean;
   topscorerResultaat?: string | null;
   geleKaartenResultaat?: string | null;
   toernooiwinaarResultaat?: string | null;
+  eersteDoelpuntenmakerResultaat?: string | null;
+  eersteDoelpuntenminuutResultaat?: number | null;
+  afgerond: boolean;
+  winnaarId?: string | null;
   liveStats?: Record<string, string>;
 }

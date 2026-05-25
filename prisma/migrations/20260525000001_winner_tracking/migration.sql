@@ -1,0 +1,6 @@
+ALTER TABLE "User"
+  ADD COLUMN "aantalWinsten" INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE "Poule"
+  ADD COLUMN "afgerond"   BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN "winnaarId"  TEXT;
