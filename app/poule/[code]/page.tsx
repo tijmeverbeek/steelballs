@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, rondeAfPoule } from "@/lib/api";
 import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
-import { wedstrijden, CL_FINALE } from "@/lib/matches";
+import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer } from "@/lib/types";
 import { slaMatchResultaatOp, updatePouleInstellingen } from "@/lib/api";
@@ -294,7 +294,9 @@ function PoulePagina() {
       try {
         await navigator.share({
           title: `${poule?.naam} — Steelballs`,
-          text: `Doe mee aan de WK poule "${poule?.naam}"! Voorspel alle wedstrijden en bewijs wie de staalste ballen heeft.`,
+          text: poule?.soort === "cl_finale"
+            ? `Doe mee aan de CL Finale poule "${poule?.naam}"! Voorspel de uitslag en bewijs wie de staalste ballen heeft.`
+            : `Doe mee aan de WK poule "${poule?.naam}"! Voorspel alle wedstrijden en bewijs wie de staalste ballen heeft.`,
           url,
         });
       } catch {
@@ -393,7 +395,8 @@ function PoulePagina() {
 
   const isOrganisator = mijnUserId !== null && poule.organisatorId === mijnUserId;
   const huidigDeelnemer = poule.deelnemers.find((d) => d.userId === mijnUserId);
-  const aantalWedstrijden = wedstrijden.length;
+  const pouleWedstrijden = getWedstrijdenVoorSoort(poule.soort ?? "wk");
+  const aantalWedstrijden = pouleWedstrijden.length;
   const jouwIngevuld = huidigDeelnemer?.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length ?? 0;
 
   const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief;
@@ -418,7 +421,7 @@ function PoulePagina() {
       return a.minuutAfstand - b.minuutAfstand;
     });
 
-  const eersteWedstrijden = wedstrijden.slice(0, 6);
+  const eersteWedstrijden = pouleWedstrijden.slice(0, 6);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -675,8 +678,8 @@ function PoulePagina() {
             </div>
             <div className="p-5 space-y-5">
 
-              {/* Topscorer toggle */}
-              <div>
+              {/* Topscorer toggle — alleen WK */}
+              {(poule.soort ?? "wk") !== "cl_finale" && <div>
                 <div className="flex items-center justify-between mb-1">
                   <div>
                     <p className="text-sm font-semibold text-white">Topscorer</p>
@@ -708,11 +711,11 @@ function PoulePagina() {
                     </div>
                   </>
                 )}
-              </div>
+              </div>}
 
+              {/* Gele kaarten toggle — alleen WK */}
+              {(poule.soort ?? "wk") !== "cl_finale" && <>
               <div className="border-t border-zinc-800" />
-
-              {/* Gele kaarten toggle */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <div>
@@ -746,10 +749,7 @@ function PoulePagina() {
                   </>
                 )}
               </div>
-
               <div className="border-t border-zinc-800" />
-
-              {/* Toernooiwinnaar toggle */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <div>
@@ -776,11 +776,10 @@ function PoulePagina() {
                   </div>
                 )}
               </div>
+              </>}
 
-              <div className="border-t border-zinc-800" />
-
-              {/* Eerste doelpuntenmaker toggle */}
-              <div>
+              {/* Eerste doelpuntenmaker toggle — alleen CL */}
+              {(poule.soort ?? "wk") === "cl_finale" && <><div>
                 <div className="flex items-center justify-between mb-1">
                   <div>
                     <p className="text-sm font-semibold text-white">Eerste doelpuntenmaker</p>
@@ -877,6 +876,9 @@ function PoulePagina() {
               </div>
 
               <div className="border-t border-zinc-800" />
+              </>}
+
+              <div className="border-t border-zinc-800" />
 
               {/* Afronden */}
               <div>
@@ -925,9 +927,9 @@ function PoulePagina() {
         {/* ── Eerste wedstrijden ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-            <h2 className="font-bold text-white">Eerste wedstrijden</h2>
+            <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
             <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
-              Alle {aantalWedstrijden} →
+              {(poule.soort ?? "wk") === "cl_finale" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
             </Link>
           </div>
           <div className="divide-y divide-zinc-800">

@@ -79,6 +79,7 @@ export default function Home() {
   const [aantalWinsten, setAantalWinsten] = useState<number>(0);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
+  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale">("wk");
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [loading, setLoading] = useState<"create" | "join" | null>(null);
@@ -114,7 +115,7 @@ export default function Home() {
     setLoading("create");
     setCreateError("");
     try {
-      const { code } = await createPoule(poulenaam.trim());
+      const { code } = await createPoule(poulenaam.trim(), pouleSoort);
       router.push(`/poule/${code}`);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Er ging iets mis.");
@@ -327,6 +328,27 @@ export default function Home() {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                  Type poule
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPouleSoort("wk")}
+                    className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "wk" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
+                  >
+                    WK 2026
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPouleSoort("cl_finale")}
+                    className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "cl_finale" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
+                  >
+                    CL Finale
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"
