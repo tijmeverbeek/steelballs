@@ -1,5 +1,15 @@
 import { Team, Wedstrijd } from "./types";
 
+export const CL_FINALE: Wedstrijd = {
+  id: "CL1",
+  thuis: { code: "PSG", naam: "PSG", vlag: "🇫🇷" },
+  uit: { code: "ARS", naam: "Arsenal", vlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  datum: "2026-05-30",
+  tijd: "21:00",
+  groep: "CL Finale",
+  fase: "knockout",
+};
+
 const groepen: Record<string, Team[]> = {
   A: [
     { code: "NED", naam: "Nederland", vlag: "🇳🇱" },
@@ -96,7 +106,7 @@ function genereerMatches(): Wedstrijd[] {
   return matches.sort((a, b) => `${a.datum}${a.tijd}`.localeCompare(`${b.datum}${b.tijd}`));
 }
 
-export const wedstrijden: Wedstrijd[] = genereerMatches();
+export const wedstrijden: Wedstrijd[] = [CL_FINALE, ...genereerMatches()];
 
 export function getWedstrijd(id: string): Wedstrijd | undefined {
   return wedstrijden.find((w) => w.id === id);

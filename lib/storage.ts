@@ -3,6 +3,7 @@ import { Voorspelling } from "./types";
 export const TOPSCORER_PUNTEN = 5;
 export const GELE_KAARTEN_PUNTEN = 5;
 export const TOERNOOIWINNAAR_PUNTEN = 20;
+export const EERSTE_DOELPUNTENMAKER_PUNTEN = 10;
 
 function matchNaam(a: string, b: string) {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -16,14 +17,17 @@ export function berekenPunten(
     topscorerVoorspelling?: string | null;
     geleKaartenVoorspelling?: string | null;
     toernooiwinaarVoorspelling?: string | null;
+    eersteDoelpuntenmakerVoorspelling?: string | null;
   },
   poule?: {
     topscorerActief?: boolean;
     geleKaartenActief?: boolean;
     toernooiwinaarActief?: boolean;
+    eersteDoelpuntenmakerActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
     toernooiwinaarResultaat?: string | null;
+    eersteDoelpuntenmakerResultaat?: string | null;
   }
 ): number {
   let punten = 0;
@@ -50,5 +54,26 @@ export function berekenPunten(
     && matchNaam(poule.toernooiwinaarResultaat, deelnemer.toernooiwinaarVoorspelling)) {
     punten += TOERNOOIWINNAAR_PUNTEN;
   }
+  if (poule?.eersteDoelpuntenmakerActief && poule.eersteDoelpuntenmakerResultaat && deelnemer?.eersteDoelpuntenmakerVoorspelling
+    && matchNaam(poule.eersteDoelpuntenmakerResultaat, deelnemer.eersteDoelpuntenmakerVoorspelling)) {
+    punten += EERSTE_DOELPUNTENMAKER_PUNTEN;
+  }
   return punten;
+}
+
+// Tiebreaker: hoe dichter bij de werkelijke minuut, hoe beter (null = oneindig ver)
+export function berekenMinuutAfstand(
+  voorspeldMinuut: number | null | undefined,
+  werkelijkMinuut: number | null | undefined
+): number {
+  if (voorspeldMinuut == null || werkelijkMinuut == null) return Infinity;
+  return Math.abs(voorspeldMinuut - werkelijkMinuut);
+}
+
+export function heeftCorrectEersteDoelpuntenmaker(
+  deelnemer: { eersteDoelpuntenmakerVoorspelling?: string | null },
+  poule: { eersteDoelpuntenmakerResultaat?: string | null }
+): boolean {
+  if (!poule.eersteDoelpuntenmakerResultaat || !deelnemer.eersteDoelpuntenmakerVoorspelling) return false;
+  return matchNaam(poule.eersteDoelpuntenmakerResultaat, deelnemer.eersteDoelpuntenmakerVoorspelling);
 }

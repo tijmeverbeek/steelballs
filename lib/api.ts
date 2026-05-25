@@ -39,6 +39,8 @@ export async function saveVoorspellingen(
     topscorerVoorspelling?: string | null;
     geleKaartenVoorspelling?: string | null;
     toernooiwinaarVoorspelling?: string | null;
+    eersteDoelpuntenmakerVoorspelling?: string | null;
+    eersteDoelpuntenminuutVoorspelling?: number | null;
   }
 ): Promise<void> {
   const res = await fetch(`/api/poules/${code}/deelnemers/${deelnemerId}/voorspellingen`, {
@@ -49,15 +51,33 @@ export async function saveVoorspellingen(
   if (!res.ok) throw new Error("Opslaan mislukt");
 }
 
+export async function slaMatchResultaatOp(
+  code: string,
+  wedstrijdId: string,
+  thuis: number,
+  uit: number
+): Promise<void> {
+  const res = await fetch(`/api/poules/${code}/resultaat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wedstrijdId, thuis, uit }),
+  });
+  if (!res.ok) throw new Error("Resultaat opslaan mislukt");
+}
+
 export async function updatePouleInstellingen(
   code: string,
   instellingen: {
     topscorerActief?: boolean;
     geleKaartenActief?: boolean;
     toernooiwinaarActief?: boolean;
+    eersteDoelpuntenmakerActief?: boolean;
+    eersteDoelpuntenminuutActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
     toernooiwinaarResultaat?: string | null;
+    eersteDoelpuntenmakerResultaat?: string | null;
+    eersteDoelpuntenminuutResultaat?: number | null;
   }
 ): Promise<void> {
   const res = await fetch(`/api/poules/${code}`, {

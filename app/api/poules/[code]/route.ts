@@ -54,9 +54,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
       ...(body.topscorerActief !== undefined && { topscorerActief: body.topscorerActief }),
       ...(body.geleKaartenActief !== undefined && { geleKaartenActief: body.geleKaartenActief }),
       ...(body.toernooiwinaarActief !== undefined && { toernooiwinaarActief: body.toernooiwinaarActief }),
+      ...(body.eersteDoelpuntenmakerActief !== undefined && { eersteDoelpuntenmakerActief: body.eersteDoelpuntenmakerActief }),
+      ...(body.eersteDoelpuntenminuutActief !== undefined && { eersteDoelpuntenminuutActief: body.eersteDoelpuntenminuutActief }),
       ...(body.topscorerResultaat !== undefined && { topscorerResultaat: body.topscorerResultaat || null }),
       ...(body.geleKaartenResultaat !== undefined && { geleKaartenResultaat: body.geleKaartenResultaat || null }),
       ...(body.toernooiwinaarResultaat !== undefined && { toernooiwinaarResultaat: body.toernooiwinaarResultaat || null }),
+      ...(body.eersteDoelpuntenmakerResultaat !== undefined && { eersteDoelpuntenmakerResultaat: body.eersteDoelpuntenmakerResultaat || null }),
+      ...(body.eersteDoelpuntenminuutResultaat !== undefined && { eersteDoelpuntenminuutResultaat: body.eersteDoelpuntenminuutResultaat ?? null }),
     },
   });
 
