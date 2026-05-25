@@ -63,6 +63,7 @@ function Toggle({ aan, onChange }: { aan: boolean; onChange: (v: boolean) => voi
 type StandItem = {
   id: string;
   userId: string;
+  gebruikersnaam: string | null;
   displayNaam: string;
   punten: number;
   ingevuld: number;
@@ -165,7 +166,17 @@ function EindstandModal({
             <h2 className="text-xl font-black text-white">Toernooi afgerond</h2>
             {winnaar && (
               <p className="text-zinc-400 text-sm mt-1">
-                <span className="text-yellow-400 font-semibold">{winnaar.displayNaam}</span> heeft gewonnen
+                {winnaar.gebruikersnaam && winnaar.userId !== mijnUserId ? (
+                  <Link
+                    href={`/speler/${encodeURIComponent(winnaar.gebruikersnaam)}`}
+                    className="text-yellow-400 font-semibold hover:text-yellow-300 transition-colors"
+                    onClick={onSluit}
+                  >
+                    {winnaar.displayNaam}
+                  </Link>
+                ) : (
+                  <span className="text-yellow-400 font-semibold">{winnaar.displayNaam}</span>
+                )}{" "}heeft gewonnen
               </p>
             )}
           </div>
@@ -200,7 +211,15 @@ function EindstandModal({
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">
-                      {d.displayNaam}
+                      {d.gebruikersnaam && d.userId !== mijnUserId ? (
+                        <Link
+                          href={`/speler/${encodeURIComponent(d.gebruikersnaam)}`}
+                          className="hover:text-zinc-300 transition-colors"
+                          onClick={onSluit}
+                        >
+                          {d.displayNaam}
+                        </Link>
+                      ) : d.displayNaam}
                       {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>}
                     </p>
                     {poule.eersteDoelpuntenminuutActief && d.eersteDoelpuntenminuutVoorspelling != null && poule.eersteDoelpuntenminuutResultaat != null && (
@@ -391,6 +410,7 @@ function PoulePagina() {
     .map((d) => ({
       id: d.id,
       userId: d.userId,
+      gebruikersnaam: d.user.gebruikersnaam,
       displayNaam: deelnemerNaam(d),
       punten: berekenPunten(d.voorspellingen, poule.resultaten, d, poule),
       ingevuld: d.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length,
@@ -615,7 +635,14 @@ function PoulePagina() {
                 <Initialen naam={d.displayNaam} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white text-sm truncate">
-                    {d.displayNaam}
+                    {d.gebruikersnaam && d.userId !== mijnUserId ? (
+                      <Link
+                        href={`/speler/${encodeURIComponent(d.gebruikersnaam)}`}
+                        className="hover:text-zinc-300 transition-colors"
+                      >
+                        {d.displayNaam}
+                      </Link>
+                    ) : d.displayNaam}
                     {d.userId === mijnUserId && (
                       <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
                     )}
