@@ -3,11 +3,11 @@
 import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getPoule } from "@/lib/api";
+import { getPoule, rondeAfPoule } from "@/lib/api";
 import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { wedstrijden, CL_FINALE } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
-import { Poule } from "@/lib/types";
+import { Poule, Deelnemer } from "@/lib/types";
 import { slaMatchResultaatOp, updatePouleInstellingen } from "@/lib/api";
 
 class ErrorBoundary extends Component<
@@ -60,6 +60,180 @@ function Toggle({ aan, onChange }: { aan: boolean; onChange: (v: boolean) => voi
   );
 }
 
+type StandItem = {
+  id: string;
+  userId: string;
+  displayNaam: string;
+  punten: number;
+  ingevuld: number;
+  correctDoelpuntenmaker: boolean;
+  minuutAfstand: number;
+  eersteDoelpuntenmakerVoorspelling?: string | null;
+  eersteDoelpuntenminuutVoorspelling?: number | null;
+  voorspellingen: Deelnemer["voorspellingen"];
+};
+
+function EindstandModal({
+  poule,
+  stand,
+  mijnUserId,
+  onSluit,
+}: {
+  poule: Poule;
+  stand: StandItem[];
+  mijnUserId: string | null;
+  onSluit: () => void;
+}) {
+  const isWinnaar = mijnUserId !== null && poule.winnaarId === mijnUserId;
+  const winnaar = stand[0];
+  const clResultaat = poule.resultaten["CL1"];
+
+  function keuzeRegel(deelnemer: StandItem) {
+    const vp = deelnemer.voorspellingen.find((v) => v.wedstrijdId === "CL1");
+    const punten = deelnemer.punten;
+    return (
+      <div className="space-y-1.5">
+        {clResultaat && vp?.thuis != null && vp?.uit != null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className={vp.thuis === clResultaat.thuis && vp.uit === clResultaat.uit ? "text-green-400" : "text-zinc-400"}>
+              {vp.thuis === clResultaat.thuis && vp.uit === clResultaat.uit ? "✓" : "○"}
+            </span>
+            <span className="text-zinc-300">
+              PSG {vp.thuis}–{vp.uit} Arsenal
+              {clResultaat && (
+                <span className="text-zinc-600 ml-1">(werkelijk: {clResultaat.thuis}–{clResultaat.uit})</span>
+              )}
+            </span>
+          </div>
+        )}
+        {poule.eersteDoelpuntenmakerActief && deelnemer.eersteDoelpuntenmakerVoorspelling && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className={deelnemer.correctDoelpuntenmaker ? "text-green-400" : "text-zinc-400"}>
+              {deelnemer.correctDoelpuntenmaker ? "✓" : "✗"}
+            </span>
+            <span className="text-zinc-300">
+              {deelnemer.eersteDoelpuntenmakerVoorspelling}
+              {poule.eersteDoelpuntenmakerResultaat && (
+                <span className="text-zinc-600 ml-1">(werkelijk: {poule.eersteDoelpuntenmakerResultaat})</span>
+              )}
+            </span>
+          </div>
+        )}
+        {poule.eersteDoelpuntenminuutActief && deelnemer.eersteDoelpuntenminuutVoorspelling != null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className={deelnemer.minuutAfstand === 0 ? "text-green-400" : "text-zinc-400"}>
+              {deelnemer.minuutAfstand === 0 ? "✓" : "⏱"}
+            </span>
+            <span className="text-zinc-300">
+              minuut {deelnemer.eersteDoelpuntenminuutVoorspelling}
+              {poule.eersteDoelpuntenminuutResultaat != null && (
+                <span className="text-zinc-600 ml-1">(werkelijk: {poule.eersteDoelpuntenminuutResultaat})</span>
+              )}
+            </span>
+          </div>
+        )}
+        <div className="text-xs text-zinc-500 pt-0.5">{punten} punten totaal</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onSluit} />
+
+      <div className="relative w-full max-w-md bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+
+        {/* Header */}
+        {isWinnaar ? (
+          <div
+            className="px-6 pt-8 pb-6 text-center relative overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #78350f 0%, #92400e 40%, #78350f 100%)" }}
+          >
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(253,224,71,0.6) 0%, transparent 70%)" }}
+            />
+            <div className="relative">
+              <div className="text-6xl mb-3 animate-bounce">🏆</div>
+              <h2 className="text-3xl font-black text-yellow-300 tracking-tight">Gewonnen!</h2>
+              <p className="text-yellow-100/80 text-sm mt-1">Jij hebt de staalste ballen</p>
+            </div>
+          </div>
+        ) : (
+          <div className="px-6 pt-7 pb-5 text-center bg-zinc-800">
+            <div className="text-4xl mb-2">🏆</div>
+            <h2 className="text-xl font-black text-white">Toernooi afgerond</h2>
+            {winnaar && (
+              <p className="text-zinc-400 text-sm mt-1">
+                <span className="text-yellow-400 font-semibold">{winnaar.displayNaam}</span> heeft gewonnen
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Scroll content */}
+        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+
+          {/* Winnaar's keuzes */}
+          {winnaar && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">
+                {isWinnaar ? "Jouw winnende keuzes" : `Keuzes van ${winnaar.displayNaam}`}
+              </p>
+              <div className="bg-zinc-800/60 rounded-xl p-4">
+                {keuzeRegel(winnaar)}
+              </div>
+            </div>
+          )}
+
+          {/* Eindstand */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">Eindstand</p>
+            <div className="bg-zinc-800/60 rounded-xl overflow-hidden divide-y divide-zinc-700/50">
+              {stand.map((d, i) => (
+                <div
+                  key={d.id}
+                  className={`px-4 py-3 flex items-center gap-3 ${d.userId === mijnUserId ? "bg-zinc-700/40" : ""}`}
+                >
+                  <span className="text-base w-6 text-center flex-shrink-0">
+                    {i === 0 ? "🏆" : i < 3 ? ["🥈", "🥉"][i - 1] : <span className="text-xs text-zinc-600 font-bold">{i + 1}</span>}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">
+                      {d.displayNaam}
+                      {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>}
+                    </p>
+                    {poule.eersteDoelpuntenminuutActief && d.eersteDoelpuntenminuutVoorspelling != null && poule.eersteDoelpuntenminuutResultaat != null && (
+                      <p className="text-xs text-zinc-600">
+                        minuut {d.eersteDoelpuntenminuutVoorspelling}
+                        {d.minuutAfstand < Infinity && ` (±${d.minuutAfstand})`}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-lg font-black text-white">{d.punten}</span>
+                    <span className="text-xs text-zinc-600 ml-1">pt</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 pt-3 border-t border-zinc-800">
+          <button
+            onClick={onSluit}
+            className="w-full bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-3 rounded-xl transition-colors text-sm"
+          >
+            Sluiten
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PoulePagina() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
@@ -67,6 +241,7 @@ function PoulePagina() {
   const [mijnUserId, setMijnUserId] = useState<string | null>(null);
   const [gedeeld, setGedeeld] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
+  const [toonEindstand, setToonEindstand] = useState(false);
   const [topscorerResultaatInput, setTopscorerResultaatInput] = useState("");
   const [geleKaartenResultaatInput, setGeleKaartenResultaatInput] = useState("");
   const [toernooiwinaarResultaatInput, setToernooiwinaarResultaatInput] = useState("");
@@ -91,6 +266,12 @@ function PoulePagina() {
       setEersteDoelpuntenminuutResultaatInput(p.eersteDoelpuntenminuutResultaat ?? null);
       const clResult = p.resultaten["CL1"];
       if (clResult) { setClFinaleThuis(clResult.thuis); setClFinaleUit(clResult.uit); }
+      if (p.afgerond) {
+        const gezienKey = `eindstand-gezien-${p.code}`;
+        if (!localStorage.getItem(gezienKey)) {
+          setToonEindstand(true);
+        }
+      }
     }).catch((err) => {
       setFout(String(err));
     });
@@ -163,6 +344,23 @@ function PoulePagina() {
     }
   }
 
+  async function rondeAf() {
+    if (!poule) return;
+    try {
+      await rondeAfPoule(code);
+      const bijgewerkt = { ...poule, afgerond: true };
+      setPoule(bijgewerkt);
+      setToonEindstand(true);
+    } catch {
+      // silently fail
+    }
+  }
+
+  function sluitEindstand() {
+    localStorage.setItem(`eindstand-gezien-${code}`, "1");
+    setToonEindstand(false);
+  }
+
   if (fout) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
@@ -189,20 +387,22 @@ function PoulePagina() {
 
   const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief;
 
-  const stand = poule.deelnemers
+  const stand: StandItem[] = poule.deelnemers
     .map((d) => ({
-      ...d,
+      id: d.id,
+      userId: d.userId,
       displayNaam: deelnemerNaam(d),
       punten: berekenPunten(d.voorspellingen, poule.resultaten, d, poule),
       ingevuld: d.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length,
       correctDoelpuntenmaker: heeftCorrectEersteDoelpuntenmaker(d, poule),
       minuutAfstand: berekenMinuutAfstand(d.eersteDoelpuntenminuutVoorspelling, poule.eersteDoelpuntenminuutResultaat),
+      eersteDoelpuntenmakerVoorspelling: d.eersteDoelpuntenmakerVoorspelling,
+      eersteDoelpuntenminuutVoorspelling: d.eersteDoelpuntenminuutVoorspelling,
+      voorspellingen: d.voorspellingen,
     }))
     .sort((a, b) => {
       if (b.punten !== a.punten) return b.punten - a.punten;
-      // Tiebreaker 1: juiste eerste doelpuntenmaker
       if (a.correctDoelpuntenmaker !== b.correctDoelpuntenmaker) return a.correctDoelpuntenmaker ? -1 : 1;
-      // Tiebreaker 2: dichtstbijzijnde minuut
       return a.minuutAfstand - b.minuutAfstand;
     });
 
@@ -210,6 +410,15 @@ function PoulePagina() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
+
+      {toonEindstand && (
+        <EindstandModal
+          poule={poule}
+          stand={stand}
+          mijnUserId={mijnUserId}
+          onSluit={sluitEindstand}
+        />
+      )}
 
       <header className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-2xl mx-auto px-5 py-5">
@@ -241,6 +450,27 @@ function PoulePagina() {
       </header>
 
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-5">
+
+        {/* ── Afgerond banner ── */}
+        {poule.afgerond && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🏆</span>
+              <div>
+                <p className="font-bold text-yellow-300 text-sm">Toernooi afgerond</p>
+                <p className="text-xs text-zinc-500">
+                  {stand[0] ? `${stand[0].displayNaam} heeft gewonnen met ${stand[0].punten} punten` : "Eindstand bekend"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setToonEindstand(true)}
+              className="flex-shrink-0 bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-xs px-4 py-2 rounded-xl transition-colors"
+            >
+              Bekijk →
+            </button>
+          </div>
+        )}
 
         {/* ── Jouw voorspellingen CTA ── */}
         {huidigDeelnemer && (
@@ -380,7 +610,7 @@ function PoulePagina() {
                 className={`px-5 py-4 flex items-center gap-3 ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
               >
                 <span className="text-lg w-7 text-center flex-shrink-0">
-                  {i < 3 ? MEDAILLES[i] : <span className="text-sm text-zinc-600 font-bold">{i + 1}</span>}
+                  {poule.afgerond && i === 0 ? "🏆" : i < 3 ? MEDAILLES[i] : <span className="text-sm text-zinc-600 font-bold">{i + 1}</span>}
                 </span>
                 <Initialen naam={d.displayNaam} />
                 <div className="flex-1 min-w-0">
@@ -388,6 +618,12 @@ function PoulePagina() {
                     {d.displayNaam}
                     {d.userId === mijnUserId && (
                       <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
+                    )}
+                    {poule.afgerond && i === 0 && d.userId !== mijnUserId && (
+                      <span className="ml-1.5 text-xs text-yellow-400 font-normal">winnaar</span>
+                    )}
+                    {poule.afgerond && i === 0 && d.userId === mijnUserId && (
+                      <span className="ml-1.5 text-xs text-yellow-400 font-normal">jij gewonnen!</span>
                     )}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
@@ -625,6 +861,29 @@ function PoulePagina() {
                     Opslaan
                   </button>
                 </div>
+              </div>
+
+              <div className="border-t border-zinc-800" />
+
+              {/* Afronden */}
+              <div>
+                <p className="text-sm font-semibold text-white mb-1">Toernooi afronden</p>
+                <p className="text-xs text-zinc-500 mb-3">
+                  Sluit het toernooi af, bepaal de winnaar en ken de trofee toe. Dit kan niet ongedaan worden gemaakt.
+                </p>
+                {poule.afgerond ? (
+                  <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
+                    <span>✓</span>
+                    <span>Toernooi is afgerond — {stand[0]?.displayNaam} heeft gewonnen</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={rondeAf}
+                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
+                  >
+                    🏆 Toernooi afronden
+                  </button>
+                )}
               </div>
 
             </div>

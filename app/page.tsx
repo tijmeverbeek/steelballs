@@ -67,12 +67,15 @@ interface UserPoule {
   deelnemerId: string;
   ingevuld: number;
   aangemaaktOp: string;
+  afgerond: boolean;
+  winnaarId?: string | null;
 }
 
 export default function Home() {
   const router = useRouter();
   const [ingelogd, setIngelogd] = useState<boolean | null>(null);
   const [gebruikersnaam, setGebruikersnaam] = useState<string | null>(null);
+  const [aantalWinsten, setAantalWinsten] = useState<number>(0);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -94,6 +97,7 @@ export default function Home() {
       if (userRes.ok) {
         const u = await userRes.json();
         setGebruikersnaam(u?.gebruikersnaam ?? null);
+        setAantalWinsten(u?.aantalWinsten ?? 0);
       }
       if (poulesRes.ok) {
         setMijnPoules(await poulesRes.json());
@@ -230,13 +234,20 @@ export default function Home() {
 
         {/* ── Topbar met gebruiker ── */}
         <div className="flex items-center justify-between pt-2">
-          {gebruikersnaam ? (
-            <p className="text-sm text-zinc-500">
-              Ingelogd als <span className="text-white font-medium">{gebruikersnaam}</span>
-            </p>
-          ) : (
-            <div />
-          )}
+          <div>
+            {gebruikersnaam ? (
+              <p className="text-sm text-zinc-500">
+                Ingelogd als <span className="text-white font-medium">{gebruikersnaam}</span>
+              </p>
+            ) : (
+              <div />
+            )}
+            {aantalWinsten > 0 && (
+              <p className="text-sm text-yellow-400 font-semibold mt-0.5">
+                🏆 {aantalWinsten} toernooi{aantalWinsten !== 1 ? "en" : ""} gewonnen
+              </p>
+            )}
+          </div>
           <button
             onClick={handleLogout}
             className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
@@ -256,21 +267,28 @@ export default function Home() {
                 <Link
                   key={p.id}
                   href={`/poule/${p.code}`}
-                  className="block bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 hover:border-zinc-600 transition-colors"
+                  className={`block bg-zinc-900 rounded-2xl px-5 py-4 hover:border-zinc-600 transition-colors border ${p.afgerond ? "border-yellow-500/30" : "border-zinc-800"}`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <p className="font-bold text-white">{p.naam}</p>
+                    <div className="flex items-center gap-2">
+                      {p.afgerond && <span className="text-base">🏆</span>}
+                      <p className="font-bold text-white">{p.naam}</p>
+                    </div>
                     <span className="text-xs font-mono text-zinc-500">{p.code}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-1.5 bg-zinc-800 rounded-full">
-                      <div
-                        className="h-1.5 bg-green-500 rounded-full transition-all"
-                        style={{ width: `${(p.ingevuld / aantalWedstrijden) * 100}%` }}
-                      />
+                  {p.afgerond ? (
+                    <p className="text-xs text-yellow-400/80">Afgerond · tik voor eindstand</p>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-1.5 bg-zinc-800 rounded-full">
+                        <div
+                          className="h-1.5 bg-green-500 rounded-full transition-all"
+                          style={{ width: `${(p.ingevuld / aantalWedstrijden) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-zinc-500">{p.ingevuld}/{aantalWedstrijden} voorspeld</span>
                     </div>
-                    <span className="text-xs text-zinc-500">{p.ingevuld}/{aantalWedstrijden} voorspeld</span>
-                  </div>
+                  )}
                 </Link>
               ))}
             </div>

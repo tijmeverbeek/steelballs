@@ -50,5 +50,7 @@ export interface Poule {
   toernooiwinaarResultaat?: string | null;
   eersteDoelpuntenmakerResultaat?: string | null;
   eersteDoelpuntenminuutResultaat?: number | null;
+  afgerond: boolean;
+  winnaarId?: string | null;
   liveStats?: Record<string, string>;
 }

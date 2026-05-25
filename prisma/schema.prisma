@@ -13,6 +13,7 @@ model User {
   email          String      @unique
   gebruikersnaam String?     @unique
   aangemaaktOp   DateTime    @default(now())
+  aantalWinsten  Int         @default(0)
   deelnemers     Deelnemer[]
 }
 
@@ -32,6 +33,8 @@ model Poule {
   toernooiwinaarResultaat            String?
   eersteDoelpuntenmakerResultaat     String?
   eersteDoelpuntenminuutResultaat    Int?
+  afgerond                           Boolean  @default(false)
+  winnaarId                          String?
   deelnemers           Deelnemer[]
 }
 

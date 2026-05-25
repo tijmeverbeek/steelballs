@@ -87,3 +87,12 @@ export async function updatePouleInstellingen(
   });
   if (!res.ok) throw new Error("Bijwerken mislukt");
 }
+
+export async function rondeAfPoule(code: string): Promise<{ winnaarId: string }> {
+  const res = await fetch(`/api/poules/${code}/afronden`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error("Afronden mislukt");
+  return res.json();
+}
