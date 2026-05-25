@@ -70,3 +70,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
 
   return NextResponse.json({ success: true, poule: updated });
 }
+
+export async function DELETE(_req: Request, { params }: { params: Promise<{ code: string }> }) {
+  const authUser = await getAuthUser();
+  if (!authUser) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+
+  const { code } = await params;
+  const poule = await prisma.poule.findUnique({ where: { code } });
+  if (!poule) return NextResponse.json({ error: "Niet gevonden" }, { status: 404 });
+  if (poule.organisatorId !== authUser.id) return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
+
+  try {
+    await prisma.voorspelling.deleteMany({ where: { deelnemer: { pouleId: poule.id } } });
+    await prisma.deelnemer.deleteMany({ where: { pouleId: poule.id } });
+    await prisma.poule.delete({ where: { id: poule.id } });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: `DB-fout: ${String(err)}` }, { status: 500 });
+  }
+}
