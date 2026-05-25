@@ -3,12 +3,11 @@
 import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getPoule, rondeAfPoule } from "@/lib/api";
+import { getPoule } from "@/lib/api";
 import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer } from "@/lib/types";
-import { slaMatchResultaatOp, updatePouleInstellingen } from "@/lib/api";
 
 class ErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -255,14 +254,6 @@ function PoulePagina() {
   const [gedeeld, setGedeeld] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [toonEindstand, setToonEindstand] = useState(false);
-  const [topscorerResultaatInput, setTopscorerResultaatInput] = useState("");
-  const [geleKaartenResultaatInput, setGeleKaartenResultaatInput] = useState("");
-  const [toernooiwinaarResultaatInput, setToernooiwinaarResultaatInput] = useState("");
-  const [eersteDoelpuntenmakerResultaatInput, setEersteDoelpuntenmakerResultaatInput] = useState("");
-  const [eersteDoelpuntenminuutResultaatInput, setEersteDoelpuntenminuutResultaatInput] = useState<number | null>(null);
-  const [clFinaleThuis, setClFinaleThuis] = useState<number | null>(null);
-  const [clFinaleUit, setClFinaleUit] = useState<number | null>(null);
-  const [instellingenOpgeslagen, setInstellingenOpgeslagen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -272,13 +263,6 @@ function PoulePagina() {
     getPoule(code).then((p) => {
       if (!p) { router.push("/"); return; }
       setPoule(p);
-      setTopscorerResultaatInput(p.topscorerResultaat ?? "");
-      setGeleKaartenResultaatInput(p.geleKaartenResultaat ?? "");
-      setToernooiwinaarResultaatInput(p.toernooiwinaarResultaat ?? "");
-      setEersteDoelpuntenmakerResultaatInput(p.eersteDoelpuntenmakerResultaat ?? "");
-      setEersteDoelpuntenminuutResultaatInput(p.eersteDoelpuntenminuutResultaat ?? null);
-      const clResult = p.resultaten["CL1"];
-      if (clResult) { setClFinaleThuis(clResult.thuis); setClFinaleUit(clResult.uit); }
       if (p.afgerond) {
         const gezienKey = `eindstand-gezien-${p.code}`;
         if (!localStorage.getItem(gezienKey)) {
@@ -311,66 +295,6 @@ function PoulePagina() {
     }
   }
 
-  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief" | "toernooiwinaarActief" | "eersteDoelpuntenmakerActief" | "eersteDoelpuntenminuutActief", waarde: boolean) {
-    if (!poule) return;
-    setPoule({ ...poule, [key]: waarde });
-    try {
-      await updatePouleInstellingen(code, { [key]: waarde });
-    } catch {
-      setPoule({ ...poule, [key]: !waarde });
-    }
-  }
-
-  async function slaResultaatOp(key: "topscorerResultaat" | "geleKaartenResultaat" | "toernooiwinaarResultaat" | "eersteDoelpuntenmakerResultaat", waarde: string) {
-    if (!poule) return;
-    const prev = poule[key];
-    setPoule({ ...poule, [key]: waarde || null });
-    try {
-      await updatePouleInstellingen(code, { [key]: waarde || null });
-      setInstellingenOpgeslagen(true);
-      setTimeout(() => setInstellingenOpgeslagen(false), 2000);
-    } catch {
-      setPoule({ ...poule, [key]: prev });
-    }
-  }
-
-  async function slaMinuutResultaatOp(minuut: number | null) {
-    if (!poule) return;
-    const prev = poule.eersteDoelpuntenminuutResultaat;
-    setPoule({ ...poule, eersteDoelpuntenminuutResultaat: minuut });
-    try {
-      await updatePouleInstellingen(code, { eersteDoelpuntenminuutResultaat: minuut });
-      setInstellingenOpgeslagen(true);
-      setTimeout(() => setInstellingenOpgeslagen(false), 2000);
-    } catch {
-      setPoule({ ...poule, eersteDoelpuntenminuutResultaat: prev });
-    }
-  }
-
-  async function slaClFinaleResultaatOp() {
-    if (!poule || clFinaleThuis === null || clFinaleUit === null) return;
-    try {
-      await slaMatchResultaatOp(code, "CL1", clFinaleThuis, clFinaleUit);
-      setPoule({ ...poule, resultaten: { ...poule.resultaten, CL1: { thuis: clFinaleThuis, uit: clFinaleUit } } });
-      setInstellingenOpgeslagen(true);
-      setTimeout(() => setInstellingenOpgeslagen(false), 2000);
-    } catch {
-      // silently fail
-    }
-  }
-
-  async function rondeAf() {
-    if (!poule) return;
-    try {
-      await rondeAfPoule(code);
-      const bijgewerkt = { ...poule, afgerond: true };
-      setPoule(bijgewerkt);
-      setToonEindstand(true);
-    } catch {
-      // silently fail
-    }
-  }
-
   function sluitEindstand() {
     localStorage.setItem(`eindstand-gezien-${code}`, "1");
     setToonEindstand(false);
@@ -397,6 +321,8 @@ function PoulePagina() {
 
   const isOrganisator = mijnUserId !== null && poule.organisatorId === mijnUserId;
   const huidigDeelnemer = poule.deelnemers.find((d) => d.userId === mijnUserId);
+  const organisatorDeelnemer = poule.deelnemers.find((d) => d.userId === poule.organisatorId);
+  const organisatorNaam = organisatorDeelnemer ? deelnemerNaam(organisatorDeelnemer) : null;
   const pouleWedstrijden = getWedstrijdenVoorSoort(poule.soort ?? "wk");
   const aantalWedstrijden = pouleWedstrijden.length;
   const jouwIngevuld = huidigDeelnemer?.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length ?? 0;
@@ -446,7 +372,8 @@ function PoulePagina() {
             <div>
               <h1 className="text-2xl font-black text-white">{poule.naam}</h1>
               <p className="text-zinc-500 text-sm mt-0.5">
-                {poule.deelnemers.length} deelnemer{poule.deelnemers.length !== 1 ? "s" : ""} · WK 2026
+                {poule.deelnemers.length} deelnemer{poule.deelnemers.length !== 1 ? "s" : ""}
+                {organisatorNaam && <> · Georganiseerd door {organisatorNaam}</>}
               </p>
             </div>
             <button
@@ -637,6 +564,9 @@ function PoulePagina() {
                     {d.userId === mijnUserId && (
                       <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
                     )}
+                    {d.userId === poule.organisatorId && (
+                      <span className="ml-1.5 text-xs text-zinc-500 font-normal">organisator</span>
+                    )}
                     {poule.afgerond && i === 0 && d.userId !== mijnUserId && (
                       <span className="ml-1.5 text-xs text-yellow-400 font-normal">winnaar</span>
                     )}
@@ -666,367 +596,18 @@ function PoulePagina() {
           </div>
         </div>
 
-        {/* ── Organizer instellingen ── */}
+        {/* ── Poule-instellingen knop (alleen organisator) ── */}
         {isOrganisator && (
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-              <div>
-                <h2 className="font-bold text-white">Poule-instellingen</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">Alleen zichtbaar voor jou als organisator</p>
-              </div>
-              {instellingenOpgeslagen && (
-                <span className="text-xs text-green-400 font-medium">✓ Opgeslagen</span>
-              )}
+          <Link
+            href={`/poule/${code}/instellingen`}
+            className="bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded-2xl p-5 flex items-center justify-between transition-colors"
+          >
+            <div>
+              <h2 className="font-bold text-white">Poule-instellingen</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Bonussen, resultaten en poule beheer</p>
             </div>
-            <div className="p-5 space-y-5">
-
-              {/* Topscorer toggle — alleen WK */}
-              {(poule.soort ?? "wk") !== "cl_finale" && <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Topscorer</p>
-                    <p className="text-xs text-zinc-500">Deelnemers raden de topscorer van het toernooi ({TOPSCORER_PUNTEN} pt)</p>
-                  </div>
-                  <Toggle aan={poule.topscorerActief} onChange={(v) => toggleInstelling("topscorerActief", v)} />
-                </div>
-                {poule.topscorerActief && (
-                  <>
-                    {poule.liveStats?.topscorer && (
-                      <p className="text-xs text-blue-400 mt-2">
-                        Live leider: <span className="font-semibold">{poule.liveStats.topscorer}</span>
-                      </p>
-                    )}
-                    <div className="mt-2 flex gap-2">
-                      <input
-                        type="text"
-                        value={topscorerResultaatInput}
-                        onChange={(e) => setTopscorerResultaatInput(e.target.value)}
-                        placeholder="Definitieve topscorer invullen..."
-                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <button
-                        onClick={() => slaResultaatOp("topscorerResultaat", topscorerResultaatInput)}
-                        className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                      >
-                        Opslaan
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>}
-
-              {/* Gele kaarten toggle — alleen WK */}
-              {(poule.soort ?? "wk") !== "cl_finale" && <>
-              <div className="border-t border-zinc-800" />
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Meeste gele kaarten</p>
-                    <p className="text-xs text-zinc-500">Deelnemers raden wie de meeste gele kaarten krijgt ({GELE_KAARTEN_PUNTEN} pt)</p>
-                  </div>
-                  <Toggle aan={poule.geleKaartenActief} onChange={(v) => toggleInstelling("geleKaartenActief", v)} />
-                </div>
-                {poule.geleKaartenActief && (
-                  <>
-                    {poule.liveStats?.geleKaarten && (
-                      <p className="text-xs text-blue-400 mt-2">
-                        Live leider: <span className="font-semibold">{poule.liveStats.geleKaarten}</span>
-                      </p>
-                    )}
-                    <div className="mt-2 flex gap-2">
-                      <input
-                        type="text"
-                        value={geleKaartenResultaatInput}
-                        onChange={(e) => setGeleKaartenResultaatInput(e.target.value)}
-                        placeholder="Definitieve speler invullen..."
-                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      <button
-                        onClick={() => slaResultaatOp("geleKaartenResultaat", geleKaartenResultaatInput)}
-                        className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                      >
-                        Opslaan
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="border-t border-zinc-800" />
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Winnaar van het toernooi</p>
-                    <p className="text-xs text-zinc-500">Deelnemers raden welk land het WK wint ({TOERNOOIWINNAAR_PUNTEN} pt)</p>
-                  </div>
-                  <Toggle aan={poule.toernooiwinaarActief} onChange={(v) => toggleInstelling("toernooiwinaarActief", v)} />
-                </div>
-                {poule.toernooiwinaarActief && (
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      type="text"
-                      value={toernooiwinaarResultaatInput}
-                      onChange={(e) => setToernooiwinaarResultaatInput(e.target.value)}
-                      placeholder="Winnaar invullen zodra bekend..."
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={() => slaResultaatOp("toernooiwinaarResultaat", toernooiwinaarResultaatInput)}
-                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Opslaan
-                    </button>
-                  </div>
-                )}
-              </div>
-              </>}
-
-              {/* Eerste doelpuntenmaker toggle — alleen CL */}
-              {(poule.soort ?? "wk") === "cl_finale" && <><div>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Eerste doelpuntenmaker</p>
-                    <p className="text-xs text-zinc-500">Wie scoort het eerste doelpunt van de CL finale? ({EERSTE_DOELPUNTENMAKER_PUNTEN} pt)</p>
-                  </div>
-                  <Toggle aan={poule.eersteDoelpuntenmakerActief} onChange={(v) => toggleInstelling("eersteDoelpuntenmakerActief", v)} />
-                </div>
-                {poule.eersteDoelpuntenmakerActief && (
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      type="text"
-                      value={eersteDoelpuntenmakerResultaatInput}
-                      onChange={(e) => setEersteDoelpuntenmakerResultaatInput(e.target.value)}
-                      placeholder="Naam van de eerste doelpuntenmaker..."
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={() => slaResultaatOp("eersteDoelpuntenmakerResultaat", eersteDoelpuntenmakerResultaatInput)}
-                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Opslaan
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-zinc-800" />
-
-              {/* Minuut tiebreaker toggle */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Minuut eerste doelpunt</p>
-                    <p className="text-xs text-zinc-500">Tiebreaker — dichtstbijzijnde minuut wint bij gelijke stand</p>
-                  </div>
-                  <Toggle aan={poule.eersteDoelpuntenminuutActief} onChange={(v) => toggleInstelling("eersteDoelpuntenminuutActief", v)} />
-                </div>
-                {poule.eersteDoelpuntenminuutActief && (
-                  <div className="mt-2 flex gap-2 items-center">
-                    <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={eersteDoelpuntenminuutResultaatInput ?? ""}
-                      onChange={(e) => setEersteDoelpuntenminuutResultaatInput(e.target.value === "" ? null : parseInt(e.target.value))}
-                      placeholder="bijv. 34"
-                      className="w-28 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                    <span className="text-xs text-zinc-500">minuut</span>
-                    <button
-                      onClick={() => slaMinuutResultaatOp(eersteDoelpuntenminuutResultaatInput)}
-                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Opslaan
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-zinc-800" />
-
-              {/* CL Finale uitslag */}
-              <div>
-                <p className="text-sm font-semibold text-white mb-1">CL Finale uitslag</p>
-                <p className="text-xs text-zinc-500 mb-3">
-                  PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal — vul de eindstand in na de wedstrijd
-                </p>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    value={clFinaleThuis ?? ""}
-                    onChange={(e) => setClFinaleThuis(e.target.value === "" ? null : parseInt(e.target.value))}
-                    placeholder="PSG"
-                    className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center"
-                  />
-                  <span className="text-zinc-600 font-bold">–</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={clFinaleUit ?? ""}
-                    onChange={(e) => setClFinaleUit(e.target.value === "" ? null : parseInt(e.target.value))}
-                    placeholder="ARS"
-                    className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center"
-                  />
-                  <button
-                    onClick={slaClFinaleResultaatOp}
-                    disabled={clFinaleThuis === null || clFinaleUit === null}
-                    className="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                  >
-                    Opslaan
-                  </button>
-                </div>
-              </div>
-
-              <div className="border-t border-zinc-800" />
-              </>}
-
-              <div className="border-t border-zinc-800" />
-
-              {/* Afronden */}
-              <div>
-                <p className="text-sm font-semibold text-white mb-1">Toernooi afronden</p>
-                <p className="text-xs text-zinc-500 mb-3">
-                  Sluit het toernooi af, bepaal de winnaar en ken de trofee toe. Dit kan niet ongedaan worden gemaakt.
-                </p>
-                {poule.afgerond ? (
-                  <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
-                    <span>✓</span>
-                    <span>Toernooi is afgerond — {stand[0]?.displayNaam} heeft gewonnen</span>
-                  </div>
-                ) : (
-                  <button
-                    onClick={rondeAf}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
-                  >
-                    🏆 Toernooi afronden
-                  </button>
-                )}
-              </div>
-
-              <div className="border-t border-zinc-800" />
-
-              {/* Eerste doelpuntenmaker toggle */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Eerste doelpuntenmaker</p>
-                    <p className="text-xs text-zinc-500">Wie scoort het eerste doelpunt van de CL finale? ({EERSTE_DOELPUNTENMAKER_PUNTEN} pt)</p>
-                  </div>
-                  <Toggle aan={poule.eersteDoelpuntenmakerActief} onChange={(v) => toggleInstelling("eersteDoelpuntenmakerActief", v)} />
-                </div>
-                {poule.eersteDoelpuntenmakerActief && (
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      type="text"
-                      value={eersteDoelpuntenmakerResultaatInput}
-                      onChange={(e) => setEersteDoelpuntenmakerResultaatInput(e.target.value)}
-                      placeholder="Naam van de eerste doelpuntenmaker..."
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={() => slaResultaatOp("eersteDoelpuntenmakerResultaat", eersteDoelpuntenmakerResultaatInput)}
-                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Opslaan
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-zinc-800" />
-
-              {/* Minuut tiebreaker toggle */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Minuut eerste doelpunt</p>
-                    <p className="text-xs text-zinc-500">Tiebreaker — dichtstbijzijnde minuut wint bij gelijke stand</p>
-                  </div>
-                  <Toggle aan={poule.eersteDoelpuntenminuutActief} onChange={(v) => toggleInstelling("eersteDoelpuntenminuutActief", v)} />
-                </div>
-                {poule.eersteDoelpuntenminuutActief && (
-                  <div className="mt-2 flex gap-2 items-center">
-                    <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={eersteDoelpuntenminuutResultaatInput ?? ""}
-                      onChange={(e) => setEersteDoelpuntenminuutResultaatInput(e.target.value === "" ? null : parseInt(e.target.value))}
-                      placeholder="bijv. 34"
-                      className="w-28 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                    <span className="text-xs text-zinc-500">minuut</span>
-                    <button
-                      onClick={() => slaMinuutResultaatOp(eersteDoelpuntenminuutResultaatInput)}
-                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Opslaan
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-zinc-800" />
-
-              {/* CL Finale uitslag */}
-              <div>
-                <p className="text-sm font-semibold text-white mb-1">CL Finale uitslag</p>
-                <p className="text-xs text-zinc-500 mb-3">
-                  PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal — vul de eindstand in na de wedstrijd
-                </p>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    value={clFinaleThuis ?? ""}
-                    onChange={(e) => setClFinaleThuis(e.target.value === "" ? null : parseInt(e.target.value))}
-                    placeholder="PSG"
-                    className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center"
-                  />
-                  <span className="text-zinc-600 font-bold">–</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={clFinaleUit ?? ""}
-                    onChange={(e) => setClFinaleUit(e.target.value === "" ? null : parseInt(e.target.value))}
-                    placeholder="ARS"
-                    className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center"
-                  />
-                  <button
-                    onClick={slaClFinaleResultaatOp}
-                    disabled={clFinaleThuis === null || clFinaleUit === null}
-                    className="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                  >
-                    Opslaan
-                  </button>
-                </div>
-              </div>
-
-              <div className="border-t border-zinc-800" />
-
-              {/* Afronden */}
-              <div>
-                <p className="text-sm font-semibold text-white mb-1">Toernooi afronden</p>
-                <p className="text-xs text-zinc-500 mb-3">
-                  Sluit het toernooi af, bepaal de winnaar en ken de trofee toe. Dit kan niet ongedaan worden gemaakt.
-                </p>
-                {poule.afgerond ? (
-                  <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
-                    <span>✓</span>
-                    <span>Toernooi is afgerond — {stand[0]?.displayNaam} heeft gewonnen</span>
-                  </div>
-                ) : (
-                  <button
-                    onClick={rondeAf}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
-                  >
-                    🏆 Toernooi afronden
-                  </button>
-                )}
-              </div>
-
-            </div>
-          </div>
+            <span className="text-zinc-400 text-lg">→</span>
+          </Link>
         )}
 
         {/* ── Uitnodigen ── */}
