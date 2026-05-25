@@ -166,12 +166,13 @@ function EindstandModal({
             <h2 className="text-xl font-black text-white">Toernooi afgerond</h2>
             {winnaar && (
               <p className="text-zinc-400 text-sm mt-1">
-                <span
-                  className="text-yellow-400 font-semibold cursor-pointer"
-                  onClick={() => { onSluit(); window.location.href = `/speler/${encodeURIComponent(winnaar.userId)}`; }}
+                <Link
+                  href={`/speler/${encodeURIComponent(winnaar.userId)}`}
+                  className="text-yellow-400 font-semibold hover:text-yellow-300 transition-colors"
+                  onClick={onSluit}
                 >
                   {winnaar.displayNaam}
-                </span>{" "}heeft gewonnen
+                </Link>{" "}heeft gewonnen
               </p>
             )}
           </div>
@@ -206,12 +207,13 @@ function EindstandModal({
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">
-                      <span
-                        className="hover:text-zinc-300 transition-colors cursor-pointer"
-                        onClick={() => { onSluit(); window.location.href = `/speler/${encodeURIComponent(d.userId)}`; }}
+                      <Link
+                        href={`/speler/${encodeURIComponent(d.userId)}`}
+                        className="hover:text-zinc-300 transition-colors"
+                        onClick={onSluit}
                       >
                         {d.displayNaam}
-                      </span>
+                      </Link>
                       {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>}
                     </p>
                     {poule.eersteDoelpuntenminuutActief && d.eersteDoelpuntenminuutVoorspelling != null && poule.eersteDoelpuntenminuutResultaat != null && (
@@ -622,7 +624,7 @@ function PoulePagina() {
             {stand.map((d, i) => (
               <div
                 key={d.id}
-                onClick={() => { window.location.href = `/speler/${encodeURIComponent(d.userId)}`; }}
+                onClick={() => router.push(`/speler/${encodeURIComponent(d.userId)}`)}
                 className={`px-5 py-4 flex items-center gap-3 active:bg-zinc-800 transition-colors cursor-pointer ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
               >
                 <span className="text-lg w-7 text-center flex-shrink-0">
@@ -877,6 +879,128 @@ function PoulePagina() {
 
               <div className="border-t border-zinc-800" />
               </>}
+
+              <div className="border-t border-zinc-800" />
+
+              {/* Afronden */}
+              <div>
+                <p className="text-sm font-semibold text-white mb-1">Toernooi afronden</p>
+                <p className="text-xs text-zinc-500 mb-3">
+                  Sluit het toernooi af, bepaal de winnaar en ken de trofee toe. Dit kan niet ongedaan worden gemaakt.
+                </p>
+                {poule.afgerond ? (
+                  <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
+                    <span>✓</span>
+                    <span>Toernooi is afgerond — {stand[0]?.displayNaam} heeft gewonnen</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={rondeAf}
+                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
+                  >
+                    🏆 Toernooi afronden
+                  </button>
+                )}
+              </div>
+
+              <div className="border-t border-zinc-800" />
+
+              {/* Eerste doelpuntenmaker toggle */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Eerste doelpuntenmaker</p>
+                    <p className="text-xs text-zinc-500">Wie scoort het eerste doelpunt van de CL finale? ({EERSTE_DOELPUNTENMAKER_PUNTEN} pt)</p>
+                  </div>
+                  <Toggle aan={poule.eersteDoelpuntenmakerActief} onChange={(v) => toggleInstelling("eersteDoelpuntenmakerActief", v)} />
+                </div>
+                {poule.eersteDoelpuntenmakerActief && (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      value={eersteDoelpuntenmakerResultaatInput}
+                      onChange={(e) => setEersteDoelpuntenmakerResultaatInput(e.target.value)}
+                      placeholder="Naam van de eerste doelpuntenmaker..."
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={() => slaResultaatOp("eersteDoelpuntenmakerResultaat", eersteDoelpuntenmakerResultaatInput)}
+                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      Opslaan
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-zinc-800" />
+
+              {/* Minuut tiebreaker toggle */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Minuut eerste doelpunt</p>
+                    <p className="text-xs text-zinc-500">Tiebreaker — dichtstbijzijnde minuut wint bij gelijke stand</p>
+                  </div>
+                  <Toggle aan={poule.eersteDoelpuntenminuutActief} onChange={(v) => toggleInstelling("eersteDoelpuntenminuutActief", v)} />
+                </div>
+                {poule.eersteDoelpuntenminuutActief && (
+                  <div className="mt-2 flex gap-2 items-center">
+                    <input
+                      type="number"
+                      min={1}
+                      max={120}
+                      value={eersteDoelpuntenminuutResultaatInput ?? ""}
+                      onChange={(e) => setEersteDoelpuntenminuutResultaatInput(e.target.value === "" ? null : parseInt(e.target.value))}
+                      placeholder="bijv. 34"
+                      className="w-28 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <span className="text-xs text-zinc-500">minuut</span>
+                    <button
+                      onClick={() => slaMinuutResultaatOp(eersteDoelpuntenminuutResultaatInput)}
+                      className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                    >
+                      Opslaan
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-zinc-800" />
+
+              {/* CL Finale uitslag */}
+              <div>
+                <p className="text-sm font-semibold text-white mb-1">CL Finale uitslag</p>
+                <p className="text-xs text-zinc-500 mb-3">
+                  PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal — vul de eindstand in na de wedstrijd
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={clFinaleThuis ?? ""}
+                    onChange={(e) => setClFinaleThuis(e.target.value === "" ? null : parseInt(e.target.value))}
+                    placeholder="PSG"
+                    className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center"
+                  />
+                  <span className="text-zinc-600 font-bold">–</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={clFinaleUit ?? ""}
+                    onChange={(e) => setClFinaleUit(e.target.value === "" ? null : parseInt(e.target.value))}
+                    placeholder="ARS"
+                    className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-center"
+                  />
+                  <button
+                    onClick={slaClFinaleResultaatOp}
+                    disabled={clFinaleThuis === null || clFinaleUit === null}
+                    className="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    Opslaan
+                  </button>
+                </div>
+              </div>
 
               <div className="border-t border-zinc-800" />
 

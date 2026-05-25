@@ -27,7 +27,10 @@ export async function joinPoule(code: string): Promise<{ deelnemerId: string } |
 export async function getPoule(code: string): Promise<Poule | null> {
   const res = await fetch(`/api/poules/${code}`);
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error("Ophalen mislukt");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Ophalen mislukt (${res.status})`);
+  }
   return res.json();
 }
 
