@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface SpelerProfiel {
-  gebruikersnaam: string;
+  gebruikersnaam: string | null;
+  email: string;
   aantalWinsten: number;
   aantalPoules: number;
   poules: {
@@ -30,13 +31,13 @@ function Initialen({ naam }: { naam: string }) {
 }
 
 export default function SpelerPagina() {
-  const { gebruikersnaam } = useParams<{ gebruikersnaam: string }>();
+  const { userId } = useParams<{ userId: string }>();
   const router = useRouter();
   const [profiel, setProfiel] = useState<SpelerProfiel | null>(null);
   const [laden, setLaden] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/speler/${encodeURIComponent(gebruikersnaam)}`)
+    fetch(`/api/speler/${encodeURIComponent(userId)}`)
       .then((r) => {
         if (r.status === 404) { router.push("/"); return null; }
         return r.json();
@@ -46,7 +47,7 @@ export default function SpelerPagina() {
         setLaden(false);
       })
       .catch(() => setLaden(false));
-  }, [gebruikersnaam, router]);
+  }, [userId, router]);
 
   if (laden) {
     return (
@@ -79,9 +80,11 @@ export default function SpelerPagina() {
 
         {/* ── Profiel header ── */}
         <div className="flex items-center gap-5">
-          <Initialen naam={profiel.gebruikersnaam} />
+          <Initialen naam={profiel.gebruikersnaam ?? profiel.email.split("@")[0]} />
           <div>
-            <h1 className="text-2xl font-black text-white">{profiel.gebruikersnaam}</h1>
+            <h1 className="text-2xl font-black text-white">
+              {profiel.gebruikersnaam ?? profiel.email.split("@")[0]}
+            </h1>
             {profiel.aantalWinsten > 0 ? (
               <p className="text-yellow-400 font-semibold text-sm mt-0.5">
                 🏆 {profiel.aantalWinsten} toernooi{profiel.aantalWinsten !== 1 ? "en" : ""} gewonnen

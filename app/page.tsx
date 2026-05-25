@@ -75,6 +75,7 @@ export default function Home() {
   const router = useRouter();
   const [ingelogd, setIngelogd] = useState<boolean | null>(null);
   const [gebruikersnaam, setGebruikersnaam] = useState<string | null>(null);
+  const [mijnUserId, setMijnUserId] = useState<string | null>(null);
   const [aantalWinsten, setAantalWinsten] = useState<number>(0);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
@@ -89,6 +90,7 @@ export default function Home() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setIngelogd(false); return; }
       setIngelogd(true);
+      setMijnUserId(user.id);
 
       const [userRes, poulesRes] = await Promise.all([
         fetch("/api/user"),
@@ -235,11 +237,11 @@ export default function Home() {
         {/* ── Topbar met gebruiker ── */}
         <div className="flex items-center justify-between pt-2">
           <div>
-            {gebruikersnaam ? (
+            {mijnUserId ? (
               <p className="text-sm text-zinc-500">
                 Ingelogd als{" "}
-                <Link href={`/speler/${encodeURIComponent(gebruikersnaam)}`} className="text-white font-medium hover:text-zinc-300 transition-colors">
-                  {gebruikersnaam}
+                <Link href={`/speler/${encodeURIComponent(mijnUserId)}`} className="text-white font-medium hover:text-zinc-300 transition-colors">
+                  {gebruikersnaam ?? "jij"}
                 </Link>
               </p>
             ) : (

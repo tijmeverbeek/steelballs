@@ -3,11 +3,11 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ gebruikersnaam: string }> }) {
-  const { gebruikersnaam } = await params;
+export async function GET(_req: Request, { params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params;
 
   const user = await prisma.user.findUnique({
-    where: { gebruikersnaam },
+    where: { id: userId },
     include: {
       deelnemers: {
         include: {
@@ -24,6 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ gebruik
 
   return NextResponse.json({
     gebruikersnaam: user.gebruikersnaam,
+    email: user.email,
     aantalWinsten: user.aantalWinsten,
     aantalPoules: user.deelnemers.length,
     poules: user.deelnemers.map((d) => ({

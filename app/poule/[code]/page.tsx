@@ -166,17 +166,13 @@ function EindstandModal({
             <h2 className="text-xl font-black text-white">Toernooi afgerond</h2>
             {winnaar && (
               <p className="text-zinc-400 text-sm mt-1">
-                {winnaar.gebruikersnaam && winnaar.userId !== mijnUserId ? (
-                  <Link
-                    href={`/speler/${encodeURIComponent(winnaar.gebruikersnaam)}`}
-                    className="text-yellow-400 font-semibold hover:text-yellow-300 transition-colors"
-                    onClick={onSluit}
-                  >
-                    {winnaar.displayNaam}
-                  </Link>
-                ) : (
-                  <span className="text-yellow-400 font-semibold">{winnaar.displayNaam}</span>
-                )}{" "}heeft gewonnen
+                <Link
+                  href={`/speler/${encodeURIComponent(winnaar.userId)}`}
+                  className="text-yellow-400 font-semibold hover:text-yellow-300 transition-colors"
+                  onClick={onSluit}
+                >
+                  {winnaar.displayNaam}
+                </Link>{" "}heeft gewonnen
               </p>
             )}
           </div>
@@ -211,15 +207,13 @@ function EindstandModal({
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white text-sm truncate">
-                      {d.gebruikersnaam ? (
-                        <Link
-                          href={`/speler/${encodeURIComponent(d.gebruikersnaam)}`}
-                          className="hover:text-zinc-300 transition-colors"
-                          onClick={onSluit}
-                        >
-                          {d.displayNaam}
-                        </Link>
-                      ) : d.displayNaam}
+                      <Link
+                        href={`/speler/${encodeURIComponent(d.userId)}`}
+                        className="hover:text-zinc-300 transition-colors"
+                        onClick={onSluit}
+                      >
+                        {d.displayNaam}
+                      </Link>
                       {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>}
                     </p>
                     {poule.eersteDoelpuntenminuutActief && d.eersteDoelpuntenminuutVoorspelling != null && poule.eersteDoelpuntenminuutResultaat != null && (
@@ -635,14 +629,12 @@ function PoulePagina() {
                 <Initialen naam={d.displayNaam} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-white text-sm truncate">
-                    {d.gebruikersnaam ? (
-                      <Link
-                        href={`/speler/${encodeURIComponent(d.gebruikersnaam)}`}
-                        className="hover:text-zinc-300 transition-colors"
-                      >
-                        {d.displayNaam}
-                      </Link>
-                    ) : d.displayNaam}
+                    <Link
+                      href={`/speler/${encodeURIComponent(d.userId)}`}
+                      className="hover:text-zinc-300 transition-colors"
+                    >
+                      {d.displayNaam}
+                    </Link>
                     {d.userId === mijnUserId && (
                       <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
                     )}
