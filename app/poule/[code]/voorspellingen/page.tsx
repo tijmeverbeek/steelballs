@@ -8,9 +8,10 @@ import { createClient } from "@/lib/supabase/client";
 import { getWedstrijdenVoorSoort } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
+import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
 
 type ScoreMap = Record<string, { thuis: number | null; uit: number | null }>;
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
 
 function Stepper({
   value,
@@ -78,6 +79,10 @@ export default function VoorspellingenPagina() {
   const wedstrijden = useMemo(() => getWedstrijdenVoorSoort(poule?.soort ?? "wk"), [poule?.soort]);
   const groepen = useMemo(() => [...new Set(wedstrijden.map((w) => w.groep))].sort(), [wedstrijden]);
 
+  // Keep a ref in sync so doAutoSave never captures a stale closure
+  const wedstrijdenRef = useRef(wedstrijden);
+  useEffect(() => { wedstrijdenRef.current = wedstrijden; }, [wedstrijden]);
+
   useEffect(() => {
     async function load() {
       const supabase = createClient();
@@ -125,6 +130,17 @@ export default function VoorspellingenPagina() {
     setActieveGroep(groepen[0] ?? null);
   }, [code, router, groepen]);
 
+  // Warn before closing if there are unsaved changes
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (saveStatus === "pending" || saveStatus === "saving") {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [saveStatus]);
+
   const doAutoSave = useCallback(
     async (
       latestScores: ScoreMap,
@@ -137,7 +153,8 @@ export default function VoorspellingenPagina() {
       const id = deelnemerRef.current;
       if (!id) return;
       setSaveStatus("saving");
-      const vps: Voorspelling[] = wedstrijden.map((w) => ({
+      // Use ref to avoid stale closure — wedstrijden changes when poule loads
+      const vps: Voorspelling[] = wedstrijdenRef.current.map((w) => ({
         wedstrijdId: w.id,
         thuis: latestScores[w.id]?.thuis ?? null,
         uit: latestScores[w.id]?.uit ?? null,
@@ -156,80 +173,74 @@ export default function VoorspellingenPagina() {
           eersteDoelpuntenminuutVoorspelling: edmin,
         });
         setSaveStatus("saved");
-        setTimeout(() => setSaveStatus("idle"), 2000);
       } catch {
         setSaveStatus("error");
-        setTimeout(() => setSaveStatus("idle"), 3000);
       }
     },
     [code]
   );
 
+  function scheduleSave(latestScores: ScoreMap, ...bonusArgs: Parameters<typeof doAutoSave> extends [ScoreMap, ...infer R] ? R : never) {
+    setSaveStatus("pending");
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => doAutoSave(latestScores, ...bonusArgs), 700);
+  }
+
   function autoFill() {
-    setScores((prev) => {
-      const updated = { ...prev };
-      for (const w of wedstrijden) {
-        if (updated[w.id]?.thuis != null && updated[w.id]?.uit != null) continue;
-        const goals = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4];
-        const thuis = goals[Math.floor(Math.random() * goals.length)];
-        const uit = goals[Math.floor(Math.random() * goals.length)];
-        updated[w.id] = { thuis, uit };
-      }
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => doAutoSave(updated), 700);
-      return updated;
-    });
+    const goals = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4];
+    const updated = { ...scores };
+    for (const w of wedstrijden) {
+      if (updated[w.id]?.thuis != null && updated[w.id]?.uit != null) continue;
+      updated[w.id] = {
+        thuis: goals[Math.floor(Math.random() * goals.length)],
+        uit: goals[Math.floor(Math.random() * goals.length)],
+      };
+    }
+    setScores(updated);
+    scheduleSave(updated);
   }
 
   function updateScore(wedstrijdId: string, kant: "thuis" | "uit", waarde: number) {
-    setScores((prev) => {
-      const updated = {
-        ...prev,
-        [wedstrijdId]: {
-          thuis: prev[wedstrijdId]?.thuis ?? null,
-          uit: prev[wedstrijdId]?.uit ?? null,
-          [kant]: waarde,
-        },
-      };
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => doAutoSave(updated), 700);
-      return updated;
-    });
+    const updated = {
+      ...scores,
+      [wedstrijdId]: {
+        thuis: scores[wedstrijdId]?.thuis ?? null,
+        uit: scores[wedstrijdId]?.uit ?? null,
+        [kant]: waarde,
+      },
+    };
+    setScores(updated);
+    scheduleSave(updated);
   }
 
   function updateTopscorer(waarde: string) {
     setTopscorerInput(waarde);
     topscorerRef.current = waarde;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doAutoSave(scores, waarde, geleKaartenRef.current), 700);
+    scheduleSave(scores, waarde, geleKaartenRef.current);
   }
 
   function updateGeleKaarten(waarde: string) {
     setGeleKaartenInput(waarde);
     geleKaartenRef.current = waarde;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doAutoSave(scores, topscorerRef.current, waarde, toernooiwinaarRef.current), 700);
+    scheduleSave(scores, topscorerRef.current, waarde, toernooiwinaarRef.current);
   }
 
   function updateToernooiwinnaar(waarde: string) {
     setToernooiwinaarInput(waarde);
     toernooiwinaarRef.current = waarde;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doAutoSave(scores, topscorerRef.current, geleKaartenRef.current, waarde), 700);
+    scheduleSave(scores, topscorerRef.current, geleKaartenRef.current, waarde);
   }
 
   function updateEersteDoelpuntenmaker(waarde: string) {
     setEersteDoelpuntenmakerInput(waarde);
     eersteDoelpuntenmakerRef.current = waarde;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doAutoSave(scores, topscorerRef.current, geleKaartenRef.current, toernooiwinaarRef.current, waarde, eersteDoelpuntenminuutRef.current), 700);
+    scheduleSave(scores, topscorerRef.current, geleKaartenRef.current, toernooiwinaarRef.current, waarde, eersteDoelpuntenminuutRef.current);
   }
 
   function updateEersteDoelpuntenminuut(waarde: number | null) {
     setEersteDoelpuntenminuutInput(waarde);
     eersteDoelpuntenminuutRef.current = waarde;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doAutoSave(scores, topscorerRef.current, geleKaartenRef.current, toernooiwinaarRef.current, eersteDoelpuntenmakerRef.current, waarde), 700);
+    scheduleSave(scores, topscorerRef.current, geleKaartenRef.current, toernooiwinaarRef.current, eersteDoelpuntenmakerRef.current, waarde);
   }
 
   const totalIngevuld = Object.values(scores).filter(
@@ -264,7 +275,8 @@ export default function VoorspellingenPagina() {
             <div className="text-xs text-zinc-500">voorspeld</div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-xs text-right w-20">
+            <div className="text-xs text-right w-24">
+              {saveStatus === "pending" && <span className="text-amber-400">● Niet opgeslagen</span>}
               {saveStatus === "saving" && <span className="text-zinc-400">Opslaan...</span>}
               {saveStatus === "saved" && <span className="text-green-400 font-medium">✓ Opgeslagen</span>}
               {saveStatus === "error" && <span className="text-red-400 font-medium">Fout — probeer opnieuw</span>}
@@ -331,12 +343,11 @@ export default function VoorspellingenPagina() {
                     <label className="text-sm font-semibold text-white">Topscorer</label>
                     <span className="text-xs text-yellow-500 font-semibold">{TOPSCORER_PUNTEN} pt</span>
                   </div>
-                  <input
-                    type="text"
+                  <SpelerAutocomplete
+                    soort={poule.soort ?? "wk"}
                     value={topscorerInput}
-                    onChange={(e) => updateTopscorer(e.target.value)}
+                    onChange={updateTopscorer}
                     placeholder="Naam van de topscorer..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   />
                 </div>
               )}
@@ -346,12 +357,11 @@ export default function VoorspellingenPagina() {
                     <label className="text-sm font-semibold text-white">Meeste gele kaarten</label>
                     <span className="text-xs text-yellow-500 font-semibold">{GELE_KAARTEN_PUNTEN} pt</span>
                   </div>
-                  <input
-                    type="text"
+                  <SpelerAutocomplete
+                    soort={poule.soort ?? "wk"}
                     value={geleKaartenInput}
-                    onChange={(e) => updateGeleKaarten(e.target.value)}
+                    onChange={updateGeleKaarten}
                     placeholder="Naam van de speler met de meeste gele kaarten..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   />
                 </div>
               )}
@@ -377,12 +387,11 @@ export default function VoorspellingenPagina() {
                     <span className="text-xs text-yellow-500 font-semibold">{EERSTE_DOELPUNTENMAKER_PUNTEN} pt</span>
                   </div>
                   <p className="text-xs text-zinc-500 mb-2">Wie scoort het eerste doelpunt van de CL finale?</p>
-                  <input
-                    type="text"
+                  <SpelerAutocomplete
+                    soort={poule.soort ?? "wk"}
                     value={eersteDoelpuntenmakerInput}
-                    onChange={(e) => updateEersteDoelpuntenmaker(e.target.value)}
-                    placeholder="Naam van de speler..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                    onChange={updateEersteDoelpuntenmaker}
+                    placeholder="Kies een speler..."
                   />
                 </div>
               )}

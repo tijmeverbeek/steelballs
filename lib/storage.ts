@@ -5,8 +5,26 @@ export const GELE_KAARTEN_PUNTEN = 5;
 export const TOERNOOIWINNAAR_PUNTEN = 20;
 export const EERSTE_DOELPUNTENMAKER_PUNTEN = 10;
 
-function matchNaam(a: string, b: string) {
-  return a.trim().toLowerCase() === b.trim().toLowerCase();
+function normaliseer(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // é → e, ï → i, etc.
+    .replace(/ø/g, "o")              // Ødegaard → odegaard
+    .replace(/['\-.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function matchNaam(a: string, b: string): boolean {
+  const na = normaliseer(a);
+  const nb = normaliseer(b);
+  if (na === nb) return true;
+  // Last-name fallback: "Saka" still matches "Bukayo Saka" for anyone who typed manually
+  const lastA = na.split(" ").at(-1)!;
+  const lastB = nb.split(" ").at(-1)!;
+  if (lastA === lastB && lastA.length >= 4) return true;
+  return false;
 }
 
 // Exacte score: 3 pt, juiste uitslag: 1 pt, bonuscategorieën: vaste punten per categorie
