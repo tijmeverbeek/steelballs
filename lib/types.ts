@@ -20,6 +20,13 @@ export interface Voorspelling {
   uit: number | null;
 }
 
+export interface LmsPick {
+  rondeNr: number;
+  teamCode: string;
+  wedstrijdId: string;
+  uitkomst: string | null;
+}
+
 export interface Deelnemer {
   id: string;
   userId: string;
@@ -30,6 +37,9 @@ export interface Deelnemer {
   toernooiwinaarVoorspelling?: string | null;
   eersteDoelpuntenmakerVoorspelling?: string | null;
   eersteDoelpuntenminuutVoorspelling?: number | null;
+  lmsActief?: boolean;
+  lmsUitgeschakeldRonde?: number | null;
+  lmsPicks?: LmsPick[];
 }
 
 export interface Poule {

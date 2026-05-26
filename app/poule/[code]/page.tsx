@@ -7,7 +7,8 @@ import { getPoule } from "@/lib/api";
 import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
-import { Poule, Deelnemer } from "@/lib/types";
+import { Poule, Deelnemer, LmsPick } from "@/lib/types";
+import { getWedstrijdenVoorRonde, LMS_RONDES } from "@/lib/lms";
 
 class ErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -242,6 +243,135 @@ function EindstandModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LmsStand({
+  deelnemers,
+  mijnUserId,
+  organisatorId,
+}: {
+  deelnemers: Deelnemer[];
+  mijnUserId: string | null;
+  organisatorId: string | null;
+}) {
+  const actief = deelnemers.filter((d) => d.lmsActief !== false);
+  const uitgeschakeld = deelnemers
+    .filter((d) => d.lmsActief === false)
+    .sort((a, b) => (b.lmsUitgeschakeldRonde ?? 0) - (a.lmsUitgeschakeldRonde ?? 0));
+
+  function PickBadges({ picks }: { picks: LmsPick[] }) {
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {picks
+          .sort((a, b) => a.rondeNr - b.rondeNr)
+          .map((p) => {
+            const wedstrijden = getWedstrijdenVoorRonde(p.rondeNr);
+            const w = wedstrijden.find((x) => x.id === p.wedstrijdId);
+            const team = w ? (w.thuis.code === p.teamCode ? w.thuis : w.uit) : null;
+            return (
+              <span
+                key={p.rondeNr}
+                className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border ${
+                  p.uitkomst === "win"
+                    ? "bg-green-500/10 border-green-500/30 text-green-400"
+                    : p.uitkomst === "verlies" || p.uitkomst === "gelijk"
+                    ? "bg-red-500/10 border-red-500/30 text-red-400"
+                    : "bg-zinc-800 border-zinc-700 text-zinc-500"
+                }`}
+              >
+                {team?.vlag && <span>{team.vlag}</span>}
+                <span>{team?.naam ?? p.teamCode}</span>
+                {p.uitkomst === "win" && <span>✓</span>}
+                {(p.uitkomst === "verlies" || p.uitkomst === "gelijk") && <span>✗</span>}
+              </span>
+            );
+          })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-zinc-800">
+        <h2 className="font-bold text-white">Stand</h2>
+        <p className="text-xs text-zinc-500 mt-0.5">
+          {actief.length} speler{actief.length !== 1 ? "s" : ""} nog actief · {uitgeschakeld.length} uitgeschakeld
+        </p>
+      </div>
+
+      {actief.length > 0 && (
+        <div className="divide-y divide-zinc-800">
+          {actief.map((d) => {
+            const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
+            const picks = d.lmsPicks ?? [];
+            const winStreak = picks.filter((p) => p.uitkomst === "win").length;
+            return (
+              <div
+                key={d.id}
+                className={`px-5 py-3 ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-base w-7 text-center flex-shrink-0">🟢</span>
+                  <Initialen naam={naam} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">
+                      {naam}
+                      {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>}
+                      {d.userId === organisatorId && <span className="ml-1.5 text-xs text-zinc-500 font-normal">organisator</span>}
+                    </p>
+                    {picks.length > 0 && <PickBadges picks={picks} />}
+                  </div>
+                  {winStreak > 0 && (
+                    <div className="text-right flex-shrink-0">
+                      <span className="text-sm font-bold text-green-400">{winStreak}</span>
+                      <span className="text-xs text-zinc-600 ml-1">wins</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {uitgeschakeld.length > 0 && (
+        <>
+          <div className="px-5 py-2 bg-zinc-900/50 border-t border-zinc-800">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-600">Uitgeschakeld</p>
+          </div>
+          <div className="divide-y divide-zinc-800">
+            {uitgeschakeld.map((d) => {
+              const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
+              const picks = d.lmsPicks ?? [];
+              const ronde = LMS_RONDES.find((r) => r.nr === d.lmsUitgeschakeldRonde);
+              return (
+                <div key={d.id} className="px-5 py-3 opacity-50">
+                  <div className="flex items-center gap-3">
+                    <span className="text-base w-7 text-center flex-shrink-0">💀</span>
+                    <Initialen naam={naam} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-zinc-400 text-sm truncate">
+                        {naam}
+                        {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-zinc-500 font-normal">jij</span>}
+                      </p>
+                      <p className="text-xs text-zinc-600 mt-0.5">
+                        Uitgeschakeld {ronde ? `in ${ronde.naam}` : `ronde ${d.lmsUitgeschakeldRonde}`}
+                      </p>
+                      {picks.length > 0 && <PickBadges picks={picks} />}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {deelnemers.length === 0 && (
+        <p className="px-5 py-4 text-sm text-zinc-600">Nog geen deelnemers.</p>
+      )}
     </div>
   );
 }
@@ -542,59 +672,63 @@ function PoulePagina() {
         )}
 
         {/* ── Stand ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800">
-            <h2 className="font-bold text-white">Stand</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">Punten worden bijgewerkt zodra uitslagen bekend zijn</p>
-          </div>
-          <div className="divide-y divide-zinc-800">
-            {stand.map((d, i) => (
-              <div
-                key={d.id}
-                onClick={() => router.push(`/speler/${encodeURIComponent(d.userId)}`)}
-                className={`px-5 py-4 flex items-center gap-3 active:bg-zinc-800 transition-colors cursor-pointer ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
-              >
-                <span className="text-lg w-7 text-center flex-shrink-0">
-                  {poule.afgerond && i === 0 ? "🏆" : i < 3 ? MEDAILLES[i] : <span className="text-sm text-zinc-600 font-bold">{i + 1}</span>}
-                </span>
-                <Initialen naam={d.displayNaam} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white text-sm truncate">
-                    {d.displayNaam}
-                    {d.userId === mijnUserId && (
-                      <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
-                    )}
-                    {d.userId === poule.organisatorId && (
-                      <span className="ml-1.5 text-xs text-zinc-500 font-normal">organisator</span>
-                    )}
-                    {poule.afgerond && i === 0 && d.userId !== mijnUserId && (
-                      <span className="ml-1.5 text-xs text-yellow-400 font-normal">winnaar</span>
-                    )}
-                    {poule.afgerond && i === 0 && d.userId === mijnUserId && (
-                      <span className="ml-1.5 text-xs text-yellow-400 font-normal">jij gewonnen!</span>
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-1 w-24 bg-zinc-700 rounded-full">
-                      <div
-                        className="h-1 bg-zinc-400 rounded-full"
-                        style={{ width: `${(d.ingevuld / aantalWedstrijden) * 100}%` }}
-                      />
+        {(poule.soort ?? "wk") === "lms" ? (
+          <LmsStand deelnemers={poule.deelnemers} mijnUserId={mijnUserId} organisatorId={poule.organisatorId ?? null} />
+        ) : (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="font-bold text-white">Stand</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Punten worden bijgewerkt zodra uitslagen bekend zijn</p>
+            </div>
+            <div className="divide-y divide-zinc-800">
+              {stand.map((d, i) => (
+                <div
+                  key={d.id}
+                  onClick={() => router.push(`/speler/${encodeURIComponent(d.userId)}`)}
+                  className={`px-5 py-4 flex items-center gap-3 active:bg-zinc-800 transition-colors cursor-pointer ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
+                >
+                  <span className="text-lg w-7 text-center flex-shrink-0">
+                    {poule.afgerond && i === 0 ? "🏆" : i < 3 ? MEDAILLES[i] : <span className="text-sm text-zinc-600 font-bold">{i + 1}</span>}
+                  </span>
+                  <Initialen naam={d.displayNaam} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">
+                      {d.displayNaam}
+                      {d.userId === mijnUserId && (
+                        <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
+                      )}
+                      {d.userId === poule.organisatorId && (
+                        <span className="ml-1.5 text-xs text-zinc-500 font-normal">organisator</span>
+                      )}
+                      {poule.afgerond && i === 0 && d.userId !== mijnUserId && (
+                        <span className="ml-1.5 text-xs text-yellow-400 font-normal">winnaar</span>
+                      )}
+                      {poule.afgerond && i === 0 && d.userId === mijnUserId && (
+                        <span className="ml-1.5 text-xs text-yellow-400 font-normal">jij gewonnen!</span>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="h-1 w-24 bg-zinc-700 rounded-full">
+                        <div
+                          className="h-1 bg-zinc-400 rounded-full"
+                          style={{ width: `${(d.ingevuld / aantalWedstrijden) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-zinc-600">{d.ingevuld}/{aantalWedstrijden}</span>
                     </div>
-                    <span className="text-xs text-zinc-600">{d.ingevuld}/{aantalWedstrijden}</span>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-xl font-black text-white">{d.punten}</span>
+                    <span className="text-xs text-zinc-600 ml-1">pt</span>
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <span className="text-xl font-black text-white">{d.punten}</span>
-                  <span className="text-xs text-zinc-600 ml-1">pt</span>
-                </div>
-              </div>
-            ))}
-            {stand.length === 0 && (
-              <p className="px-5 py-4 text-sm text-zinc-600">Nog geen deelnemers.</p>
-            )}
+              ))}
+              {stand.length === 0 && (
+                <p className="px-5 py-4 text-sm text-zinc-600">Nog geen deelnemers.</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── LMS: mijn pick knop ── */}
         {(poule.soort ?? "wk") === "lms" && (

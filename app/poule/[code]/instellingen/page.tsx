@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
+import { LMS_RONDES, getWedstrijdenVoorRonde } from "@/lib/lms";
 
 function Toggle({ aan, onChange }: { aan: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -34,6 +35,9 @@ export default function InstellingenPagina() {
   const [clFinaleUit, setClFinaleUit] = useState<number | null>(null);
   const [opgeslagen, setOpgeslagen] = useState(false);
   const [verwijderBevestiging, setVerwijderBevestiging] = useState(false);
+  const [lmsVerwerkRonde, setLmsVerwerkRonde] = useState<number | null>(null);
+  const [lmsVerwerkBezig, setLmsVerwerkBezig] = useState(false);
+  const [lmsVerwerkResultaat, setLmsVerwerkResultaat] = useState<{ verwerkt: number; ontbreekt: number } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -109,6 +113,30 @@ export default function InstellingenPagina() {
     } catch { /* silent */ }
   }
 
+  async function verwerkLmsRonde(rondeNr: number) {
+    setLmsVerwerkBezig(true);
+    setLmsVerwerkResultaat(null);
+    try {
+      const res = await fetch(`/api/poules/${code}/lms/verwerk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rondeNr }),
+      });
+      const body = await res.json();
+      if (res.ok) {
+        setLmsVerwerkResultaat({ verwerkt: body.verwerkt, ontbreekt: body.ontbreekt });
+        const fresh = await getPoule(code);
+        if (fresh) setPoule(fresh);
+      } else {
+        alert(body.error ?? "Verwerken mislukt");
+      }
+    } catch {
+      alert("Netwerkfout — probeer opnieuw");
+    } finally {
+      setLmsVerwerkBezig(false);
+    }
+  }
+
   async function verwijderPoule() {
     try {
       const res = await fetch(`/api/poules/${code}`, { method: "DELETE" });
@@ -128,6 +156,7 @@ export default function InstellingenPagina() {
   }
 
   const isCL = (poule.soort ?? "wk") === "cl_finale";
+  const isLMS = (poule.soort ?? "wk") === "lms";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -145,8 +174,8 @@ export default function InstellingenPagina() {
 
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-5">
 
-        {/* Bonus categorieën */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        {/* Bonus categorieën — alleen voor wk/cl_finale */}
+        {!isLMS && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800">
             <h2 className="font-bold text-white">Bonus categorieën</h2>
             <p className="text-xs text-zinc-500 mt-0.5">Schakel bonussen in of uit en vul resultaten in</p>
@@ -272,7 +301,92 @@ export default function InstellingenPagina() {
             )}
 
           </div>
-        </div>
+        </div>}
+
+        {/* LMS rondebeheer */}
+        {isLMS && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="font-bold text-white">Rondes verwerken</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Verwerk een ronde om picks te beoordelen en spelers uit te schakelen</p>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* Ronde selector */}
+              <div className="flex gap-2 flex-wrap">
+                {LMS_RONDES.map((r) => (
+                  <button
+                    key={r.nr}
+                    onClick={() => { setLmsVerwerkRonde(r.nr); setLmsVerwerkResultaat(null); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                      lmsVerwerkRonde === r.nr
+                        ? "bg-white text-zinc-900 border-white"
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white"
+                    }`}
+                  >
+                    R{r.nr}
+                  </button>
+                ))}
+              </div>
+
+              {lmsVerwerkRonde !== null && (
+                <div className="space-y-3">
+                  <p className="text-sm text-zinc-300 font-medium">
+                    {LMS_RONDES.find((r) => r.nr === lmsVerwerkRonde)?.naam}
+                  </p>
+
+                  {/* Overzicht picks voor deze ronde */}
+                  <div className="space-y-1.5">
+                    {poule.deelnemers.map((d) => {
+                      const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
+                      const pick = d.lmsPicks?.find((p) => p.rondeNr === lmsVerwerkRonde);
+                      const wedstrijden = getWedstrijdenVoorRonde(lmsVerwerkRonde);
+                      const w = pick ? wedstrijden.find((x) => x.id === pick.wedstrijdId) : null;
+                      const team = w && pick ? (w.thuis.code === pick.teamCode ? w.thuis : w.uit) : null;
+                      return (
+                        <div key={d.id} className="flex items-center gap-3 text-sm">
+                          <span className="text-zinc-600 w-4 text-center flex-shrink-0">
+                            {(d.lmsActief ?? true) ? "🟢" : "💀"}
+                          </span>
+                          <span className="text-zinc-400 flex-1 truncate">{naam}</span>
+                          {pick && team ? (
+                            <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded border ${
+                              pick.uitkomst === "win"
+                                ? "bg-green-500/10 border-green-500/30 text-green-400"
+                                : pick.uitkomst === "verlies" || pick.uitkomst === "gelijk"
+                                ? "bg-red-500/10 border-red-500/30 text-red-400"
+                                : "bg-zinc-800 border-zinc-700 text-zinc-300"
+                            }`}>
+                              {team.vlag} {team.naam}
+                              {pick.uitkomst === "win" && " ✓"}
+                              {(pick.uitkomst === "verlies" || pick.uitkomst === "gelijk") && " ✗"}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-zinc-700 italic">geen pick</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {lmsVerwerkResultaat && (
+                    <p className="text-xs text-green-400 font-medium">
+                      ✓ {lmsVerwerkResultaat.verwerkt} picks verwerkt
+                      {lmsVerwerkResultaat.ontbreekt > 0 && ` · ${lmsVerwerkResultaat.ontbreekt} uitslag(en) ontbreken`}
+                    </p>
+                  )}
+
+                  <button
+                    onClick={() => verwerkLmsRonde(lmsVerwerkRonde)}
+                    disabled={lmsVerwerkBezig}
+                    className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
+                  >
+                    {lmsVerwerkBezig ? "Verwerken..." : `Ronde ${lmsVerwerkRonde} verwerken`}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Toernooi afronden */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
