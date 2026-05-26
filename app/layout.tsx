@@ -1,13 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+};
+
 export const metadata: Metadata = {
   title: "Steelballs",
   description: "Maak een poule aan en voorspel alle WK wedstrijden",
-  themeColor: "#09090b",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
