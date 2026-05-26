@@ -7,6 +7,7 @@ import { getPoule, updatePouleInstellingen, slaMatchResultaatOp, rondeAfPoule } 
 import { createClient } from "@/lib/supabase/client";
 import { Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
+import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
 
 function Toggle({ aan, onChange }: { aan: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -168,7 +169,7 @@ export default function InstellingenPagina() {
                         <p className="text-xs text-blue-400 mt-2">Live leider: <span className="font-semibold">{poule.liveStats.topscorer}</span></p>
                       )}
                       <div className="mt-2 flex gap-2">
-                        <input type="text" value={topscorerResultaatInput} onChange={(e) => setTopscorerResultaatInput(e.target.value)} placeholder="Definitieve topscorer invullen..." className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                        <SpelerAutocomplete soort={poule.soort ?? "wk"} value={topscorerResultaatInput} onChange={setTopscorerResultaatInput} placeholder="Definitieve topscorer invullen..." ringColor="green" className="flex-1" />
                         <button onClick={() => slaResultaatOp("topscorerResultaat", topscorerResultaatInput)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">Opslaan</button>
                       </div>
                     </>
@@ -191,7 +192,7 @@ export default function InstellingenPagina() {
                         <p className="text-xs text-blue-400 mt-2">Live leider: <span className="font-semibold">{poule.liveStats.geleKaarten}</span></p>
                       )}
                       <div className="mt-2 flex gap-2">
-                        <input type="text" value={geleKaartenResultaatInput} onChange={(e) => setGeleKaartenResultaatInput(e.target.value)} placeholder="Definitieve speler invullen..." className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                        <SpelerAutocomplete soort={poule.soort ?? "wk"} value={geleKaartenResultaatInput} onChange={setGeleKaartenResultaatInput} placeholder="Definitieve speler invullen..." ringColor="green" className="flex-1" />
                         <button onClick={() => slaResultaatOp("geleKaartenResultaat", geleKaartenResultaatInput)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">Opslaan</button>
                       </div>
                     </>
@@ -230,7 +231,7 @@ export default function InstellingenPagina() {
                   </div>
                   {poule.eersteDoelpuntenmakerActief && (
                     <div className="mt-2 flex gap-2">
-                      <input type="text" value={eersteDoelpuntenmakerResultaatInput} onChange={(e) => setEersteDoelpuntenmakerResultaatInput(e.target.value)} placeholder="Naam van de eerste doelpuntenmaker..." className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      <SpelerAutocomplete soort={poule.soort ?? "wk"} value={eersteDoelpuntenmakerResultaatInput} onChange={setEersteDoelpuntenmakerResultaatInput} placeholder="Kies de eerste doelpuntenmaker..." ringColor="green" className="flex-1" />
                       <button onClick={() => slaResultaatOp("eersteDoelpuntenmakerResultaat", eersteDoelpuntenmakerResultaatInput)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">Opslaan</button>
                     </div>
                   )}

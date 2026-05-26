@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getWedstrijdenVoorSoort } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
+import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
 
 type ScoreMap = Record<string, { thuis: number | null; uit: number | null }>;
 type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
@@ -342,12 +343,11 @@ export default function VoorspellingenPagina() {
                     <label className="text-sm font-semibold text-white">Topscorer</label>
                     <span className="text-xs text-yellow-500 font-semibold">{TOPSCORER_PUNTEN} pt</span>
                   </div>
-                  <input
-                    type="text"
+                  <SpelerAutocomplete
+                    soort={poule.soort ?? "wk"}
                     value={topscorerInput}
-                    onChange={(e) => updateTopscorer(e.target.value)}
+                    onChange={updateTopscorer}
                     placeholder="Naam van de topscorer..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   />
                 </div>
               )}
@@ -357,12 +357,11 @@ export default function VoorspellingenPagina() {
                     <label className="text-sm font-semibold text-white">Meeste gele kaarten</label>
                     <span className="text-xs text-yellow-500 font-semibold">{GELE_KAARTEN_PUNTEN} pt</span>
                   </div>
-                  <input
-                    type="text"
+                  <SpelerAutocomplete
+                    soort={poule.soort ?? "wk"}
                     value={geleKaartenInput}
-                    onChange={(e) => updateGeleKaarten(e.target.value)}
+                    onChange={updateGeleKaarten}
                     placeholder="Naam van de speler met de meeste gele kaarten..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                   />
                 </div>
               )}
@@ -388,12 +387,11 @@ export default function VoorspellingenPagina() {
                     <span className="text-xs text-yellow-500 font-semibold">{EERSTE_DOELPUNTENMAKER_PUNTEN} pt</span>
                   </div>
                   <p className="text-xs text-zinc-500 mb-2">Wie scoort het eerste doelpunt van de CL finale?</p>
-                  <input
-                    type="text"
+                  <SpelerAutocomplete
+                    soort={poule.soort ?? "wk"}
                     value={eersteDoelpuntenmakerInput}
-                    onChange={(e) => updateEersteDoelpuntenmaker(e.target.value)}
-                    placeholder="Naam van de speler..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                    onChange={updateEersteDoelpuntenmaker}
+                    placeholder="Kies een speler..."
                   />
                 </div>
               )}
