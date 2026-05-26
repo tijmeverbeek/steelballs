@@ -800,18 +800,18 @@ function PoulePagina() {
               const heeftVp = vpThuis?.thuis != null && vpThuis?.uit != null;
               return (
                 <div key={w.id} className="px-5 py-3.5 flex items-center gap-3">
-                  <div className="flex-1">
+                  <Link href={`/wedstrijd/${w.id}`} className="flex-1 group">
                     <p className="text-xs text-zinc-600 mb-1">
                       {w.groep} · {new Date(w.datum).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} {w.tijd}
                     </p>
-                    <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                    <div className="flex items-center gap-1.5 text-sm font-semibold text-white group-hover:text-zinc-300 transition-colors">
                       <span>{w.thuis.vlag}</span>
                       <span>{w.thuis.naam}</span>
                       <span className="text-zinc-600 font-normal mx-1">vs</span>
                       <span>{w.uit.naam}</span>
                       <span>{w.uit.vlag}</span>
                     </div>
-                  </div>
+                  </Link>
                   {heeftVp ? (
                     <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
                       {vpThuis!.thuis} – {vpThuis!.uit}
