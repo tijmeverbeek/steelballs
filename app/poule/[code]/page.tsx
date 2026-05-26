@@ -596,6 +596,20 @@ function PoulePagina() {
           </div>
         </div>
 
+        {/* ── LMS: mijn pick knop ── */}
+        {(poule.soort ?? "wk") === "lms" && (
+          <Link
+            href={`/poule/${code}/picks`}
+            className="bg-zinc-900 border border-green-500/40 hover:border-green-500 rounded-2xl p-5 flex items-center justify-between transition-colors group"
+          >
+            <div>
+              <h2 className="font-bold text-white">Mijn pick</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Kies je team voor de huidige ronde</p>
+            </div>
+            <span className="text-green-400 text-lg group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+        )}
+
         {/* ── Poule-instellingen knop (alleen organisator) ── */}
         {isOrganisator && (
           <Link

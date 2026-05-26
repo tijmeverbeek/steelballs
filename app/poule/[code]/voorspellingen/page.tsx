@@ -17,13 +17,27 @@ function Stepper({
   value,
   onChange,
   color = "green",
+  disabled = false,
 }: {
   value: number | null;
   onChange: (v: number) => void;
   color?: "green" | "orange";
+  disabled?: boolean;
 }) {
   const activeBg = color === "green" ? "bg-green-500" : "bg-orange-500";
   const hasValue = value !== null;
+
+  if (disabled) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <div className="w-9 h-9" />
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-black bg-zinc-800/50 text-zinc-600">
+          {value ?? "—"}
+        </div>
+        <div className="w-9 h-9" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -249,6 +263,16 @@ export default function VoorspellingenPagina() {
 
   const heeftBonusCategorieen = poule?.topscorerActief || poule?.geleKaartenActief || poule?.toernooiwinaarActief || poule?.eersteDoelpuntenmakerActief || poule?.eersteDoelpuntenminuutActief;
 
+  function isGestart(w: { datum: string; tijd: string }): boolean {
+    return new Date() >= new Date(`${w.datum}T${w.tijd}:00`);
+  }
+
+  function formatDeadline(w: { datum: string; tijd: string }): string {
+    return new Date(`${w.datum}T${w.tijd}:00`).toLocaleDateString("nl-NL", {
+      weekday: "short", day: "numeric", month: "short",
+    }) + " · " + w.tijd;
+  }
+
   if (!deelnemerid) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -449,20 +473,24 @@ export default function VoorspellingenPagina() {
                 {groepWedstrijden.map((w) => {
                   const vp = scores[w.id];
                   const heeftBeide = vp?.thuis !== null && vp?.uit !== null;
+                  const gestart = isGestart(w);
 
                   return (
                     <div
                       key={w.id}
-                      className={`px-5 py-5 transition-colors ${heeftBeide ? "bg-zinc-800/30" : ""}`}
+                      className={`px-5 py-5 transition-colors ${gestart ? "opacity-70" : heeftBeide ? "bg-zinc-800/30" : ""}`}
                     >
-                      <p className="text-xs text-zinc-600 text-center mb-4">
-                        {new Date(w.datum).toLocaleDateString("nl-NL", {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                        })}{" "}
-                        · {w.tijd}
-                      </p>
+                      {gestart ? (
+                        <div className="flex items-center justify-center gap-1.5 mb-3">
+                          <span className="text-xs text-zinc-500">🔒</span>
+                          <span className="text-xs text-zinc-500">Wedstrijd gestart — voorspelling gesloten</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1 mb-3">
+                          <span className="text-xs text-zinc-500">⏱</span>
+                          <span className="text-xs text-zinc-500">Sluit op <span className="text-zinc-400 font-medium">{formatDeadline(w)}</span></span>
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1 text-right">
@@ -475,12 +503,14 @@ export default function VoorspellingenPagina() {
                             value={vp?.thuis ?? null}
                             onChange={(v) => updateScore(w.id, "thuis", v)}
                             color="green"
+                            disabled={gestart}
                           />
                           <span className="text-zinc-700 font-bold text-lg">—</span>
                           <Stepper
                             value={vp?.uit ?? null}
                             onChange={(v) => updateScore(w.id, "uit", v)}
                             color="orange"
+                            disabled={gestart}
                           />
                         </div>
 

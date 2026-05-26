@@ -80,7 +80,7 @@ export default function Home() {
   const [aantalWinsten, setAantalWinsten] = useState<number>(0);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
-  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale">("wk");
+  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "lms">("wk");
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [loading, setLoading] = useState<"create" | "join" | null>(null);
@@ -370,7 +370,7 @@ export default function Home() {
                 <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
                   Type poule
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setPouleSoort("wk")}
@@ -384,6 +384,13 @@ export default function Home() {
                     className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "cl_finale" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
                   >
                     CL Finale
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPouleSoort("lms")}
+                    className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "lms" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
+                  >
+                    Last Man Standing
                   </button>
                 </div>
               </div>

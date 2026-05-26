@@ -51,8 +51,23 @@ model Deelnemer {
   toernooiwinaarVoorspelling           String?
   eersteDoelpuntenmakerVoorspelling    String?
   eersteDoelpuntenminuutVoorspelling   Int?
+  lmsPicks                LmsPick[]
+  lmsActief               Boolean        @default(true)
+  lmsUitgeschakeldRonde   Int?
 
   @@unique([userId, pouleId])
+}
+
+model LmsPick {
+  id          String    @id @default(cuid())
+  deelnemerId String
+  deelnemer   Deelnemer @relation(fields: [deelnemerId], references: [id])
+  rondeNr     Int
+  teamCode    String
+  wedstrijdId String
+  uitkomst    String?   // "win" | "verlies" | "gelijk" | null (pending)
+
+  @@unique([deelnemerId, rondeNr])
 }
 
 model Voorspelling {
