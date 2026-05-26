@@ -9,6 +9,7 @@ import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer, LmsPick } from "@/lib/types";
 import { getWedstrijdenVoorRonde, LMS_RONDES } from "@/lib/lms";
+import { TeamLogo } from "@/components/TeamLogo";
 
 class ErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -805,11 +806,11 @@ function PoulePagina() {
                       {w.groep} · {new Date(w.datum).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} {w.tijd}
                     </p>
                     <div className="flex items-center gap-1.5 text-sm font-semibold text-white group-hover:text-zinc-300 transition-colors">
-                      <span>{w.thuis.vlag}</span>
+                      <TeamLogo team={w.thuis} size="xs" />
                       <span>{w.thuis.naam}</span>
                       <span className="text-zinc-600 font-normal mx-1">vs</span>
                       <span>{w.uit.naam}</span>
-                      <span>{w.uit.vlag}</span>
+                      <TeamLogo team={w.uit} size="xs" />
                     </div>
                   </Link>
                   {heeftVp ? (

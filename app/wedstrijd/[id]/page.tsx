@@ -6,6 +6,7 @@ import { getWedstrijd } from "@/lib/matches";
 import { getSpelers, Speler, Positie } from "@/lib/players";
 import { getStadion } from "@/lib/stadions";
 import { Wedstrijd } from "@/lib/types";
+import { TeamLogo } from "@/components/TeamLogo";
 
 interface Resultaat {
   wedstrijdId: string;
@@ -33,19 +34,6 @@ function isGestart(wedstrijd: Wedstrijd): boolean {
   return now >= matchStart;
 }
 
-function TeamBadge({ team, size = "lg" }: { team: { naam: string; vlag: string; logo?: string }; size?: "lg" | "sm" }) {
-  const dim = size === "lg" ? "w-20 h-20" : "w-8 h-8";
-  if (team.logo) {
-    return (
-      <img
-        src={team.logo}
-        alt={team.naam}
-        className={`${dim} object-contain`}
-      />
-    );
-  }
-  return <span className={size === "lg" ? "text-6xl" : "text-2xl"}>{team.vlag}</span>;
-}
 
 function SpelerGroep({ spelers, teamCode }: { spelers: Speler[]; teamCode: string }) {
   const teamSpelers = spelers.filter((s) => s.team === teamCode);
@@ -162,7 +150,7 @@ export default function WedstrijdPagina() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-8">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 flex flex-col items-center gap-2">
-              <TeamBadge team={wedstrijd.thuis} size="lg" />
+              <TeamLogo team={wedstrijd.thuis} size="lg" />
               <p className="font-bold text-white text-center text-sm leading-tight">
                 {wedstrijd.thuis.naam}
               </p>
@@ -171,7 +159,7 @@ export default function WedstrijdPagina() {
               <span className={scoreKlasse}>{scoreDisplay}</span>
             </div>
             <div className="flex-1 flex flex-col items-center gap-2">
-              <TeamBadge team={wedstrijd.uit} size="lg" />
+              <TeamLogo team={wedstrijd.uit} size="lg" />
               <p className="font-bold text-white text-center text-sm leading-tight">
                 {wedstrijd.uit.naam}
               </p>
@@ -209,14 +197,14 @@ export default function WedstrijdPagina() {
           <div className="grid grid-cols-2 divide-x divide-zinc-800">
             <div className="px-4 py-4">
               <div className="flex items-center gap-2 mb-3">
-                <TeamBadge team={wedstrijd.thuis} size="sm" />
+                <TeamLogo team={wedstrijd.thuis} size="sm" />
                 <p className="text-xs font-semibold text-zinc-400">{wedstrijd.thuis.naam}</p>
               </div>
               <SpelerGroep spelers={spelers} teamCode={wedstrijd.thuis.code} />
             </div>
             <div className="px-4 py-4">
               <div className="flex items-center gap-2 mb-3">
-                <TeamBadge team={wedstrijd.uit} size="sm" />
+                <TeamLogo team={wedstrijd.uit} size="sm" />
                 <p className="text-xs font-semibold text-zinc-400">{wedstrijd.uit.naam}</p>
               </div>
               <SpelerGroep spelers={spelers} teamCode={wedstrijd.uit.code} />
