@@ -2,8 +2,8 @@ import { Team, Wedstrijd } from "./types";
 
 export const CL_FINALE: Wedstrijd = {
   id: "CL1",
-  thuis: { code: "PSG", naam: "PSG", vlag: "🇫🇷" },
-  uit: { code: "ARS", naam: "Arsenal", vlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  thuis: { code: "PSG", naam: "PSG", vlag: "🇫🇷", logo: "/logos/PSG.svg" },
+  uit: { code: "ARS", naam: "Arsenal", vlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", logo: "/logos/ARS.svg" },
   datum: "2026-05-30",
   tijd: "21:00",
   groep: "CL Finale",

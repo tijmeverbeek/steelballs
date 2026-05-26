@@ -33,6 +33,20 @@ function isGestart(wedstrijd: Wedstrijd): boolean {
   return now >= matchStart;
 }
 
+function TeamBadge({ team, size = "lg" }: { team: { naam: string; vlag: string; logo?: string }; size?: "lg" | "sm" }) {
+  const dim = size === "lg" ? "w-20 h-20" : "w-8 h-8";
+  if (team.logo) {
+    return (
+      <img
+        src={team.logo}
+        alt={team.naam}
+        className={`${dim} object-contain`}
+      />
+    );
+  }
+  return <span className={size === "lg" ? "text-6xl" : "text-2xl"}>{team.vlag}</span>;
+}
+
 function SpelerGroep({ spelers, teamCode }: { spelers: Speler[]; teamCode: string }) {
   const teamSpelers = spelers.filter((s) => s.team === teamCode);
 
@@ -147,22 +161,17 @@ export default function WedstrijdPagina() {
         {/* ── Teams banner ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-8">
           <div className="flex items-center justify-between gap-4">
-            {/* Thuis */}
             <div className="flex-1 flex flex-col items-center gap-2">
-              <span className="text-6xl">{wedstrijd.thuis.vlag}</span>
+              <TeamBadge team={wedstrijd.thuis} size="lg" />
               <p className="font-bold text-white text-center text-sm leading-tight">
                 {wedstrijd.thuis.naam}
               </p>
             </div>
-
-            {/* Score */}
             <div className="flex flex-col items-center min-w-[80px]">
               <span className={scoreKlasse}>{scoreDisplay}</span>
             </div>
-
-            {/* Uit */}
             <div className="flex-1 flex flex-col items-center gap-2">
-              <span className="text-6xl">{wedstrijd.uit.vlag}</span>
+              <TeamBadge team={wedstrijd.uit} size="lg" />
               <p className="font-bold text-white text-center text-sm leading-tight">
                 {wedstrijd.uit.naam}
               </p>
@@ -173,6 +182,7 @@ export default function WedstrijdPagina() {
         {/* ── Info row ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <span className="text-zinc-300">{formatDatum(wedstrijd.datum)}</span>
+          <span className="text-zinc-500">{wedstrijd.tijd}</span>
           {stadion && (
             <span className="text-zinc-500">
               {stadion.naam}, {stadion.stad}
@@ -183,35 +193,35 @@ export default function WedstrijdPagina() {
           </span>
         </div>
 
-        {/* ── Selecties ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800">
-            <h2 className="font-bold text-white">Selecties</h2>
-          </div>
-          <div className="grid grid-cols-2 divide-x divide-zinc-800">
-            {/* Thuis team */}
-            <div className="px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">
-                {wedstrijd.thuis.vlag} {wedstrijd.thuis.naam}
-              </p>
-              <SpelerGroep spelers={spelers} teamCode={wedstrijd.thuis.code} />
-            </div>
-            {/* Uit team */}
-            <div className="px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">
-                {wedstrijd.uit.vlag} {wedstrijd.uit.naam}
-              </p>
-              <SpelerGroep spelers={spelers} teamCode={wedstrijd.uit.code} />
-            </div>
-          </div>
-        </div>
-
-        {/* ── Opstelling ── */}
+        {/* ── Opstelling (boven selectie) ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-5">
           <h2 className="font-bold text-white mb-2">Opstelling</h2>
           <p className="text-sm text-zinc-500">
             Opstelling wordt ca. 1 uur voor aftrap bekendgemaakt
           </p>
+        </div>
+
+        {/* ── Selecties ── */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-zinc-800">
+            <h2 className="font-bold text-white">Selectie</h2>
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-zinc-800">
+            <div className="px-4 py-4">
+              <div className="flex items-center gap-2 mb-3">
+                <TeamBadge team={wedstrijd.thuis} size="sm" />
+                <p className="text-xs font-semibold text-zinc-400">{wedstrijd.thuis.naam}</p>
+              </div>
+              <SpelerGroep spelers={spelers} teamCode={wedstrijd.thuis.code} />
+            </div>
+            <div className="px-4 py-4">
+              <div className="flex items-center gap-2 mb-3">
+                <TeamBadge team={wedstrijd.uit} size="sm" />
+                <p className="text-xs font-semibold text-zinc-400">{wedstrijd.uit.naam}</p>
+              </div>
+              <SpelerGroep spelers={spelers} teamCode={wedstrijd.uit.code} />
+            </div>
+          </div>
         </div>
 
       </main>

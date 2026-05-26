@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140">
+  <!-- Shield shape -->
+  <path d="M60 4 L112 22 L112 88 L60 136 L8 88 L8 22 Z" fill="#004175"/>
+  <!-- Red horizontal band -->
+  <path d="M8 58 L112 58 L112 78 L8 78 Z" fill="#DA291C"/>
+  <!-- Outline -->
+  <path d="M60 4 L112 22 L112 88 L60 136 L8 88 L8 22 Z" fill="none" stroke="#C8A951" stroke-width="3"/>
+  <!-- Top text -->
+  <text x="60" y="50" text-anchor="middle" fill="white" font-size="16" font-family="Arial, sans-serif" font-weight="900" letter-spacing="2">PARIS</text>
+  <!-- Red band text -->
+  <text x="60" y="74" text-anchor="middle" fill="white" font-size="15" font-family="Arial, sans-serif" font-weight="900" letter-spacing="3">SG</text>
+  <!-- Bottom text -->
+  <text x="60" y="110" text-anchor="middle" fill="#C8A951" font-size="11" font-family="Arial, sans-serif" font-weight="700" letter-spacing="1">1970</text>
+</svg>

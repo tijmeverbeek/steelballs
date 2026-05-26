@@ -2,6 +2,7 @@ export interface Team {
   code: string;
   naam: string;
   vlag: string;
+  logo?: string; // URL naar clublogo; als afwezig: toon vlag emoji
 }
 
 export interface Wedstrijd {
