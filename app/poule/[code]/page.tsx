@@ -546,8 +546,31 @@ function PoulePagina() {
           </div>
         )}
 
+        {/* ── LMS: mijn pick CTA ── */}
+        {(poule.soort ?? "wk") === "lms" && huidigDeelnemer && (
+          <Link
+            href={`/poule/${code}/picks`}
+            className="bg-zinc-900 border border-green-500/40 hover:border-green-500 rounded-2xl p-5 flex items-center justify-between transition-colors group"
+          >
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-0.5">Last Man Standing</p>
+              <p className="font-bold text-white">
+                {(() => {
+                  const picks = huidigDeelnemer.lmsPicks ?? [];
+                  const wins = picks.filter((p) => p.uitkomst === "win").length;
+                  const actief = huidigDeelnemer.lmsActief !== false;
+                  if (!actief) return "Uitgeschakeld";
+                  if (wins === 0) return "Kies je eerste team →";
+                  return `${wins} win${wins !== 1 ? "s" : ""} — nog actief`;
+                })()}
+              </p>
+            </div>
+            <span className="text-green-400 text-lg group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+        )}
+
         {/* ── Jouw voorspellingen CTA ── */}
-        {huidigDeelnemer && (
+        {huidigDeelnemer && (poule.soort ?? "wk") !== "lms" && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -574,7 +597,7 @@ function PoulePagina() {
         )}
 
         {/* ── Bonus categorieën overzicht (voor deelnemers) ── */}
-        {heeftBonusCategorieen && huidigDeelnemer && (
+        {heeftBonusCategorieen && huidigDeelnemer && (poule.soort ?? "wk") !== "lms" && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <p className="text-xs font-semibold uppercase tracking-widest text-yellow-500 mb-3">Bonus voorspellingen</p>
             <div className="space-y-3">
@@ -728,20 +751,6 @@ function PoulePagina() {
               )}
             </div>
           </div>
-        )}
-
-        {/* ── LMS: mijn pick knop ── */}
-        {(poule.soort ?? "wk") === "lms" && (
-          <Link
-            href={`/poule/${code}/picks`}
-            className="bg-zinc-900 border border-green-500/40 hover:border-green-500 rounded-2xl p-5 flex items-center justify-between transition-colors group"
-          >
-            <div>
-              <h2 className="font-bold text-white">Mijn pick</h2>
-              <p className="text-xs text-zinc-500 mt-0.5">Kies je team voor de huidige ronde</p>
-            </div>
-            <span className="text-green-400 text-lg group-hover:translate-x-1 transition-transform">→</span>
-          </Link>
         )}
 
         {/* ── Poule-instellingen knop (alleen organisator) ── */}
