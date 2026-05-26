@@ -83,6 +83,7 @@ export default function Home() {
   const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "lms">("wk");
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState<"create" | "join" | null>(null);
   const [createError, setCreateError] = useState("");
 
@@ -94,9 +95,10 @@ export default function Home() {
       setIngelogd(true);
       setMijnUserId(user.id);
 
-      const [userRes, poulesRes] = await Promise.all([
+      const [userRes, poulesRes, adminRes] = await Promise.all([
         fetch("/api/user"),
         fetch("/api/user/poules"),
+        fetch("/api/admin/stats"),
       ]);
       if (userRes.ok) {
         const u = await userRes.json();
@@ -105,6 +107,9 @@ export default function Home() {
       }
       if (poulesRes.ok) {
         setMijnPoules(await poulesRes.json());
+      }
+      if (adminRes.ok) {
+        setIsAdmin(true);
       }
     }
     load();
@@ -254,12 +259,22 @@ export default function Home() {
               </p>
             )}
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            Uitloggen
-          </button>
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-xs text-zinc-400 hover:text-white transition-colors font-medium"
+              >
+                ⚙ Admin
+              </Link>
+            )}
+            <button
+              onClick={handleLogout}
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              Uitloggen
+            </button>
+          </div>
         </div>
 
         {/* ── Jouw poules ── */}
