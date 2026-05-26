@@ -14,6 +14,7 @@ model User {
   gebruikersnaam String?     @unique
   aangemaaktOp   DateTime    @default(now())
   aantalWinsten  Int         @default(0)
+  isAdmin        Boolean     @default(false)
   deelnemers     Deelnemer[]
 }
 
@@ -90,5 +91,12 @@ model Resultaat {
 model TournamentStat {
   type         String   @id
   waarde       String
+  bijgewerktOp DateTime @updatedAt
+}
+
+model FeatureFlag {
+  naam         String   @id
+  aanGezet     Boolean  @default(false)
+  beschrijving String   @default("")
   bijgewerktOp DateTime @updatedAt
 }
