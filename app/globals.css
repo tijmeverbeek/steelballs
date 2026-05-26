@@ -4,6 +4,7 @@
   --font-sans: var(--font-geist);
 }
 
-body {
+html, body {
+  background-color: #09090b; /* zinc-950 — voorkomt witte overscroll op mobiel */
   font-family: var(--font-sans), system-ui, sans-serif;
 }
