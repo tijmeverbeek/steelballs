@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createPoule, joinPoule } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { wedstrijden } from "@/lib/matches";
+import { getWedstrijdenVoorSoort } from "@/lib/matches";
 
 function SteelBallsLogo({ size = 140 }: { size?: number }) {
   return (
@@ -64,6 +64,7 @@ interface UserPoule {
   id: string;
   naam: string;
   code: string;
+  soort: string;
   deelnemerId: string;
   ingevuld: number;
   aangemaaktOp: string;
@@ -148,7 +149,6 @@ export default function Home() {
     router.push("/login");
   }
 
-  const aantalWedstrijden = wedstrijden.length;
 
   if (ingelogd === null) {
     return (
@@ -289,10 +289,10 @@ export default function Home() {
                       <div className="flex-1 h-1.5 bg-zinc-800 rounded-full">
                         <div
                           className="h-1.5 bg-green-500 rounded-full transition-all"
-                          style={{ width: `${(p.ingevuld / aantalWedstrijden) * 100}%` }}
+                          style={{ width: `${(p.ingevuld / getWedstrijdenVoorSoort(p.soort ?? "wk").length) * 100}%` }}
                         />
                       </div>
-                      <span className="text-xs text-zinc-500">{p.ingevuld}/{aantalWedstrijden} voorspeld</span>
+                      <span className="text-xs text-zinc-500">{p.ingevuld}/{getWedstrijdenVoorSoort(p.soort ?? "wk").length} voorspeld</span>
                     </div>
                   )}
                 </Link>
