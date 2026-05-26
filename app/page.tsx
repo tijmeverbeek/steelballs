@@ -304,6 +304,43 @@ export default function Home() {
         {/* ── Acties ── */}
         <div className="grid md:grid-cols-2 gap-5">
 
+          {/* Poule joinen */}
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+            <div className="px-7 pt-6 pb-3">
+              <div className="text-xs font-semibold uppercase tracking-widest text-orange-400 mb-1.5">
+                Uitgenodigd?
+              </div>
+              <h2 className="text-xl font-bold text-white">Doe mee</h2>
+              <p className="text-zinc-400 text-sm mt-1">
+                Voer de poule code in die je hebt ontvangen.
+              </p>
+            </div>
+            <form onSubmit={handleJoin} className="px-7 pb-7 pt-2 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                  Poule code
+                </label>
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => { setJoinCode(e.target.value); setJoinError(""); }}
+                  placeholder="ABC123"
+                  maxLength={6}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 uppercase tracking-[0.25em] font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+                {joinError && <p className="text-red-400 text-xs mt-1">{joinError}</p>}
+              </div>
+              <button
+                type="submit"
+                disabled={loading === "join"}
+                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors text-sm"
+              >
+                {loading === "join" ? "Deelnemen..." : "Doe mee →"}
+              </button>
+            </form>
+          </div>
+
           {/* Poule aanmaken */}
           <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
             <div className="px-7 pt-6 pb-3">
@@ -358,43 +395,6 @@ export default function Home() {
                 {loading === "create" ? "Aanmaken..." : "Maak poule aan →"}
               </button>
               {createError && <p className="text-red-400 text-xs">{createError}</p>}
-            </form>
-          </div>
-
-          {/* Poule joinen */}
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
-            <div className="px-7 pt-6 pb-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-orange-400 mb-1.5">
-                Uitgenodigd?
-              </div>
-              <h2 className="text-xl font-bold text-white">Doe mee</h2>
-              <p className="text-zinc-400 text-sm mt-1">
-                Voer de poule code in die je hebt ontvangen.
-              </p>
-            </div>
-            <form onSubmit={handleJoin} className="px-7 pb-7 pt-2 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
-                  Poule code
-                </label>
-                <input
-                  type="text"
-                  value={joinCode}
-                  onChange={(e) => { setJoinCode(e.target.value); setJoinError(""); }}
-                  placeholder="ABC123"
-                  maxLength={6}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 uppercase tracking-[0.25em] font-mono focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  required
-                />
-                {joinError && <p className="text-red-400 text-xs mt-1">{joinError}</p>}
-              </div>
-              <button
-                type="submit"
-                disabled={loading === "join"}
-                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors text-sm"
-              >
-                {loading === "join" ? "Deelnemen..." : "Doe mee →"}
-              </button>
             </form>
           </div>
         </div>
