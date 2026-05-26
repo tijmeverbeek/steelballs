@@ -786,8 +786,8 @@ function PoulePagina() {
           </div>
         </div>
 
-        {/* ── Eerste wedstrijden ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        {/* ── Eerste wedstrijden — verborgen voor LMS ── */}
+        {(poule.soort ?? "wk") !== "lms" && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
             <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
             <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
@@ -828,7 +828,7 @@ function PoulePagina() {
               );
             })}
           </div>
-        </div>
+        </div>}
 
       </main>
     </div>

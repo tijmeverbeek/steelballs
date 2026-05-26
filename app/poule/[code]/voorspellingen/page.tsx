@@ -106,6 +106,11 @@ export default function VoorspellingenPagina() {
       const geladen = await getPoule(code);
       if (!geladen) { router.push("/"); return; }
 
+      if ((geladen.soort ?? "wk") === "lms") {
+        router.push(`/poule/${code}/picks`);
+        return;
+      }
+
       setPoule(geladen);
       setPoulenaam(geladen.naam);
 
