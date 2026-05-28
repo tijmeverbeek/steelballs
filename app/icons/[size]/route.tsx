@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ siz
           width: ballSize,
           height: ballSize,
           borderRadius: "50%",
-          background: "#22c55e",
+          background: "#ea580c",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",

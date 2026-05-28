@@ -9,12 +9,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Steelballs",
+  title: "Stalenballen Cup",
   description: "Maak een poule aan en voorspel alle WK wedstrijden",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Steelballs",
+    title: "Stalenballen Cup",
   },
   formatDetection: { telephone: false },
 };

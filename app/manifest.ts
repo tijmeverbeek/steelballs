@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Steelballs",
-    short_name: "Steelballs",
+    name: "Stalenballen Cup",
+    short_name: "Stalenballen",
     description: "Voorspel alle WK wedstrijden en bewijs wie de staalste ballen heeft",
     start_url: "/",
     display: "standalone",

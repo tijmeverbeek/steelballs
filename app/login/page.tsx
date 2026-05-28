@@ -84,9 +84,8 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-black text-white tracking-tight">STEELBALLS</h1>
-          <p className="text-zinc-500 text-sm mt-1">WK Poule 2026</p>
+        <div className="flex justify-center mb-8">
+          <img src="/logo.png" alt="Stalenballen Cup" className="w-40 h-40 object-contain" />
         </div>
 
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
