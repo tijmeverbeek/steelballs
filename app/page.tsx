@@ -233,13 +233,10 @@ export default function Home() {
             {/* Teams */}
             <div className="flex items-center justify-center gap-4 mb-5">
               <div className="flex flex-col items-center gap-2">
-                <div className="flex flex-col items-center gap-2">
-                  <img src="https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg" alt="PSG" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                <img src="https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg" alt="PSG" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 <span className="text-sm font-black text-white">PSG</span>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-2xl font-black text-zinc-600">VS</span>
-              </div>
+              <span className="text-2xl font-black text-zinc-600">VS</span>
               <div className="flex flex-col items-center gap-2">
                 <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 <span className="text-sm font-black text-white">Arsenal</span>
