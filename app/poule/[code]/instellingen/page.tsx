@@ -34,6 +34,8 @@ export default function InstellingenPagina() {
   const [clFinaleThuis, setClFinaleThuis] = useState<number | null>(null);
   const [clFinaleUit, setClFinaleUit] = useState<number | null>(null);
   const [opgeslagen, setOpgeslagen] = useState(false);
+  const [clFout, setClFout] = useState("");
+  const [clBezig, setClBezig] = useState(false);
   const [verwijderBevestiging, setVerwijderBevestiging] = useState(false);
   const [lmsVerwerkRonde, setLmsVerwerkRonde] = useState<number | null>(null);
   const [lmsVerwerkBezig, setLmsVerwerkBezig] = useState(false);
@@ -98,11 +100,26 @@ export default function InstellingenPagina() {
 
   async function slaClFinaleResultaatOp() {
     if (!poule || clFinaleThuis === null || clFinaleUit === null) return;
+    setClBezig(true);
+    setClFout("");
     try {
-      await slaMatchResultaatOp(code, "CL1", clFinaleThuis, clFinaleUit);
+      const res = await fetch(`/api/poules/${code}/resultaat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wedstrijdId: "CL1", thuis: clFinaleThuis, uit: clFinaleUit }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setClFout(data.error ?? `Fout ${res.status} — controleer of je de beheerder bent van deze poule`);
+        return;
+      }
       setPoule({ ...poule, resultaten: { ...poule.resultaten, CL1: { thuis: clFinaleThuis, uit: clFinaleUit } } });
       toonOpgeslagen();
-    } catch { /* silent */ }
+    } catch (e) {
+      setClFout("Verbindingsfout — probeer het opnieuw");
+    } finally {
+      setClBezig(false);
+    }
   }
 
   async function rondeAf() {
@@ -291,11 +308,14 @@ export default function InstellingenPagina() {
                   <p className="text-sm font-semibold text-white mb-1">CL Finale uitslag</p>
                   <p className="text-xs text-zinc-500 mb-3">PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal — vul de eindstand in na de wedstrijd</p>
                   <div className="flex items-center gap-2">
-                    <input type="number" min={0} value={clFinaleThuis ?? ""} onChange={(e) => setClFinaleThuis(e.target.value === "" ? null : parseInt(e.target.value))} placeholder="PSG" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                    <input type="number" min={0} value={clFinaleThuis ?? ""} onChange={(e) => { setClFinaleThuis(e.target.value === "" ? null : parseInt(e.target.value)); setClFout(""); }} placeholder="PSG" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
                     <span className="text-zinc-600 font-bold">–</span>
-                    <input type="number" min={0} value={clFinaleUit ?? ""} onChange={(e) => setClFinaleUit(e.target.value === "" ? null : parseInt(e.target.value))} placeholder="ARS" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
-                    <button onClick={slaClFinaleResultaatOp} disabled={clFinaleThuis === null || clFinaleUit === null} className="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">Opslaan</button>
+                    <input type="number" min={0} value={clFinaleUit ?? ""} onChange={(e) => { setClFinaleUit(e.target.value === "" ? null : parseInt(e.target.value)); setClFout(""); }} placeholder="ARS" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                    <button onClick={slaClFinaleResultaatOp} disabled={clFinaleThuis === null || clFinaleUit === null || clBezig} className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">
+                      {clBezig ? "Opslaan..." : "Opslaan"}
+                    </button>
                   </div>
+                  {clFout && <p className="text-red-400 text-xs mt-2">{clFout}</p>}
                 </div>
               </>
             )}
