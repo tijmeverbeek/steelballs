@@ -547,6 +547,50 @@ function PoulePagina() {
           </div>
         )}
 
+        {/* ── Wedstrijden — verborgen voor LMS ── */}
+        {(poule.soort ?? "wk") !== "lms" && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+            <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
+            <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+              {(poule.soort ?? "wk") === "cl_finale" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
+            </Link>
+          </div>
+          <div className="divide-y divide-zinc-800">
+            {eersteWedstrijden.map((w) => {
+              const vpThuis = huidigDeelnemer?.voorspellingen.find((v) => v.wedstrijdId === w.id);
+              const heeftVp = vpThuis?.thuis != null && vpThuis?.uit != null;
+              return (
+                <div key={w.id} className="px-5 py-3.5 flex items-center gap-3">
+                  <Link href={`/wedstrijd/${w.id}`} className="flex-1 group">
+                    <p className="text-xs text-zinc-600 mb-1">
+                      {w.groep} · {new Date(w.datum).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} {w.tijd}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-sm font-semibold text-white group-hover:text-zinc-300 transition-colors">
+                      <TeamLogo team={w.thuis} size="xs" />
+                      <span>{w.thuis.naam}</span>
+                      <span className="text-zinc-600 font-normal mx-1">vs</span>
+                      <span>{w.uit.naam}</span>
+                      <TeamLogo team={w.uit} size="xs" />
+                    </div>
+                  </Link>
+                  {heeftVp ? (
+                    <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
+                      {vpThuis!.thuis} – {vpThuis!.uit}
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/poule/${code}/voorspellingen`}
+                      className="text-xs text-zinc-600 hover:text-zinc-400 whitespace-nowrap"
+                    >
+                      Voorspel →
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>}
+
         {/* ── LMS: mijn pick CTA ── */}
         {(poule.soort ?? "wk") === "lms" && huidigDeelnemer && (
           <Link
@@ -787,49 +831,6 @@ function PoulePagina() {
           </div>
         </div>
 
-        {/* ── Eerste wedstrijden — verborgen voor LMS ── */}
-        {(poule.soort ?? "wk") !== "lms" && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-            <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
-            <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
-              {(poule.soort ?? "wk") === "cl_finale" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
-            </Link>
-          </div>
-          <div className="divide-y divide-zinc-800">
-            {eersteWedstrijden.map((w) => {
-              const vpThuis = huidigDeelnemer?.voorspellingen.find((v) => v.wedstrijdId === w.id);
-              const heeftVp = vpThuis?.thuis != null && vpThuis?.uit != null;
-              return (
-                <div key={w.id} className="px-5 py-3.5 flex items-center gap-3">
-                  <Link href={`/wedstrijd/${w.id}`} className="flex-1 group">
-                    <p className="text-xs text-zinc-600 mb-1">
-                      {w.groep} · {new Date(w.datum).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} {w.tijd}
-                    </p>
-                    <div className="flex items-center gap-1.5 text-sm font-semibold text-white group-hover:text-zinc-300 transition-colors">
-                      <TeamLogo team={w.thuis} size="xs" />
-                      <span>{w.thuis.naam}</span>
-                      <span className="text-zinc-600 font-normal mx-1">vs</span>
-                      <span>{w.uit.naam}</span>
-                      <TeamLogo team={w.uit} size="xs" />
-                    </div>
-                  </Link>
-                  {heeftVp ? (
-                    <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
-                      {vpThuis!.thuis} – {vpThuis!.uit}
-                    </div>
-                  ) : (
-                    <Link
-                      href={`/poule/${code}/voorspellingen`}
-                      className="text-xs text-zinc-600 hover:text-zinc-400 whitespace-nowrap"
-                    >
-                      Voorspel →
-                    </Link>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>}
 
       </main>
     </div>
