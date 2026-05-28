@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface SpelerProfiel {
   gebruikersnaam: string | null;
@@ -35,19 +36,47 @@ export default function SpelerPagina() {
   const router = useRouter();
   const [profiel, setProfiel] = useState<SpelerProfiel | null>(null);
   const [laden, setLaden] = useState(true);
+  const [isEigenProfiel, setIsEigenProfiel] = useState(false);
+  const [bewerkModus, setBewerkModus] = useState(false);
+  const [nieuweNaam, setNieuweNaam] = useState("");
+  const [naamOpslaan, setNaamOpslaan] = useState(false);
+  const [naamFout, setNaamFout] = useState("");
 
   useEffect(() => {
-    fetch(`/api/speler/${encodeURIComponent(userId)}`)
-      .then((r) => {
-        if (r.status === 404) { router.push("/"); return null; }
-        return r.json();
-      })
-      .then((data) => {
-        if (data) setProfiel(data);
-        setLaden(false);
-      })
-      .catch(() => setLaden(false));
+    async function load() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id === userId) setIsEigenProfiel(true);
+
+      const r = await fetch(`/api/speler/${encodeURIComponent(userId)}`);
+      if (r.status === 404) { router.push("/"); return; }
+      const data = await r.json();
+      setProfiel(data);
+      setNieuweNaam(data.gebruikersnaam ?? "");
+      setLaden(false);
+    }
+    load().catch(() => setLaden(false));
   }, [userId, router]);
+
+  async function handleNaamOpslaan(e: React.FormEvent) {
+    e.preventDefault();
+    setNaamOpslaan(true);
+    setNaamFout("");
+    const res = await fetch("/api/user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gebruikersnaam: nieuweNaam }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setNaamFout(data.error ?? "Er ging iets mis.");
+      setNaamOpslaan(false);
+      return;
+    }
+    setProfiel((p) => p ? { ...p, gebruikersnaam: data.gebruikersnaam } : p);
+    setBewerkModus(false);
+    setNaamOpslaan(false);
+  }
 
   if (laden) {
     return (
@@ -94,6 +123,55 @@ export default function SpelerPagina() {
             )}
           </div>
         </div>
+
+        {/* ── Gebruikersnaam wijzigen ── */}
+        {isEigenProfiel && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4">
+            {!bewerkModus ? (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-zinc-400">Gebruikersnaam</p>
+                <button
+                  onClick={() => setBewerkModus(true)}
+                  className="text-xs text-green-400 hover:text-green-300 font-semibold transition-colors"
+                >
+                  Wijzigen
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleNaamOpslaan} className="space-y-3">
+                <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wide">
+                  Nieuwe gebruikersnaam
+                </label>
+                <input
+                  type="text"
+                  value={nieuweNaam}
+                  onChange={(e) => { setNieuweNaam(e.target.value); setNaamFout(""); }}
+                  minLength={2}
+                  maxLength={30}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                />
+                {naamFout && <p className="text-red-400 text-xs">{naamFout}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={naamOpslaan}
+                    className="flex-1 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors"
+                  >
+                    {naamOpslaan ? "Opslaan..." : "Opslaan"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setBewerkModus(false); setNaamFout(""); setNieuweNaam(profiel?.gebruikersnaam ?? ""); }}
+                    className="px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
 
         {/* ── Statistieken ── */}
         <div className="grid grid-cols-3 gap-3">
