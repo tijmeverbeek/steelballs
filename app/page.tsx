@@ -327,22 +327,55 @@ export default function Home() {
             </form>
           </div>
 
-          {/* Poule aanmaken – coming soon */}
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden opacity-60">
+          {/* Poule aanmaken */}
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
             <div className="px-7 pt-6 pb-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-1.5">
+              <div className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-1.5">
                 Nieuwe poule
               </div>
               <h2 className="text-xl font-bold text-white">Maak een poule</h2>
-              <p className="text-zinc-500 text-sm mt-1">
-                Eigen poules aanmaken gaat werken voor het WK 2026 (juni).
+              <p className="text-zinc-400 text-sm mt-1">
+                Maak een nieuwe poule aan en nodig vrienden uit.
               </p>
             </div>
-            <div className="px-7 pb-7 pt-2">
-              <div className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-600 text-center">
-                Binnenkort beschikbaar
+            <form onSubmit={handleCreate} className="px-7 pb-7 pt-2 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                  Naam
+                </label>
+                <input
+                  type="text"
+                  value={poulenaam}
+                  onChange={(e) => { setPoulenaam(e.target.value); setCreateError(""); }}
+                  placeholder="bijv. Vrienden 2026"
+                  maxLength={40}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                />
               </div>
-            </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                  Type
+                </label>
+                <select
+                  value={pouleSoort}
+                  onChange={(e) => setPouleSoort(e.target.value as "wk" | "cl_finale" | "lms")}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="wk">WK 2026</option>
+                  <option value="cl_finale">CL Finale</option>
+                  <option value="lms">Last Man Standing</option>
+                </select>
+              </div>
+              {createError && <p className="text-red-400 text-xs">{createError}</p>}
+              <button
+                type="submit"
+                disabled={loading === "create"}
+                className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors text-sm"
+              >
+                {loading === "create" ? "Aanmaken..." : "Poule aanmaken →"}
+              </button>
+            </form>
           </div>
         </div>
 
