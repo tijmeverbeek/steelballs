@@ -316,6 +316,31 @@ export default function Home() {
           </div>
         )}
 
+        {/* ── CL Finale banner ── */}
+        <div className="relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-950/60 via-zinc-900 to-zinc-900">
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "radial-gradient(ellipse 70% 80% at 0% 50%, rgba(59,130,246,0.12) 0%, transparent 70%)" }}
+          />
+          <div className="relative px-7 pt-6 pb-7">
+            <div className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-1.5">
+              Aankomende zaterdag
+            </div>
+            <h2 className="text-2xl font-black text-white mb-1">
+              🏆 Champions League Finale
+            </h2>
+            <p className="text-zinc-400 text-sm mb-5">
+              Doe mee aan de Steelballs CL poule en voorspel de finale. Wie scoort, wie wint?
+            </p>
+            <Link
+              href="/join/5YYSJQ"
+              className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm"
+            >
+              Doe mee aan de CL poule →
+            </Link>
+          </div>
+        </div>
+
         {/* ── Acties ── */}
         <div className="grid md:grid-cols-2 gap-5">
 
@@ -356,68 +381,22 @@ export default function Home() {
             </form>
           </div>
 
-          {/* Poule aanmaken */}
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+          {/* Poule aanmaken – coming soon */}
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden opacity-60">
             <div className="px-7 pt-6 pb-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-1.5">
+              <div className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-1.5">
                 Nieuwe poule
               </div>
               <h2 className="text-xl font-bold text-white">Maak een poule</h2>
-              <p className="text-zinc-400 text-sm mt-1">
-                Geef je poule een naam en nodig vrienden uit.
+              <p className="text-zinc-500 text-sm mt-1">
+                Eigen poules aanmaken gaat werken voor het WK 2026 (juni).
               </p>
             </div>
-            <form onSubmit={handleCreate} className="px-7 pb-7 pt-2 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
-                  Naam van de poule
-                </label>
-                <input
-                  type="text"
-                  value={poulenaam}
-                  onChange={(e) => setPoulenaam(e.target.value)}
-                  placeholder="Bijv. De Harde Kern 2026"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  required
-                />
+            <div className="px-7 pb-7 pt-2">
+              <div className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-600 text-center">
+                Binnenkort beschikbaar
               </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
-                  Type poule
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPouleSoort("wk")}
-                    className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "wk" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
-                  >
-                    WK 2026
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPouleSoort("cl_finale")}
-                    className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "cl_finale" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
-                  >
-                    CL Finale
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPouleSoort("lms")}
-                    className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "lms" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
-                  >
-                    Last Man Standing
-                  </button>
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={loading === "create"}
-                className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors text-sm"
-              >
-                {loading === "create" ? "Aanmaken..." : "Maak poule aan →"}
-              </button>
-              {createError && <p className="text-red-400 text-xs">{createError}</p>}
-            </form>
+            </div>
           </div>
         </div>
 
