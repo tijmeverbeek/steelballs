@@ -200,14 +200,14 @@ export default function WedstrijdPagina() {
                 <TeamLogo team={wedstrijd.thuis} size="sm" />
                 <p className="text-xs font-semibold text-zinc-400">{wedstrijd.thuis.naam}</p>
               </div>
-              <SpelerGroep spelers={spelers} teamCode={wedstrijd.thuis.code} />
+              <SpelerGroep spelers={spelers} teamCode={wedstrijd.thuis.naam} />
             </div>
             <div className="px-4 py-4">
               <div className="flex items-center gap-2 mb-3">
                 <TeamLogo team={wedstrijd.uit} size="sm" />
                 <p className="text-xs font-semibold text-zinc-400">{wedstrijd.uit.naam}</p>
               </div>
-              <SpelerGroep spelers={spelers} teamCode={wedstrijd.uit.code} />
+              <SpelerGroep spelers={spelers} teamCode={wedstrijd.uit.naam} />
             </div>
           </div>
         </div>
