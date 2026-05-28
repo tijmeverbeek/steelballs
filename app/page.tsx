@@ -7,58 +7,6 @@ import { createPoule, joinPoule } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { getWedstrijdenVoorSoort } from "@/lib/matches";
 
-function SteelBallsLogo({ size = 140 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size * 0.9}
-      viewBox="0 0 160 144"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <radialGradient id="s1" cx="32%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="12%" stopColor="#e4e4e4" />
-          <stop offset="40%" stopColor="#8c8c8c" />
-          <stop offset="75%" stopColor="#3e3e3e" />
-          <stop offset="100%" stopColor="#141414" />
-        </radialGradient>
-        <radialGradient id="s2" cx="32%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="12%" stopColor="#e4e4e4" />
-          <stop offset="40%" stopColor="#8c8c8c" />
-          <stop offset="75%" stopColor="#3e3e3e" />
-          <stop offset="100%" stopColor="#141414" />
-        </radialGradient>
-        <radialGradient id="s3" cx="32%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="12%" stopColor="#e4e4e4" />
-          <stop offset="40%" stopColor="#8c8c8c" />
-          <stop offset="75%" stopColor="#3e3e3e" />
-          <stop offset="100%" stopColor="#141414" />
-        </radialGradient>
-        <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="3.5" />
-          <feOffset dx="1" dy="5" result="blur" />
-          <feFlood floodColor="#000" floodOpacity="0.55" result="color" />
-          <feComposite in="color" in2="blur" operator="in" result="shadow" />
-          <feMerge>
-            <feMergeNode in="shadow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <ellipse cx="80" cy="138" rx="58" ry="7" fill="rgba(0,0,0,0.35)" />
-      <circle cx="43" cy="100" r="33" fill="url(#s1)" filter="url(#sh)" />
-      <circle cx="117" cy="100" r="33" fill="url(#s2)" filter="url(#sh)" />
-      <circle cx="80" cy="44" r="33" fill="url(#s3)" filter="url(#sh)" />
-      <ellipse cx="67" cy="32" rx="11" ry="7" fill="rgba(255,255,255,0.72)" transform="rotate(-22 67 32)" />
-      <ellipse cx="30" cy="89" rx="11" ry="7" fill="rgba(255,255,255,0.65)" transform="rotate(-22 30 89)" />
-      <ellipse cx="104" cy="89" rx="11" ry="7" fill="rgba(255,255,255,0.65)" transform="rotate(-22 104 89)" />
-    </svg>
-  );
-}
 
 interface UserPoule {
   id: string;
@@ -168,7 +116,7 @@ export default function Home() {
       <div className="min-h-screen flex flex-col bg-zinc-950 text-white">
         <main className="flex-1 max-w-2xl mx-auto w-full px-6 flex flex-col items-center justify-center py-20 text-center">
           <div className="flex justify-center mb-6">
-            <SteelBallsLogo size={120} />
+            <img src="/logo.png" alt="Stalenballen Cup" className="w-32 h-32 object-contain" />
           </div>
           <h1 className="text-5xl font-black tracking-tight mb-3 text-white">STEELBALLS</h1>
           <p className="text-xl font-semibold text-zinc-200 mb-2">Strijd met je vrienden.</p>
@@ -223,7 +171,7 @@ export default function Home() {
         />
         <div className="relative max-w-3xl mx-auto px-6 pt-16 pb-12 text-center">
           <div className="flex justify-center mb-5">
-            <SteelBallsLogo size={120} />
+            <img src="/logo.png" alt="Stalenballen Cup" className="w-32 h-32 object-contain" />
           </div>
           <h1 className="text-5xl font-black tracking-tight mb-3 text-white">STEELBALLS</h1>
           <p className="text-xl font-semibold text-zinc-200 mb-1">Strijd met je vrienden.</p>
