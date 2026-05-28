@@ -61,11 +61,18 @@ function LoginForm() {
         password: wachtwoord,
       });
       if (error) {
-        setError(
-          error.message === "User already registered"
-            ? "Dit e-mailadres is al in gebruik."
-            : "Er ging iets mis. Probeer het opnieuw."
-        );
+        const msg = error.message ?? "";
+        if (msg === "User already registered") {
+          setError("Dit e-mailadres is al in gebruik.");
+        } else if (msg.toLowerCase().includes("email") && msg.toLowerCase().includes("disabled")) {
+          setError("E-mail registratie is uitgeschakeld. Gebruik Google om in te loggen.");
+        } else if (msg.toLowerCase().includes("rate limit") || msg.toLowerCase().includes("over_email")) {
+          setError("Te veel pogingen. Wacht even en probeer het opnieuw.");
+        } else if (msg.toLowerCase().includes("password")) {
+          setError("Wachtwoord moet minimaal 6 tekens zijn.");
+        } else {
+          setError(`Er ging iets mis: ${msg}`);
+        }
         setLoading(null);
         return;
       }
