@@ -279,7 +279,7 @@ export default function Home() {
               Doe mee aan de Stalenballen CL poule en voorspel de finale. Wie scoort, wie wint?
             </p>
             <Link
-              href="/join/5YYSJQ"
+              href="/join/SGPZ3B"
               className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm"
             >
               Doe mee aan de CL poule →
