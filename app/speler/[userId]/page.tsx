@@ -71,7 +71,7 @@ export default function SpelerPagina() {
       <header className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-2xl mx-auto px-5 py-5">
           <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-300 font-medium transition-colors">
-            ← STEELBALLS
+            ← STALENBALLEN
           </Link>
         </div>
       </header>

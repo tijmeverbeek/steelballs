@@ -39,7 +39,7 @@ function SetupForm() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">⚽</div>
-          <h1 className="text-3xl font-black text-white tracking-tight">STEELBALLS</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight">STALENBALLEN</h1>
           <p className="text-zinc-500 text-sm mt-1">WK Poule 2026</p>
         </div>
 

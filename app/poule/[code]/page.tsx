@@ -410,7 +410,7 @@ function PoulePagina() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${poule?.naam} — Steelballs`,
+          title: `${poule?.naam} — Stalenballen`,
           text: poule?.soort === "cl_finale"
             ? `Doe mee aan de CL Finale poule "${poule?.naam}"! Voorspel de uitslag en bewijs wie de staalste ballen heeft.`
             : `Doe mee aan de WK poule "${poule?.naam}"! Voorspel alle wedstrijden en bewijs wie de staalste ballen heeft.`,
@@ -497,7 +497,7 @@ function PoulePagina() {
       <header className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-2xl mx-auto px-5 py-5">
           <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-300 font-medium transition-colors">
-            ← STEELBALLS
+            ← STALENBALLEN
           </Link>
           <div className="mt-3 flex items-start justify-between gap-4">
             <div>

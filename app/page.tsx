@@ -276,7 +276,7 @@ export default function Home() {
               🏆 Champions League Finale
             </h2>
             <p className="text-zinc-400 text-sm mb-5">
-              Doe mee aan de Steelballs CL poule en voorspel de finale. Wie scoort, wie wint?
+              Doe mee aan de Stalenballen CL poule en voorspel de finale. Wie scoort, wie wint?
             </p>
             <Link
               href="/join/5YYSJQ"

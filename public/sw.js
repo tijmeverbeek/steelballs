@@ -1,4 +1,4 @@
-const CACHE = "steelballs-v1";
+const CACHE = "stalenballen-v1";
 const OFFLINE = "/offline";
 
 self.addEventListener("install", (e) => {

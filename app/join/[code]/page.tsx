@@ -58,7 +58,7 @@ export default function JoinPagina() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-black text-white tracking-tight">
-            STEELBALLS
+            STALENBALLEN
           </Link>
           <p className="text-zinc-500 text-sm mt-1">WK Poule 2026</p>
         </div>
