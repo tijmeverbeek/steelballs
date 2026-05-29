@@ -5,7 +5,7 @@ export const CL_FINALE: Wedstrijd = {
   thuis: { code: "PSG", naam: "PSG", vlag: "🇫🇷", logo: "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg" },
   uit: { code: "ARS", naam: "Arsenal", vlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", logo: "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" },
   datum: "2026-05-30",
-  tijd: "21:00",
+  tijd: "18:00",
   groep: "CL Finale",
   fase: "knockout",
 };

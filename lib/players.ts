@@ -29,36 +29,38 @@ const CL_FINALE_SPELERS: Speler[] = [
   { naam: "Lucas Hernández",        positie: "VER", team: "PSG" },
   { naam: "Nuno Mendes",            positie: "VER", team: "PSG" },
   { naam: "Lucas Beraldo",          positie: "VER", team: "PSG" },
-  { naam: "Milan Škriniar",         positie: "VER", team: "PSG" },
   // ── PSG – Doelmannen ──────────────────────────────────────
-  { naam: "Gianluigi Donnarumma",   positie: "DOE", team: "PSG" },
   { naam: "Matvey Safonov",         positie: "DOE", team: "PSG" },
+  { naam: "Gianluigi Donnarumma",   positie: "DOE", team: "PSG" },
 
   // ── Arsenal – Aanvallers ──────────────────────────────────
+  { naam: "Viktor Gyökeres",        positie: "AAN", team: "Arsenal" },
   { naam: "Bukayo Saka",            positie: "AAN", team: "Arsenal" },
+  { naam: "Eberechi Eze",           positie: "AAN", team: "Arsenal" },
   { naam: "Gabriel Martinelli",     positie: "AAN", team: "Arsenal" },
+  { naam: "Noni Madueke",           positie: "AAN", team: "Arsenal" },
   { naam: "Leandro Trossard",       positie: "AAN", team: "Arsenal" },
   { naam: "Kai Havertz",            positie: "AAN", team: "Arsenal" },
   { naam: "Gabriel Jesus",          positie: "AAN", team: "Arsenal" },
-  { naam: "Eddie Nketiah",          positie: "AAN", team: "Arsenal" },
   // ── Arsenal – Middenvelders ───────────────────────────────
   { naam: "Martin Ødegaard",        positie: "MID", team: "Arsenal" },
   { naam: "Declan Rice",            positie: "MID", team: "Arsenal" },
-  { naam: "Thomas Partey",          positie: "MID", team: "Arsenal" },
-  { naam: "Jorginho",               positie: "MID", team: "Arsenal" },
-  { naam: "Ethan Nwaneri",          positie: "MID", team: "Arsenal" },
+  { naam: "Mikel Merino",           positie: "MID", team: "Arsenal" },
+  { naam: "Martin Zubimendi",       positie: "MID", team: "Arsenal" },
+  { naam: "Christian Nørgaard",     positie: "MID", team: "Arsenal" },
   // ── Arsenal – Verdedigers ─────────────────────────────────
-  { naam: "Ben White",              positie: "VER", team: "Arsenal" },
   { naam: "William Saliba",         positie: "VER", team: "Arsenal" },
   { naam: "Gabriel Magalhães",      positie: "VER", team: "Arsenal" },
-  { naam: "Oleksandr Zinchenko",    positie: "VER", team: "Arsenal" },
-  { naam: "Takehiro Tomiyasu",      positie: "VER", team: "Arsenal" },
-  { naam: "Jakub Kiwior",           positie: "VER", team: "Arsenal" },
-  { naam: "Riccardo Calafiori",     positie: "VER", team: "Arsenal" },
   { naam: "Jurrien Timber",         positie: "VER", team: "Arsenal" },
+  { naam: "Riccardo Calafiori",     positie: "VER", team: "Arsenal" },
+  { naam: "Myles Lewis-Skelly",     positie: "VER", team: "Arsenal" },
+  { naam: "Piero Hincapié",         positie: "VER", team: "Arsenal" },
+  { naam: "Cristhian Mosquera",     positie: "VER", team: "Arsenal" },
+  { naam: "Ben White",              positie: "VER", team: "Arsenal" },
   // ── Arsenal – Doelmannen ──────────────────────────────────
   { naam: "David Raya",             positie: "DOE", team: "Arsenal" },
-  { naam: "Neto",                   positie: "DOE", team: "Arsenal" },
+  { naam: "Kepa Arrizabalaga",      positie: "DOE", team: "Arsenal" },
+  { naam: "Tommy Setford",          positie: "DOE", team: "Arsenal" },
 ];
 
 // WK 2026 selecties worden hier toegevoegd zodra ze bekend zijn (begin juni 2026)
