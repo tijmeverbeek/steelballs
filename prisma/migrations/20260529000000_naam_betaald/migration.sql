@@ -1,0 +1,2 @@
+ALTER TABLE "User" ADD COLUMN "naam" TEXT;
+ALTER TABLE "Deelnemer" ADD COLUMN "betaald" BOOLEAN NOT NULL DEFAULT false;

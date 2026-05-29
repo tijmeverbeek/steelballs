@@ -12,6 +12,7 @@ model User {
   id             String      @id
   email          String      @unique
   gebruikersnaam String?     @unique
+  naam           String?
   aangemaaktOp   DateTime    @default(now())
   aantalWinsten  Int         @default(0)
   isAdmin        Boolean     @default(false)
@@ -55,6 +56,7 @@ model Deelnemer {
   lmsPicks                LmsPick[]
   lmsActief               Boolean        @default(true)
   lmsUitgeschakeldRonde   Int?
+  betaald                 Boolean        @default(false)
 
   @@unique([userId, pouleId])
 }

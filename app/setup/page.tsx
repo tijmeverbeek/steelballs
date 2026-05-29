@@ -7,20 +7,22 @@ function SetupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [gebruikersnaam, setGebruikersnaam] = useState("");
+  const [naam, setNaam] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = gebruikersnaam.trim();
-    if (!trimmed) return;
+    const trimmedNaam = naam.trim();
+    if (!trimmed || !trimmedNaam) return;
     setLoading(true);
     setError("");
 
     const res = await fetch("/api/user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gebruikersnaam: trimmed }),
+      body: JSON.stringify({ gebruikersnaam: trimmed, naam: trimmedNaam }),
     });
 
     if (!res.ok) {
@@ -45,12 +47,27 @@ function SetupForm() {
 
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
           <div className="px-7 pt-7 pb-4">
-            <h2 className="text-xl font-bold text-white">Kies een gebruikersnaam</h2>
+            <h2 className="text-xl font-bold text-white">Jouw profiel instellen</h2>
             <p className="text-zinc-400 text-sm mt-1">
-              Zo zien andere deelnemers jou in de poule.
+              Vul je naam en gebruikersnaam in om deel te nemen.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="px-7 pb-7 pt-3 space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                Naam
+              </label>
+              <input
+                type="text"
+                value={naam}
+                onChange={(e) => setNaam(e.target.value)}
+                placeholder="bijv. Tijme Verbeek"
+                autoFocus
+                maxLength={50}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                required
+              />
+            </div>
             <div>
               <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
                 Gebruikersnaam
@@ -60,7 +77,6 @@ function SetupForm() {
                 value={gebruikersnaam}
                 onChange={(e) => setGebruikersnaam(e.target.value)}
                 placeholder="bijv. tijme26"
-                autoFocus
                 maxLength={30}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
@@ -69,7 +85,7 @@ function SetupForm() {
             </div>
             <button
               type="submit"
-              disabled={loading || !gebruikersnaam.trim()}
+              disabled={loading || !gebruikersnaam.trim() || !naam.trim()}
               className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors text-sm"
             >
               {loading ? "Opslaan..." : "Doorgaan →"}
