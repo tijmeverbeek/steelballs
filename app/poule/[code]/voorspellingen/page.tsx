@@ -269,7 +269,7 @@ export default function VoorspellingenPagina() {
   const heeftBonusCategorieen = poule?.topscorerActief || poule?.geleKaartenActief || poule?.toernooiwinaarActief || poule?.eersteDoelpuntenmakerActief || poule?.eersteDoelpuntenminuutActief;
 
   function isGestart(w: { datum: string; tijd: string }): boolean {
-    return new Date() >= new Date(`${w.datum}T${w.tijd}:00`);
+    return new Date() >= new Date(`${w.datum}T${w.tijd}:00+02:00`);
   }
 
   function formatDeadline(w: { datum: string; tijd: string }): string {

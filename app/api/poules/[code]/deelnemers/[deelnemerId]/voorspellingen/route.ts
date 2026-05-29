@@ -48,7 +48,7 @@ export async function PUT(
   const geldige = voorspellingen.filter((v) => {
     const w = wedstrijdenMap.get(v.wedstrijdId);
     if (!w) return false;
-    return now < new Date(`${w.datum}T${w.tijd}:00`);
+    return now < new Date(`${w.datum}T${w.tijd}:00+02:00`);
   });
 
   if (geldige.length > 0) {
@@ -65,7 +65,7 @@ export async function PUT(
 
   // Bonus picks (eersteDoelpuntenmaker, minuut) are also locked after kickoff
   const clWedstrijd = wedstrijdenMap.get("CL1");
-  const clGestart = clWedstrijd ? now >= new Date(`${clWedstrijd.datum}T${clWedstrijd.tijd}:00`) : false;
+  const clGestart = clWedstrijd ? now >= new Date(`${clWedstrijd.datum}T${clWedstrijd.tijd}:00+02:00`) : false;
 
   const specialeUpdate: {
     topscorerVoorspelling?: string | null;
