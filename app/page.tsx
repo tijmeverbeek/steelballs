@@ -224,32 +224,39 @@ export default function Home() {
         </div>
 
         {/* ── CL Finale banner ── */}
-        <Link href="/join/SGPZ3B" className="block relative overflow-hidden rounded-2xl border border-blue-500/40 bg-gradient-to-br from-blue-950/80 via-zinc-900 to-zinc-950 hover:border-blue-400/60 transition-colors">
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.15) 0%, transparent 70%)" }} />
-          <div className="relative px-6 pt-5 pb-6">
-            <div className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-4">
-              🏆 Champions League Finale · Doe mee
-            </div>
-            {/* Teams */}
-            <div className="flex items-center justify-center gap-4 mb-5">
-              <div className="flex flex-col items-center gap-2">
-                <img src="https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg" alt="PSG" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                <span className="text-sm font-black text-white">PSG</span>
+        {(() => {
+          const doetMee = mijnPoules?.some((p) => p.code === "SGPZ3B") ?? false;
+          const href = doetMee ? "/poule/SGPZ3B" : "/join/SGPZ3B";
+          return (
+            <Link href={href} className="block relative overflow-hidden rounded-2xl border border-blue-500/40 bg-gradient-to-br from-blue-950/80 via-zinc-900 to-zinc-950 hover:border-blue-400/60 transition-colors">
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.15) 0%, transparent 70%)" }} />
+              <div className="relative px-6 pt-5 pb-6">
+                <div className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-4">
+                  🏆 Champions League Finale · {doetMee ? "Jij doet mee" : "Doe mee"}
+                </div>
+                <div className="flex items-center justify-center gap-4 mb-5">
+                  <div className="flex flex-col items-center gap-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg" alt="PSG" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    <span className="text-sm font-black text-white">PSG</span>
+                  </div>
+                  <span className="text-2xl font-black text-zinc-600">VS</span>
+                  <div className="flex flex-col items-center gap-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    <span className="text-sm font-black text-white">Arsenal</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-zinc-400 text-sm">
+                    {doetMee ? "Bekijk jouw voorspelling en de stand." : "Voorspel de uitslag en bewijs wie de staalste ballen heeft."}
+                  </p>
+                  <span className="shrink-0 ml-4 bg-blue-500 hover:bg-blue-400 text-white font-bold px-4 py-2 rounded-xl text-sm">
+                    {doetMee ? "Naar poule →" : "Meedoen →"}
+                  </span>
+                </div>
               </div>
-              <span className="text-2xl font-black text-zinc-600">VS</span>
-              <div className="flex flex-col items-center gap-2">
-                <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                <span className="text-sm font-black text-white">Arsenal</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-zinc-400 text-sm">Voorspel de uitslag en bewijs wie de staalste ballen heeft.</p>
-              <span className="shrink-0 ml-4 bg-blue-500 hover:bg-blue-400 text-white font-bold px-4 py-2 rounded-xl text-sm">
-                Meedoen →
-              </span>
-            </div>
-          </div>
-        </Link>
+            </Link>
+          );
+        })()}
 
         {/* ── Jouw poules ── */}
         {mijnPoules !== null && mijnPoules.length > 0 && (
