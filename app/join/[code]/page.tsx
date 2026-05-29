@@ -29,6 +29,12 @@ export default function JoinPagina() {
   }, [code, router]);
 
   async function handleJoin() {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push(`/login?redirect=/join/${code}`);
+      return;
+    }
     setLoading(true);
     try {
       const result = await joinPoule(code);
@@ -69,7 +75,7 @@ export default function JoinPagina() {
           <Link href="/" className="text-2xl font-black text-white tracking-tight">
             STALENBALLEN
           </Link>
-          <p className="text-zinc-500 text-sm mt-1">WK Poule 2026</p>
+          <p className="text-zinc-500 text-sm mt-1">Stalenballen Poule</p>
         </div>
 
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
@@ -79,7 +85,7 @@ export default function JoinPagina() {
             </p>
             <h1 className="text-2xl font-bold text-white">{poulenaam}</h1>
             <p className="text-zinc-400 text-sm mt-1 mb-6">
-              Doe mee en voorspel alle WK wedstrijden.
+              Doe mee en voorspel de wedstrijd.
             </p>
             <button
               onClick={handleJoin}
