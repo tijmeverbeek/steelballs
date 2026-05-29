@@ -476,7 +476,7 @@ function PoulePagina() {
       gebruikersnaam: d.user.gebruikersnaam,
       displayNaam: deelnemerNaam(d),
       isAdmin: d.user.isAdmin === true,
-      punten: berekenPunten(d.voorspellingen, poule.resultaten, d, poule),
+      punten: poule.afgerond ? berekenPunten(d.voorspellingen, poule.resultaten, d, poule) : 0,
       ingevuld: d.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length,
       correctDoelpuntenmaker: heeftCorrectEersteDoelpuntenmaker(d, poule),
       minuutAfstand: berekenMinuutAfstand(d.eersteDoelpuntenminuutVoorspelling, poule.eersteDoelpuntenminuutResultaat),
@@ -488,9 +488,12 @@ function PoulePagina() {
       voorspellingen: d.voorspellingen,
     }))
     .sort((a, b) => {
-      if (b.punten !== a.punten) return b.punten - a.punten;
-      if (a.correctDoelpuntenmaker !== b.correctDoelpuntenmaker) return a.correctDoelpuntenmaker ? -1 : 1;
-      return a.minuutAfstand - b.minuutAfstand;
+      if (poule.afgerond) {
+        if (b.punten !== a.punten) return b.punten - a.punten;
+        if (a.correctDoelpuntenmaker !== b.correctDoelpuntenmaker) return a.correctDoelpuntenmaker ? -1 : 1;
+        return a.minuutAfstand - b.minuutAfstand;
+      }
+      return b.ingevuld - a.ingevuld;
     });
 
   const eersteWedstrijden = pouleWedstrijden.slice(0, 6);
@@ -825,8 +828,16 @@ function PoulePagina() {
                     )}
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <span className="text-xl font-black text-white">{d.punten}</span>
-                    <span className="text-xs text-zinc-600 ml-1">pt</span>
+                    {poule.afgerond ? (
+                      <>
+                        <span className="text-xl font-black text-white">{d.punten}</span>
+                        <span className="text-xs text-zinc-600 ml-1">pt</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-bold text-zinc-400">{d.ingevuld}/{aantalWedstrijden}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
