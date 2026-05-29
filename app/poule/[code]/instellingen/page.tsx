@@ -37,6 +37,7 @@ export default function InstellingenPagina() {
   const [clFout, setClFout] = useState("");
   const [clBezig, setClBezig] = useState(false);
   const [verwijderBevestiging, setVerwijderBevestiging] = useState(false);
+  const [verwijderDeelnemerId, setVerwijderDeelnemerId] = useState<string | null>(null);
   const [lmsVerwerkRonde, setLmsVerwerkRonde] = useState<number | null>(null);
   const [lmsVerwerkBezig, setLmsVerwerkBezig] = useState(false);
   const [lmsVerwerkResultaat, setLmsVerwerkResultaat] = useState<{ verwerkt: number; ontbreekt: number } | null>(null);
@@ -152,6 +153,19 @@ export default function InstellingenPagina() {
       alert("Netwerkfout — probeer opnieuw");
     } finally {
       setLmsVerwerkBezig(false);
+    }
+  }
+
+  async function verwijderDeelnemer(deelnemerId: string) {
+    if (!poule) return;
+    try {
+      const res = await fetch(`/api/poules/${code}/deelnemers/${deelnemerId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setPoule({ ...poule, deelnemers: poule.deelnemers.filter((d) => d.id !== deelnemerId) });
+    } catch {
+      alert("Verwijderen mislukt. Probeer het opnieuw.");
+    } finally {
+      setVerwijderDeelnemerId(null);
     }
   }
 
@@ -408,6 +422,38 @@ export default function InstellingenPagina() {
             </div>
           </div>
         )}
+
+        {/* Deelnemers beheren */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-zinc-800">
+            <h2 className="font-bold text-white">Deelnemers</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Verwijder deelnemers die niet mee mogen doen</p>
+          </div>
+          <div className="divide-y divide-zinc-800">
+            {poule.deelnemers.map((d) => {
+              const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
+              return (
+                <div key={d.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                  <span className="text-sm text-zinc-300 truncate">{naam}</span>
+                  {verwijderDeelnemerId === d.id ? (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs text-zinc-400">Zeker?</span>
+                      <button onClick={() => verwijderDeelnemer(d.id)} className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">Ja</button>
+                      <button onClick={() => setVerwijderDeelnemerId(null)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">Nee</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setVerwijderDeelnemerId(d.id)} className="text-xs text-red-400 hover:text-red-300 font-medium transition-colors flex-shrink-0">
+                      Verwijderen
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            {poule.deelnemers.length === 0 && (
+              <p className="px-5 py-4 text-xs text-zinc-600 italic">Nog geen deelnemers</p>
+            )}
+          </div>
+        </div>
 
         {/* Toernooi afronden */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
