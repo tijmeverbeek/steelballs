@@ -15,13 +15,16 @@ const CL_FINALE_SPELERS: Speler[] = [
   { naam: "Bradley Barcola",        positie: "AAN", team: "PSG" },
   { naam: "Désiré Doué",            positie: "AAN", team: "PSG" },
   { naam: "Gonçalo Ramos",          positie: "AAN", team: "PSG" },
-  { naam: "Lee Kang-in",            positie: "AAN", team: "PSG" },
+  { naam: "Quentin Ndjantou",       positie: "AAN", team: "PSG" },
+  { naam: "Ibrahim Mbaye",          positie: "AAN", team: "PSG" },
   // ── PSG – Middenvelders ───────────────────────────────────
   { naam: "Vitinha",                positie: "MID", team: "PSG" },
   { naam: "Fabian Ruiz",            positie: "MID", team: "PSG" },
   { naam: "Warren Zaïre-Emery",     positie: "MID", team: "PSG" },
   { naam: "João Neves",             positie: "MID", team: "PSG" },
-  { naam: "Marco Asensio",          positie: "MID", team: "PSG" },
+  { naam: "Lee Kang-in",            positie: "MID", team: "PSG" },
+  { naam: "Senny Mayulu",           positie: "MID", team: "PSG" },
+  { naam: "Dro Fernández",          positie: "MID", team: "PSG" },
   // ── PSG – Verdedigers ─────────────────────────────────────
   { naam: "Achraf Hakimi",          positie: "VER", team: "PSG" },
   { naam: "Marquinhos",             positie: "VER", team: "PSG" },
@@ -29,9 +32,11 @@ const CL_FINALE_SPELERS: Speler[] = [
   { naam: "Lucas Hernández",        positie: "VER", team: "PSG" },
   { naam: "Nuno Mendes",            positie: "VER", team: "PSG" },
   { naam: "Lucas Beraldo",          positie: "VER", team: "PSG" },
+  { naam: "Illia Zabarnyi",         positie: "VER", team: "PSG" },
   // ── PSG – Doelmannen ──────────────────────────────────────
   { naam: "Matvey Safonov",         positie: "DOE", team: "PSG" },
-  { naam: "Gianluigi Donnarumma",   positie: "DOE", team: "PSG" },
+  { naam: "Lucas Chevalier",        positie: "DOE", team: "PSG" },
+  { naam: "Renato Marin",           positie: "DOE", team: "PSG" },
 
   // ── Arsenal – Aanvallers ──────────────────────────────────
   { naam: "Viktor Gyökeres",        positie: "AAN", team: "Arsenal" },
@@ -51,12 +56,10 @@ const CL_FINALE_SPELERS: Speler[] = [
   // ── Arsenal – Verdedigers ─────────────────────────────────
   { naam: "William Saliba",         positie: "VER", team: "Arsenal" },
   { naam: "Gabriel Magalhães",      positie: "VER", team: "Arsenal" },
-  { naam: "Jurrien Timber",         positie: "VER", team: "Arsenal" },
   { naam: "Riccardo Calafiori",     positie: "VER", team: "Arsenal" },
   { naam: "Myles Lewis-Skelly",     positie: "VER", team: "Arsenal" },
   { naam: "Piero Hincapié",         positie: "VER", team: "Arsenal" },
   { naam: "Cristhian Mosquera",     positie: "VER", team: "Arsenal" },
-  { naam: "Ben White",              positie: "VER", team: "Arsenal" },
   // ── Arsenal – Doelmannen ──────────────────────────────────
   { naam: "David Raya",             positie: "DOE", team: "Arsenal" },
   { naam: "Kepa Arrizabalaga",      positie: "DOE", team: "Arsenal" },
