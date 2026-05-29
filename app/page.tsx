@@ -122,11 +122,11 @@ export default function Home() {
           <p className="text-base text-zinc-400 mb-8">Kom erachter wie de staalste ballen heeft.</p>
 
           <div className="inline-flex items-center gap-3 bg-white/5 border border-white/10 rounded-full px-5 py-2 text-sm text-zinc-400 mb-12">
-            <span className="text-green-400 font-medium">⚽ WK 2026</span>
+            <span className="text-blue-400 font-medium">🏆 CL Finale</span>
             <span className="text-zinc-600">·</span>
-            <span>11 juni – 19 juli</span>
+            <span>PSG vs Arsenal</span>
             <span className="text-zinc-600">·</span>
-            <span>VS · Canada · Mexico</span>
+            <span>2025/26</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-12">
@@ -175,11 +175,11 @@ export default function Home() {
           <p className="text-xl font-semibold text-zinc-200 mb-1">Strijd met je vrienden.</p>
           <p className="text-base text-zinc-400 mb-6">Kom erachter wie de staalste ballen heeft.</p>
           <div className="inline-flex items-center gap-3 bg-white/5 border border-white/10 rounded-full px-5 py-2 text-sm text-zinc-400">
-            <span className="text-green-400 font-medium">⚽ WK 2026</span>
+            <span className="text-blue-400 font-medium">🏆 CL Finale</span>
             <span className="text-zinc-600">·</span>
-            <span>11 juni – 19 juli</span>
+            <span>PSG vs Arsenal</span>
             <span className="text-zinc-600">·</span>
-            <span>VS · Canada · Mexico</span>
+            <span>2025/26</span>
           </div>
         </div>
       </header>
