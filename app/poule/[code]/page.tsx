@@ -72,6 +72,9 @@ type StandItem = {
   minuutAfstand: number;
   eersteDoelpuntenmakerVoorspelling?: string | null;
   eersteDoelpuntenminuutVoorspelling?: number | null;
+  topscorerVoorspelling?: string | null;
+  geleKaartenVoorspelling?: string | null;
+  toernooiwinaarVoorspelling?: string | null;
   voorspellingen: Deelnemer["voorspellingen"];
 };
 
@@ -472,6 +475,9 @@ function PoulePagina() {
       minuutAfstand: berekenMinuutAfstand(d.eersteDoelpuntenminuutVoorspelling, poule.eersteDoelpuntenminuutResultaat),
       eersteDoelpuntenmakerVoorspelling: d.eersteDoelpuntenmakerVoorspelling,
       eersteDoelpuntenminuutVoorspelling: d.eersteDoelpuntenminuutVoorspelling,
+      topscorerVoorspelling: d.topscorerVoorspelling,
+      geleKaartenVoorspelling: d.geleKaartenVoorspelling,
+      toernooiwinaarVoorspelling: d.toernooiwinaarVoorspelling,
       voorspellingen: d.voorspellingen,
     }))
     .sort((a, b) => {
@@ -775,15 +781,39 @@ function PoulePagina() {
                         <span className="ml-1.5 text-xs text-yellow-400 font-normal">jij gewonnen!</span>
                       )}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="h-1 w-24 bg-zinc-700 rounded-full">
-                        <div
-                          className="h-1 bg-zinc-400 rounded-full"
-                          style={{ width: `${(d.ingevuld / aantalWedstrijden) * 100}%` }}
-                        />
+                    {!poule.afgerond && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="h-1 w-24 bg-zinc-700 rounded-full">
+                          <div
+                            className="h-1 bg-zinc-400 rounded-full"
+                            style={{ width: `${(d.ingevuld / aantalWedstrijden) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-zinc-600">{d.ingevuld}/{aantalWedstrijden}</span>
                       </div>
-                      <span className="text-xs text-zinc-600">{d.ingevuld}/{aantalWedstrijden}</span>
-                    </div>
+                    )}
+                    {poule.afgerond && (
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                        {(poule.soort ?? "wk") === "cl_finale" && (() => {
+                          const vp = d.voorspellingen.find((v) => v.wedstrijdId === "CL1");
+                          return vp?.thuis != null && vp?.uit != null ? (
+                            <span className="text-xs text-zinc-400">⚽ {vp.thuis}–{vp.uit}</span>
+                          ) : null;
+                        })()}
+                        {poule.eersteDoelpuntenmakerActief && d.eersteDoelpuntenmakerVoorspelling && (
+                          <span className="text-xs text-zinc-400">🥅 {d.eersteDoelpuntenmakerVoorspelling}{d.eersteDoelpuntenminuutVoorspelling != null ? ` (${d.eersteDoelpuntenminuutVoorspelling}')` : ""}</span>
+                        )}
+                        {poule.topscorerActief && d.topscorerVoorspelling && (
+                          <span className="text-xs text-zinc-400">👟 {d.topscorerVoorspelling}</span>
+                        )}
+                        {poule.toernooiwinaarActief && d.toernooiwinaarVoorspelling && (
+                          <span className="text-xs text-zinc-400">🏆 {d.toernooiwinaarVoorspelling}</span>
+                        )}
+                        {poule.geleKaartenActief && d.geleKaartenVoorspelling && (
+                          <span className="text-xs text-zinc-400">🟨 {d.geleKaartenVoorspelling}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right flex-shrink-0">
                     <span className="text-xl font-black text-white">{d.punten}</span>
