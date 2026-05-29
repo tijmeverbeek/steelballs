@@ -291,7 +291,7 @@ export default function Home() {
         )}
 
         {/* ── Acties ── */}
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className={`grid gap-5 ${isAdmin ? "md:grid-cols-2" : "md:grid-cols-1 max-w-md"}`}>
 
           {/* Poule joinen */}
           <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
@@ -330,8 +330,8 @@ export default function Home() {
             </form>
           </div>
 
-          {/* Poule aanmaken */}
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+          {/* Poule aanmaken — alleen voor admins */}
+          {isAdmin && <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
             <div className="px-7 pt-6 pb-3">
               <div className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-1.5">
                 Nieuwe poule
@@ -379,7 +379,7 @@ export default function Home() {
                 {loading === "create" ? "Aanmaken..." : "Poule aanmaken →"}
               </button>
             </form>
-          </div>
+          </div>}
         </div>
 
         {/* Hoe werkt het */}
