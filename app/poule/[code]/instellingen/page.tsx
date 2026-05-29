@@ -114,7 +114,7 @@ export default function InstellingenPagina() {
         setClFout(data.error ?? `Fout ${res.status} — controleer of je de beheerder bent van deze poule`);
         return;
       }
-      setPoule({ ...poule, resultaten: { ...poule.resultaten, CL1: { thuis: clFinaleThuis, uit: clFinaleUit } } });
+      setPoule({ ...poule, resultaten: { ...poule.resultaten, CL1: { thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) } } });
       toonOpgeslagen();
     } catch (e) {
       setClFout("Verbindingsfout — probeer het opnieuw");
