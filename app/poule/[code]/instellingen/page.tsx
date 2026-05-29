@@ -45,20 +45,23 @@ export default function InstellingenPagina() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push("/"); return; }
-      getPoule(code).then((p) => {
-        if (!p || p.organisatorId !== user.id) { router.push(`/poule/${code}`); return; }
-        setPoule(p);
-        setTopscorerResultaatInput(p.topscorerResultaat ?? "");
-        setGeleKaartenResultaatInput(p.geleKaartenResultaat ?? "");
-        setToernooiwinaarResultaatInput(p.toernooiwinaarResultaat ?? "");
-        setEersteDoelpuntenmakerResultaatInput(p.eersteDoelpuntenmakerResultaat ?? "");
-        setEersteDoelpuntenminuutResultaatInput(p.eersteDoelpuntenminuutResultaat ?? null);
-        const clResult = p.resultaten["CL1"];
-        setClFinaleThuis(clResult ? String(clResult.thuis) : "");
-        setClFinaleUit(clResult ? String(clResult.uit) : "");
-      });
+      const [p, userRes] = await Promise.all([
+        getPoule(code),
+        fetch("/api/user").then((r) => r.json()).catch(() => ({})),
+      ]);
+      const isAdmin = userRes?.isAdmin === true;
+      if (!p || (p.organisatorId !== user.id && !isAdmin)) { router.push(`/poule/${code}`); return; }
+      setPoule(p);
+      setTopscorerResultaatInput(p.topscorerResultaat ?? "");
+      setGeleKaartenResultaatInput(p.geleKaartenResultaat ?? "");
+      setToernooiwinaarResultaatInput(p.toernooiwinaarResultaat ?? "");
+      setEersteDoelpuntenmakerResultaatInput(p.eersteDoelpuntenmakerResultaat ?? "");
+      setEersteDoelpuntenminuutResultaatInput(p.eersteDoelpuntenminuutResultaat ?? null);
+      const clResult = p.resultaten["CL1"];
+      setClFinaleThuis(clResult ? String(clResult.thuis) : "");
+      setClFinaleUit(clResult ? String(clResult.uit) : "");
     });
   }, [code, router]);
 

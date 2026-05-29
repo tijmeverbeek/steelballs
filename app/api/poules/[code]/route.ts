@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthUser } from "@/lib/supabase/server";
+import { isOrganisatorOrAdmin } from "@/lib/auth";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -13,7 +14,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ code: s
           include: {
             voorspellingen: true,
             lmsPicks: true,
-            user: { select: { gebruikersnaam: true, email: true, naam: true } },
+            user: { select: { gebruikersnaam: true, email: true, naam: true, isAdmin: true } },
           },
         },
       },
@@ -48,7 +49,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
   const poule = await prisma.poule.findUnique({ where: { code } });
   if (!poule) return NextResponse.json({ error: "Niet gevonden" }, { status: 404 });
 
-  if (poule.organisatorId !== authUser.id) {
+  if (!await isOrganisatorOrAdmin(authUser.id, poule)) {
     return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
   }
 
@@ -79,7 +80,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ code
   const { code } = await params;
   const poule = await prisma.poule.findUnique({ where: { code } });
   if (!poule) return NextResponse.json({ error: "Niet gevonden" }, { status: 404 });
-  if (poule.organisatorId !== authUser.id) return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
+  if (!await isOrganisatorOrAdmin(authUser.id, poule)) return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
 
   try {
     await prisma.voorspelling.deleteMany({ where: { deelnemer: { pouleId: poule.id } } });

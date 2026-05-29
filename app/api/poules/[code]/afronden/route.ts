@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthUser } from "@/lib/supabase/server";
 import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker } from "@/lib/storage";
+import { isOrganisatorOrAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ code: 
     },
   });
   if (!poule) return NextResponse.json({ error: "Niet gevonden" }, { status: 404 });
-  if (poule.organisatorId !== authUser.id) return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
+  if (!await isOrganisatorOrAdmin(authUser.id, poule)) return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
 
   const resultaten = await prisma.resultaat.findMany();
   const resultatenMap: Record<string, { thuis: number; uit: number }> = {};

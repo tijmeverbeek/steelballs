@@ -66,6 +66,7 @@ type StandItem = {
   userId: string;
   gebruikersnaam: string | null;
   displayNaam: string;
+  isAdmin: boolean;
   punten: number;
   ingevuld: number;
   correctDoelpuntenmaker: boolean;
@@ -254,11 +255,9 @@ function EindstandModal({
 function LmsStand({
   deelnemers,
   mijnUserId,
-  organisatorId,
 }: {
   deelnemers: Deelnemer[];
   mijnUserId: string | null;
-  organisatorId: string | null;
 }) {
   const actief = deelnemers.filter((d) => d.lmsActief !== false);
   const uitgeschakeld = deelnemers
@@ -323,7 +322,7 @@ function LmsStand({
                     <p className="font-semibold text-white text-sm truncate">
                       {naam}
                       {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>}
-                      {d.userId === organisatorId && <span className="ml-1.5 text-xs text-zinc-500 font-normal">organisator</span>}
+                      {d.user.isAdmin && <span className="ml-1.5 text-xs text-zinc-500 font-normal">beheerder</span>}
                     </p>
                     {picks.length > 0 && <PickBadges picks={picks} />}
                   </div>
@@ -385,6 +384,7 @@ function PoulePagina() {
   const router = useRouter();
   const [poule, setPoule] = useState<Poule | null>(null);
   const [mijnUserId, setMijnUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [gedeeld, setGedeeld] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [toonEindstand, setToonEindstand] = useState(false);
@@ -392,7 +392,12 @@ function PoulePagina() {
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setMijnUserId(user.id);
+      if (user) {
+        setMijnUserId(user.id);
+        fetch("/api/user").then((r) => r.json()).then((u) => {
+          if (u?.isAdmin) setIsAdmin(true);
+        }).catch(() => {});
+      }
     });
     getPoule(code).then((p) => {
       if (!p) { router.push("/"); return; }
@@ -453,9 +458,10 @@ function PoulePagina() {
     );
   }
 
-  const isOrganisator = mijnUserId !== null && poule.organisatorId === mijnUserId;
+  const isOrganisator = mijnUserId !== null && (poule.organisatorId === mijnUserId || isAdmin);
   const huidigDeelnemer = poule.deelnemers.find((d) => d.userId === mijnUserId);
   const organisatorDeelnemer = poule.deelnemers.find((d) => d.userId === poule.organisatorId);
+  const organisatorIsBeheerder = organisatorDeelnemer?.user.isAdmin === true;
   const organisatorNaam = organisatorDeelnemer ? deelnemerNaam(organisatorDeelnemer) : null;
   const pouleWedstrijden = getWedstrijdenVoorSoort(poule.soort ?? "wk");
   const aantalWedstrijden = pouleWedstrijden.length;
@@ -469,6 +475,7 @@ function PoulePagina() {
       userId: d.userId,
       gebruikersnaam: d.user.gebruikersnaam,
       displayNaam: deelnemerNaam(d),
+      isAdmin: d.user.isAdmin === true,
       punten: berekenPunten(d.voorspellingen, poule.resultaten, d, poule),
       ingevuld: d.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length,
       correctDoelpuntenmaker: heeftCorrectEersteDoelpuntenmaker(d, poule),
@@ -510,7 +517,9 @@ function PoulePagina() {
               <h1 className="text-2xl font-black text-white">{poule.naam}</h1>
               <p className="text-zinc-500 text-sm mt-0.5">
                 {poule.deelnemers.length} deelnemer{poule.deelnemers.length !== 1 ? "s" : ""}
-                {organisatorNaam && <> · Georganiseerd door {organisatorNaam}</>}
+                {organisatorIsBeheerder
+                  ? " · Georganiseerd door de beheerders"
+                  : organisatorNaam && <> · Georganiseerd door {organisatorNaam}</>}
               </p>
             </div>
             <button
@@ -747,7 +756,7 @@ function PoulePagina() {
 
         {/* ── Stand ── */}
         {(poule.soort ?? "wk") === "lms" ? (
-          <LmsStand deelnemers={poule.deelnemers} mijnUserId={mijnUserId} organisatorId={poule.organisatorId ?? null} />
+          <LmsStand deelnemers={poule.deelnemers} mijnUserId={mijnUserId} />
         ) : (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-zinc-800">
@@ -771,8 +780,8 @@ function PoulePagina() {
                       {d.userId === mijnUserId && (
                         <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
                       )}
-                      {d.userId === poule.organisatorId && (
-                        <span className="ml-1.5 text-xs text-zinc-500 font-normal">organisator</span>
+                      {d.isAdmin && (
+                        <span className="ml-1.5 text-xs text-zinc-500 font-normal">beheerder</span>
                       )}
                       {poule.afgerond && i === 0 && d.userId !== mijnUserId && (
                         <span className="ml-1.5 text-xs text-yellow-400 font-normal">winnaar</span>
