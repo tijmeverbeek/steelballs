@@ -31,8 +31,8 @@ export default function InstellingenPagina() {
   const [toernooiwinaarResultaatInput, setToernooiwinaarResultaatInput] = useState("");
   const [eersteDoelpuntenmakerResultaatInput, setEersteDoelpuntenmakerResultaatInput] = useState("");
   const [eersteDoelpuntenminuutResultaatInput, setEersteDoelpuntenminuutResultaatInput] = useState<number | null>(null);
-  const [clFinaleThuis, setClFinaleThuis] = useState<number>(0);
-  const [clFinaleUit, setClFinaleUit] = useState<number>(0);
+  const [clFinaleThuis, setClFinaleThuis] = useState<string>("");
+  const [clFinaleUit, setClFinaleUit] = useState<string>("");
   const [opgeslagen, setOpgeslagen] = useState(false);
   const [clFout, setClFout] = useState("");
   const [clBezig, setClBezig] = useState(false);
@@ -54,8 +54,8 @@ export default function InstellingenPagina() {
         setEersteDoelpuntenmakerResultaatInput(p.eersteDoelpuntenmakerResultaat ?? "");
         setEersteDoelpuntenminuutResultaatInput(p.eersteDoelpuntenminuutResultaat ?? null);
         const clResult = p.resultaten["CL1"];
-        setClFinaleThuis(clResult?.thuis ?? 0);
-        setClFinaleUit(clResult?.uit ?? 0);
+        setClFinaleThuis(clResult ? String(clResult.thuis) : "");
+        setClFinaleUit(clResult ? String(clResult.uit) : "");
       });
     });
   }, [code, router]);
@@ -100,14 +100,14 @@ export default function InstellingenPagina() {
   }
 
   async function slaClFinaleResultaatOp() {
-    if (!poule) return;
+    if (!poule || clFinaleThuis === "" || clFinaleUit === "") return;
     setClBezig(true);
     setClFout("");
     try {
       const res = await fetch(`/api/poules/${code}/resultaat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wedstrijdId: "CL1", thuis: clFinaleThuis, uit: clFinaleUit }),
+        body: JSON.stringify({ wedstrijdId: "CL1", thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -309,9 +309,9 @@ export default function InstellingenPagina() {
                   <p className="text-sm font-semibold text-white mb-1">CL Finale uitslag</p>
                   <p className="text-xs text-zinc-500 mb-3">PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal — vul de eindstand in na de wedstrijd</p>
                   <div className="flex items-center gap-2">
-                    <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(parseInt(e.target.value) || 0); setClFout(""); }} placeholder="PSG" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                    <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
                     <span className="text-zinc-600 font-bold">–</span>
-                    <input type="number" min={0} value={clFinaleUit} onChange={(e) => { setClFinaleUit(parseInt(e.target.value) || 0); setClFout(""); }} placeholder="ARS" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                    <input type="number" min={0} value={clFinaleUit} onChange={(e) => { setClFinaleUit(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
                     <button onClick={slaClFinaleResultaatOp} disabled={clBezig} className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">
                       {clBezig ? "Opslaan..." : "Opslaan"}
                     </button>
