@@ -60,6 +60,8 @@ const CL_FINALE_SPELERS: Speler[] = [
   { naam: "Myles Lewis-Skelly",     positie: "VER", team: "Arsenal" },
   { naam: "Piero Hincapié",         positie: "VER", team: "Arsenal" },
   { naam: "Cristhian Mosquera",     positie: "VER", team: "Arsenal" },
+  { naam: "Jurrien Timber",         positie: "VER", team: "Arsenal" },
+  { naam: "Ben White",              positie: "VER", team: "Arsenal" },
   // ── Arsenal – Doelmannen ──────────────────────────────────
   { naam: "David Raya",             positie: "DOE", team: "Arsenal" },
   { naam: "Kepa Arrizabalaga",      positie: "DOE", team: "Arsenal" },
