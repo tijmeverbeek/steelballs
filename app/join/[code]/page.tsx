@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, joinPoule } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 
 export default function JoinPagina() {
   const { code } = useParams<{ code: string }>();
@@ -13,11 +14,19 @@ export default function JoinPagina() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    getPoule(code).then((p) => {
+    async function load() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const p = await getPoule(code);
       if (!p) { setNotFound(true); return; }
+      if (user && p.deelnemers.some((d) => d.userId === user.id)) {
+        router.replace(`/poule/${code}`);
+        return;
+      }
       setPoulenaam(p.naam);
-    });
-  }, [code]);
+    }
+    load();
+  }, [code, router]);
 
   async function handleJoin() {
     setLoading(true);
