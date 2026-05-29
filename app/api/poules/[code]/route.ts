@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ code: s
           include: {
             voorspellingen: true,
             lmsPicks: true,
-            user: { select: { gebruikersnaam: true, email: true } },
+            user: { select: { gebruikersnaam: true, email: true, naam: true } },
           },
         },
       },

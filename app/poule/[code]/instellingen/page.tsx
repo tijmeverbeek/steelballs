@@ -41,6 +41,7 @@ export default function InstellingenPagina() {
   const [lmsVerwerkRonde, setLmsVerwerkRonde] = useState<number | null>(null);
   const [lmsVerwerkBezig, setLmsVerwerkBezig] = useState(false);
   const [lmsVerwerkResultaat, setLmsVerwerkResultaat] = useState<{ verwerkt: number; ontbreekt: number } | null>(null);
+  const [betaaldBezig, setBetaaldBezig] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -166,6 +167,29 @@ export default function InstellingenPagina() {
       alert("Verwijderen mislukt. Probeer het opnieuw.");
     } finally {
       setVerwijderDeelnemerId(null);
+    }
+  }
+
+  async function toggleBetaald(deelnemerId: string, huidigeBetaald: boolean) {
+    if (!poule) return;
+    setBetaaldBezig(deelnemerId);
+    try {
+      const res = await fetch(`/api/poules/${code}/deelnemers/${deelnemerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betaald: !huidigeBetaald }),
+      });
+      if (!res.ok) throw new Error();
+      setPoule({
+        ...poule,
+        deelnemers: poule.deelnemers.map((d) =>
+          d.id === deelnemerId ? { ...d, betaald: !huidigeBetaald } : d
+        ),
+      });
+    } catch {
+      alert("Betaald-status bijwerken mislukt. Probeer het opnieuw.");
+    } finally {
+      setBetaaldBezig(null);
     }
   }
 
@@ -427,25 +451,46 @@ export default function InstellingenPagina() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800">
             <h2 className="font-bold text-white">Deelnemers</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">Verwijder deelnemers die niet mee mogen doen</p>
+            <p className="text-xs text-zinc-500 mt-0.5">Beheer deelnemers en markeer wie betaald heeft</p>
+            {poule.deelnemers.length > 0 && (
+              <p className="text-xs text-zinc-400 mt-1">
+                {poule.deelnemers.filter((d) => d.betaald).length} van {poule.deelnemers.length} betaald
+              </p>
+            )}
           </div>
           <div className="divide-y divide-zinc-800">
             {poule.deelnemers.map((d) => {
-              const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
+              const weergavenaam = d.user.naam
+                ? `${d.user.naam} (${d.user.gebruikersnaam ?? d.user.email.split("@")[0]})`
+                : (d.user.gebruikersnaam ?? d.user.email.split("@")[0]);
+              const isBetaald = d.betaald ?? false;
               return (
                 <div key={d.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                  <span className="text-sm text-zinc-300 truncate">{naam}</span>
-                  {verwijderDeelnemerId === d.id ? (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-xs text-zinc-400">Zeker?</span>
-                      <button onClick={() => verwijderDeelnemer(d.id)} className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">Ja</button>
-                      <button onClick={() => setVerwijderDeelnemerId(null)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">Nee</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setVerwijderDeelnemerId(d.id)} className="text-xs text-red-400 hover:text-red-300 font-medium transition-colors flex-shrink-0">
-                      Verwijderen
+                  <span className="text-sm text-zinc-300 truncate flex-1">{weergavenaam}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => toggleBetaald(d.id, isBetaald)}
+                      disabled={betaaldBezig === d.id}
+                      className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors border ${
+                        isBetaald
+                          ? "bg-green-500/20 border-green-500/40 text-green-400 hover:bg-green-500/30"
+                          : "bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300"
+                      } disabled:opacity-50`}
+                    >
+                      {betaaldBezig === d.id ? "..." : isBetaald ? "Betaald ✓" : "Niet betaald"}
                     </button>
-                  )}
+                    {verwijderDeelnemerId === d.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-zinc-400">Zeker?</span>
+                        <button onClick={() => verwijderDeelnemer(d.id)} className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">Ja</button>
+                        <button onClick={() => setVerwijderDeelnemerId(null)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">Nee</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setVerwijderDeelnemerId(d.id)} className="text-xs text-red-400 hover:text-red-300 font-medium transition-colors">
+                        Verwijderen
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -464,9 +509,16 @@ export default function InstellingenPagina() {
               <span>✓</span><span>Toernooi is afgerond</span>
             </div>
           ) : (
-            <button onClick={rondeAf} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-colors">
-              🏆 Toernooi afronden
-            </button>
+            <>
+              {poule.deelnemers.some((d) => !d.betaald) && (
+                <p className="text-xs text-yellow-400 mb-3">
+                  ⚠ {poule.deelnemers.filter((d) => !d.betaald).length} deelnemer{poule.deelnemers.filter((d) => !d.betaald).length !== 1 ? "s zijn" : " is"} niet als betaald gemarkeerd en telt niet mee
+                </p>
+              )}
+              <button onClick={rondeAf} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-colors">
+                🏆 Toernooi afronden
+              </button>
+            </>
           )}
         </div>
 

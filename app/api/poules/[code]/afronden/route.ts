@@ -23,7 +23,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ code: 
   const resultatenMap: Record<string, { thuis: number; uit: number }> = {};
   resultaten.forEach((r) => { resultatenMap[r.wedstrijdId] = { thuis: r.thuis, uit: r.uit }; });
 
-  const gesorteerd = poule.deelnemers
+  const betaaldeDeelnemers = poule.deelnemers.filter((d) => d.betaald);
+  if (betaaldeDeelnemers.length === 0) {
+    return NextResponse.json({ error: "Geen betaalde deelnemers om af te ronden" }, { status: 400 });
+  }
+
+  const gesorteerd = betaaldeDeelnemers
     .map((d) => ({
       userId: d.userId,
       punten: berekenPunten(d.voorspellingen, resultatenMap, d, poule),

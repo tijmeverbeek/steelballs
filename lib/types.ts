@@ -31,7 +31,7 @@ export interface LmsPick {
 export interface Deelnemer {
   id: string;
   userId: string;
-  user: { gebruikersnaam: string | null; email: string };
+  user: { gebruikersnaam: string | null; email: string; naam?: string | null };
   voorspellingen: Voorspelling[];
   topscorerVoorspelling?: string | null;
   geleKaartenVoorspelling?: string | null;
@@ -41,6 +41,7 @@ export interface Deelnemer {
   lmsActief?: boolean;
   lmsUitgeschakeldRonde?: number | null;
   lmsPicks?: LmsPick[];
+  betaald?: boolean;
 }
 
 export interface Poule {
