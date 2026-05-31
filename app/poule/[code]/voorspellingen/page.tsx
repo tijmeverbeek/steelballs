@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { getWedstrijdenVoorSoort } from "@/lib/matches";
+import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
@@ -409,45 +409,59 @@ export default function VoorspellingenPagina() {
                   />
                 </div>
               )}
-              {poule?.eersteDoelpuntenmakerActief && (
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-white">Eerste doelpuntenmaker</label>
-                    <span className="text-xs text-yellow-500 font-semibold">{EERSTE_DOELPUNTENMAKER_PUNTEN} pt</span>
-                  </div>
-                  <p className="text-xs text-zinc-500 mb-2">Wie scoort het eerste doelpunt van de CL finale?</p>
-                  <SpelerAutocomplete
-                    soort={poule.soort ?? "wk"}
-                    value={eersteDoelpuntenmakerInput}
-                    onChange={updateEersteDoelpuntenmaker}
-                    placeholder="Kies een speler..."
-                  />
-                </div>
-              )}
-              {poule?.eersteDoelpuntenminuutActief && (
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-white">Minuut eerste doelpunt</label>
-                    <span className="text-xs text-zinc-500 font-semibold">tiebreaker</span>
-                  </div>
-                  <p className="text-xs text-zinc-500 mb-2">In welke minuut valt het eerste doelpunt? Bij gelijke stand wordt degene met de nauwkeurigste minuut hoger geplaatst.</p>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={eersteDoelpuntenminuutInput ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.value === "" ? null : parseInt(e.target.value);
-                        updateEersteDoelpuntenminuut(v && v > 0 ? v : null);
-                      }}
-                      placeholder="bijv. 34"
-                      className="w-32 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                    />
-                    <span className="text-sm text-zinc-500">minuut (1–120)</span>
-                  </div>
-                </div>
-              )}
+              {(poule?.eersteDoelpuntenmakerActief || poule?.eersteDoelpuntenminuutActief) && (() => {
+                const clGestart = isGestart(CL_FINALE);
+                return (
+                  <>
+                    {clGestart && (
+                      <div className="px-5 py-3 flex items-center gap-1.5">
+                        <span className="text-xs text-zinc-500">🔒</span>
+                        <span className="text-xs text-zinc-500">Wedstrijd gestart — bonus voorspellingen gesloten</span>
+                      </div>
+                    )}
+                    {poule?.eersteDoelpuntenmakerActief && (
+                      <div className={`px-5 py-4 ${clGestart ? "opacity-50 pointer-events-none" : ""}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-semibold text-white">Eerste doelpuntenmaker</label>
+                          <span className="text-xs text-yellow-500 font-semibold">{EERSTE_DOELPUNTENMAKER_PUNTEN} pt</span>
+                        </div>
+                        <p className="text-xs text-zinc-500 mb-2">Wie scoort het eerste doelpunt van de CL finale?</p>
+                        <SpelerAutocomplete
+                          soort={poule.soort ?? "wk"}
+                          value={eersteDoelpuntenmakerInput}
+                          onChange={updateEersteDoelpuntenmaker}
+                          placeholder="Kies een speler..."
+                        />
+                      </div>
+                    )}
+                    {poule?.eersteDoelpuntenminuutActief && (
+                      <div className={`px-5 py-4 ${clGestart ? "opacity-50 pointer-events-none" : ""}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-semibold text-white">Minuut eerste doelpunt</label>
+                          <span className="text-xs text-zinc-500 font-semibold">tiebreaker</span>
+                        </div>
+                        <p className="text-xs text-zinc-500 mb-2">In welke minuut valt het eerste doelpunt? Bij gelijke stand wordt degene met de nauwkeurigste minuut hoger geplaatst.</p>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            min={1}
+                            max={120}
+                            disabled={clGestart}
+                            value={eersteDoelpuntenminuutInput ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value === "" ? null : parseInt(e.target.value);
+                              updateEersteDoelpuntenminuut(v && v > 0 ? v : null);
+                            }}
+                            placeholder="bijv. 34"
+                            className="w-32 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:opacity-50"
+                          />
+                          <span className="text-sm text-zinc-500">minuut (1–120)</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
