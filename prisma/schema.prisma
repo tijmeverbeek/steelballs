@@ -12,8 +12,10 @@ model User {
   id             String      @id
   email          String      @unique
   gebruikersnaam String?     @unique
+  naam           String?
   aangemaaktOp   DateTime    @default(now())
   aantalWinsten  Int         @default(0)
+  isAdmin        Boolean     @default(false)
   deelnemers     Deelnemer[]
 }
 
@@ -51,8 +53,24 @@ model Deelnemer {
   toernooiwinaarVoorspelling           String?
   eersteDoelpuntenmakerVoorspelling    String?
   eersteDoelpuntenminuutVoorspelling   Int?
+  lmsPicks                LmsPick[]
+  lmsActief               Boolean        @default(true)
+  lmsUitgeschakeldRonde   Int?
+  betaald                 Boolean        @default(false)
 
   @@unique([userId, pouleId])
+}
+
+model LmsPick {
+  id          String    @id @default(cuid())
+  deelnemerId String
+  deelnemer   Deelnemer @relation(fields: [deelnemerId], references: [id])
+  rondeNr     Int
+  teamCode    String
+  wedstrijdId String
+  uitkomst    String?   // "win" | "verlies" | "gelijk" | null (pending)
+
+  @@unique([deelnemerId, rondeNr])
 }
 
 model Voorspelling {
@@ -76,4 +94,21 @@ model TournamentStat {
   type         String   @id
   waarde       String
   bijgewerktOp DateTime @updatedAt
+}
+
+model FeatureFlag {
+  naam         String   @id
+  aanGezet     Boolean  @default(false)
+  beschrijving String   @default("")
+  bijgewerktOp DateTime @updatedAt
+}
+
+model Speler {
+  id      String @id @default(cuid())
+  naam    String
+  positie String
+  team    String
+  soort   String
+
+  @@unique([naam, team, soort])
 }

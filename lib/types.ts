@@ -2,6 +2,7 @@ export interface Team {
   code: string;
   naam: string;
   vlag: string;
+  logo?: string; // URL naar clublogo; als afwezig: toon vlag emoji
 }
 
 export interface Wedstrijd {
@@ -20,16 +21,27 @@ export interface Voorspelling {
   uit: number | null;
 }
 
+export interface LmsPick {
+  rondeNr: number;
+  teamCode: string;
+  wedstrijdId: string;
+  uitkomst: string | null;
+}
+
 export interface Deelnemer {
   id: string;
   userId: string;
-  user: { gebruikersnaam: string | null; email: string };
+  user: { gebruikersnaam: string | null; email: string; naam?: string | null; isAdmin?: boolean };
   voorspellingen: Voorspelling[];
   topscorerVoorspelling?: string | null;
   geleKaartenVoorspelling?: string | null;
   toernooiwinaarVoorspelling?: string | null;
   eersteDoelpuntenmakerVoorspelling?: string | null;
   eersteDoelpuntenminuutVoorspelling?: number | null;
+  lmsActief?: boolean;
+  lmsUitgeschakeldRonde?: number | null;
+  lmsPicks?: LmsPick[];
+  betaald?: boolean;
 }
 
 export interface Poule {

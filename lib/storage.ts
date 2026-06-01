@@ -5,6 +5,11 @@ export const GELE_KAARTEN_PUNTEN = 5;
 export const TOERNOOIWINNAAR_PUNTEN = 20;
 export const EERSTE_DOELPUNTENMAKER_PUNTEN = 10;
 
+// CL Finale heeft eigen puntentelling (maar 1 wedstrijd)
+export const CL_SCORE_PUNTEN = 10;
+export const CL_DOELPUNTENMAKER_PUNTEN = 5;
+export const CL_MINUUT_PUNTEN = 2;
+
 function normaliseer(s: string): string {
   return s
     .toLowerCase()
@@ -27,7 +32,6 @@ function matchNaam(a: string, b: string): boolean {
   return false;
 }
 
-// Exacte score: 3 pt, juiste uitslag: 1 pt, bonuscategorieën: vaste punten per categorie
 export function berekenPunten(
   voorspellingen: Voorspelling[],
   resultaten: Record<string, { thuis: number; uit: number }>,
@@ -36,30 +40,37 @@ export function berekenPunten(
     geleKaartenVoorspelling?: string | null;
     toernooiwinaarVoorspelling?: string | null;
     eersteDoelpuntenmakerVoorspelling?: string | null;
+    eersteDoelpuntenminuutVoorspelling?: number | null;
   },
   poule?: {
+    soort?: string;
     topscorerActief?: boolean;
     geleKaartenActief?: boolean;
     toernooiwinaarActief?: boolean;
     eersteDoelpuntenmakerActief?: boolean;
+    eersteDoelpuntenminuutActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
     toernooiwinaarResultaat?: string | null;
     eersteDoelpuntenmakerResultaat?: string | null;
+    eersteDoelpuntenminuutResultaat?: number | null;
   }
 ): number {
+  const isClFinale = poule?.soort === "cl_finale";
   let punten = 0;
+
   for (const vp of voorspellingen) {
     const resultaat = resultaten[vp.wedstrijdId];
     if (!resultaat || vp.thuis === null || vp.uit === null) continue;
     if (vp.thuis === resultaat.thuis && vp.uit === resultaat.uit) {
-      punten += 3;
+      punten += isClFinale ? CL_SCORE_PUNTEN : 3;
     } else {
       const uitslag = Math.sign(resultaat.thuis - resultaat.uit);
       const vpUitslag = Math.sign((vp.thuis ?? 0) - (vp.uit ?? 0));
       if (uitslag === vpUitslag) punten += 1;
     }
   }
+
   if (poule?.topscorerActief && poule.topscorerResultaat && deelnemer?.topscorerVoorspelling
     && matchNaam(poule.topscorerResultaat, deelnemer.topscorerVoorspelling)) {
     punten += TOPSCORER_PUNTEN;
@@ -74,8 +85,14 @@ export function berekenPunten(
   }
   if (poule?.eersteDoelpuntenmakerActief && poule.eersteDoelpuntenmakerResultaat && deelnemer?.eersteDoelpuntenmakerVoorspelling
     && matchNaam(poule.eersteDoelpuntenmakerResultaat, deelnemer.eersteDoelpuntenmakerVoorspelling)) {
-    punten += EERSTE_DOELPUNTENMAKER_PUNTEN;
+    punten += isClFinale ? CL_DOELPUNTENMAKER_PUNTEN : EERSTE_DOELPUNTENMAKER_PUNTEN;
   }
+  if (isClFinale && poule?.eersteDoelpuntenminuutActief && poule.eersteDoelpuntenminuutResultaat != null
+    && deelnemer?.eersteDoelpuntenminuutVoorspelling != null
+    && deelnemer.eersteDoelpuntenminuutVoorspelling === poule.eersteDoelpuntenminuutResultaat) {
+    punten += CL_MINUUT_PUNTEN;
+  }
+
   return punten;
 }
 
