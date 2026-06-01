@@ -12,6 +12,27 @@ interface AdminStats {
   voorspellingen: number;
 }
 
+interface SyncTestRapport {
+  apiQuota?: { gebruikt: number; limiet: number; resterend: number; fout?: string };
+  clFinale?: {
+    gevonden?: false;
+    fixtureId?: number;
+    uitslag?: string;
+    aantalGoals?: number;
+    eersteGoal?: { speler: string; minuut: number; detail: string } | null;
+    dbUitslag?: string | null;
+    dryRun?: { uitslag: string; eersteDoelpuntenmaker: string | null; eersteDoelpuntenminuut: number | null };
+    poules?: Array<{ naam: string; afgerond: boolean; eersteDoelpuntenmakerActief: boolean; eersteDoelpuntenmakerResultaat: string | null; eersteDoelpuntenminuutResultaat: number | null }>;
+    fout?: string;
+  };
+  wk?: {
+    aantalAfgelopen: number;
+    eersteVerwachteWedstrijd: string | null;
+    fixtures: Array<{ thuis: string; uit: string; thuisCode: string | null; uitCode: string | null; wedstrijdId: string | null; score: string; status: string }>;
+    fout?: string;
+  };
+}
+
 function AdminNav({ active }: { active: string }) {
   const tabs = [
     { label: "Dashboard", href: "/admin" },
@@ -46,6 +67,8 @@ export default function AdminDashboard() {
   const [syncSpelersResult, setSyncSpelersResult] = useState<string | null>(null);
   const [syncingAlles, setSyncingAlles] = useState(false);
   const [syncAllesResult, setSyncAllesResult] = useState<string | null>(null);
+  const [testingSync, setTestingSync] = useState(false);
+  const [testRapport, setTestRapport] = useState<SyncTestRapport | null>(null);
 
   async function syncSpelers() {
     setSyncingSpelers(true);
@@ -59,6 +82,20 @@ export default function AdminDashboard() {
       setSyncSpelersResult("Verbindingsfout");
     } finally {
       setSyncingSpelers(false);
+    }
+  }
+
+  async function runSyncTest() {
+    setTestingSync(true);
+    setTestRapport(null);
+    try {
+      const res = await fetch("/api/admin/sync-test");
+      if (res.ok) setTestRapport(await res.json());
+      else setTestRapport({ apiQuota: { gebruikt: 0, limiet: 0, resterend: 0, fout: `HTTP ${res.status}` } });
+    } catch {
+      setTestRapport({ apiQuota: { gebruikt: 0, limiet: 0, resterend: 0, fout: "Verbindingsfout" } });
+    } finally {
+      setTestingSync(false);
     }
   }
 
@@ -216,6 +253,121 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Dry-run test */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mt-4">
+          <div className="flex items-start justify-between mb-1">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Sync dry-run</p>
+            <span className="text-xs text-zinc-600">schrijft niks — alleen lezen</span>
+          </div>
+          <p className="text-xs text-zinc-600 mb-4">Toont wat de API teruggeeft en wat er al in de database staat, zonder iets te wijzigen.</p>
+          <button
+            onClick={runSyncTest}
+            disabled={testingSync}
+            className="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors"
+          >
+            {testingSync ? "Ophalen…" : "API & DB controleren"}
+          </button>
+
+          {testRapport && (
+            <div className="mt-4 space-y-4 text-xs">
+
+              {/* API quota */}
+              {testRapport.apiQuota && (
+                <div className="bg-zinc-800 rounded-xl p-4">
+                  <p className="font-semibold text-zinc-300 mb-2">API quota</p>
+                  {testRapport.apiQuota.fout ? (
+                    <p className="text-red-400">{testRapport.apiQuota.fout}</p>
+                  ) : (
+                    <p className="text-zinc-400">
+                      {testRapport.apiQuota.gebruikt} / {testRapport.apiQuota.limiet} gebruikt
+                      <span className="text-zinc-500 ml-2">({testRapport.apiQuota.resterend} resterend)</span>
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* CL Finale */}
+              {testRapport.clFinale && (
+                <div className="bg-zinc-800 rounded-xl p-4">
+                  <p className="font-semibold text-zinc-300 mb-2">CL Finale (UCL league 2 / seizoen 2025)</p>
+                  {testRapport.clFinale.gevonden === false ? (
+                    <p className="text-yellow-400">Fixture niet gevonden in api-football</p>
+                  ) : testRapport.clFinale.fout ? (
+                    <p className="text-red-400">{testRapport.clFinale.fout}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex gap-6">
+                        <span className="text-zinc-400">Uitslag API: <span className="text-white font-semibold">{testRapport.clFinale.uitslag}</span></span>
+                        <span className="text-zinc-400">Uitslag DB: <span className="text-white font-semibold">{testRapport.clFinale.dbUitslag ?? "–"}</span></span>
+                        <span className="text-zinc-400">{testRapport.clFinale.aantalGoals} goals in events</span>
+                      </div>
+                      {testRapport.clFinale.eersteGoal ? (
+                        <p className="text-zinc-400">
+                          Eerste goal: <span className="text-white font-semibold">{testRapport.clFinale.eersteGoal.speler}</span>
+                          <span className="text-zinc-500 ml-2">{testRapport.clFinale.eersteGoal.minuut}&apos;</span>
+                          <span className="text-zinc-600 ml-2">({testRapport.clFinale.eersteGoal.detail})</span>
+                        </p>
+                      ) : (
+                        <p className="text-yellow-400">Geen scorende goal gevonden in events</p>
+                      )}
+                      {testRapport.clFinale.poules && testRapport.clFinale.poules.length > 0 && (
+                        <div className="mt-2 border-t border-zinc-700 pt-2">
+                          <p className="text-zinc-500 mb-1">Poules (cl_finale)</p>
+                          {testRapport.clFinale.poules.map((p) => (
+                            <div key={p.naam} className="flex flex-wrap gap-x-4 gap-y-0.5 text-zinc-400 py-0.5">
+                              <span className="font-medium text-zinc-300">{p.naam}</span>
+                              <span>{p.afgerond ? "✓ afgerond" : "actief"}</span>
+                              {p.eersteDoelpuntenmakerActief && (
+                                <span>
+                                  1e doelpuntenmaker: <span className={p.eersteDoelpuntenmakerResultaat ? "text-green-400" : "text-zinc-500"}>{p.eersteDoelpuntenmakerResultaat ?? "niet ingevuld"}</span>
+                                  {p.eersteDoelpuntenminuutResultaat != null && <span className="text-zinc-500 ml-1">(min. {p.eersteDoelpuntenminuutResultaat})</span>}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* WK */}
+              {testRapport.wk && (
+                <div className="bg-zinc-800 rounded-xl p-4">
+                  <p className="font-semibold text-zinc-300 mb-2">WK 2026 (league {process.env.NEXT_PUBLIC_FOOTBALL_LEAGUE_ID ?? "1"} / seizoen 2026)</p>
+                  {testRapport.wk.fout ? (
+                    <p className="text-red-400">{testRapport.wk.fout}</p>
+                  ) : (
+                    <div className="space-y-1 text-zinc-400">
+                      <p>{testRapport.wk.aantalAfgelopen} afgeronde fixtures gevonden</p>
+                      <p>Eerste verwachte wedstrijd: <span className="text-zinc-300">{testRapport.wk.eersteVerwachteWedstrijd ?? "–"}</span></p>
+                      {testRapport.wk.fixtures.length > 0 ? (
+                        <div className="mt-2 space-y-0.5 max-h-40 overflow-y-auto">
+                          {testRapport.wk.fixtures.map((f, i) => (
+                            <div key={i} className="flex gap-3">
+                              <span className="text-zinc-500 w-6">{f.status}</span>
+                              <span>{f.thuis} vs {f.uit}</span>
+                              <span className="text-white">{f.score}</span>
+                              <span className={f.wedstrijdId ? "text-green-400" : "text-red-400"}>
+                                {f.wedstrijdId ?? `! ${f.thuisCode ?? "?"} / ${f.uitCode ?? "?"} niet gemapped`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-zinc-500 italic">Nog geen wedstrijden gespeeld (WK start 11 juni)</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
