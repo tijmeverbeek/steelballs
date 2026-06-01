@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getAfgelopenEnLiveWedstrijden, API_NAAM_NAAR_CODE } from "@/lib/football-api";
+import {
+  getAfgelopenEnLiveWedstrijden,
+  getAfgelopenEnLiveWedstrijdenVoorLeague,
+  API_NAAM_NAAR_CODE,
+  UCL_LEAGUE_ID,
+  UCL_SEASON,
+  UCL_NAAM_NAAR_CODE,
+} from "@/lib/football-api";
 import { wedstrijden } from "@/lib/matches";
+import { syncEersteDoelpuntenmakers } from "@/lib/sync-events";
 
 export const dynamic = "force-dynamic";
 
@@ -15,13 +23,14 @@ function isGeautoriseerd(req: Request): boolean {
   return false;
 }
 
-async function sync() {
-  const fixtures = await getAfgelopenEnLiveWedstrijden();
+async function syncFixtures(
+  fixtures: Awaited<ReturnType<typeof getAfgelopenEnLiveWedstrijden>>,
+  naamNaarCode: Record<string, string>
+): Promise<number> {
   let bijgewerkt = 0;
-
   for (const fixture of fixtures) {
-    const thuisCode = API_NAAM_NAAR_CODE[fixture.teams.home.name];
-    const uitCode = API_NAAM_NAAR_CODE[fixture.teams.away.name];
+    const thuisCode = naamNaarCode[fixture.teams.home.name];
+    const uitCode = naamNaarCode[fixture.teams.away.name];
     if (!thuisCode || !uitCode) continue;
 
     const wedstrijd = wedstrijden.find(
@@ -29,7 +38,6 @@ async function sync() {
     );
     if (!wedstrijd) continue;
 
-    // Live: gebruik goals; afgelopen: gebruik fulltime score
     const thuis = fixture.score.fulltime.home ?? fixture.goals.home;
     const uit = fixture.score.fulltime.away ?? fixture.goals.away;
     if (thuis === null || uit === null) continue;
@@ -40,6 +48,26 @@ async function sync() {
       create: { wedstrijdId: wedstrijd.id, thuis, uit },
     });
     bijgewerkt++;
+  }
+  return bijgewerkt;
+}
+
+async function sync() {
+  let bijgewerkt = 0;
+
+  // WK uitslagen
+  const wkFixtures = await getAfgelopenEnLiveWedstrijden();
+  bijgewerkt += await syncFixtures(wkFixtures, API_NAAM_NAAR_CODE);
+
+  // UCL (CL Finale)
+  const uclFixtures = await getAfgelopenEnLiveWedstrijdenVoorLeague(UCL_LEAGUE_ID, UCL_SEASON);
+  bijgewerkt += await syncFixtures(uclFixtures, UCL_NAAM_NAAR_CODE);
+
+  // Eerste doelpuntenmaker + minuut (no-op when already set or match not finished)
+  try {
+    await syncEersteDoelpuntenmakers();
+  } catch {
+    // don't fail the main sync if events sync fails
   }
 
   return bijgewerkt;

@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     data: {
       naam,
       code,
-      soort: soort === "cl_finale" ? "cl_finale" : "wk",
+      soort: ["cl_finale", "lms"].includes(soort) ? soort : "wk",
       organisatorId: authUser.id,
       deelnemers: {
         create: { userId: authUser.id },

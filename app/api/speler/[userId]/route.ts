@@ -24,6 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ userId:
 
   return NextResponse.json({
     gebruikersnaam: user.gebruikersnaam,
+    naam: user.naam,
     email: user.email,
     aantalWinsten: user.aantalWinsten,
     aantalPoules: user.deelnemers.length,
