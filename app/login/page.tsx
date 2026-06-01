@@ -1,13 +1,17 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") ?? "/";
+
+  const [mode, setMode] = useState<"inloggen" | "registreren">("inloggen");
   const [email, setEmail] = useState("");
-  const [verzonden, setVerzonden] = useState(false);
+  const [wachtwoord, setWachtwoord] = useState("");
   const [loading, setLoading] = useState<"google" | "email" | null>(null);
   const [error, setError] = useState("");
 
@@ -15,7 +19,6 @@ function LoginForm() {
     setLoading("google");
     setError("");
     const supabase = createClient();
-    const redirect = searchParams.get("redirect") ?? "/";
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -28,67 +31,90 @@ function LoginForm() {
     }
   }
 
+  async function ensureUserAndRedirect() {
+    const res = await fetch("/api/auth/ensure-user", { method: "POST" });
+    const data = await res.json();
+    router.push(data.needsSetup ? `/setup?redirect=${redirect}` : redirect);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !wachtwoord) return;
     setLoading("email");
     setError("");
 
     const supabase = createClient();
-    const redirect = searchParams.get("redirect") ?? "/";
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${redirect}`,
-      },
-    });
 
-    if (error) {
-      setError("Er ging iets mis. Probeer het opnieuw.");
-      setLoading(null);
-      return;
+    if (mode === "inloggen") {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: wachtwoord,
+      });
+      if (error) {
+        setError("E-mailadres of wachtwoord klopt niet.");
+        setLoading(null);
+        return;
+      }
+    } else {
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: wachtwoord,
+      });
+      if (error) {
+        const msg = error.message ?? "";
+        if (msg === "User already registered") {
+          setError("Dit e-mailadres is al in gebruik.");
+        } else if (msg.toLowerCase().includes("email") && msg.toLowerCase().includes("disabled")) {
+          setError("E-mail registratie is uitgeschakeld. Gebruik Google om in te loggen.");
+        } else if (msg.toLowerCase().includes("rate limit") || msg.toLowerCase().includes("over_email")) {
+          setError("Te veel pogingen. Wacht even en probeer het opnieuw.");
+        } else if (msg.toLowerCase().includes("password")) {
+          setError("Wachtwoord moet minimaal 6 tekens zijn.");
+        } else {
+          setError(`Er ging iets mis: ${msg}`);
+        }
+        setLoading(null);
+        return;
+      }
     }
 
-    setVerzonden(true);
-  }
-
-  if (verzonden) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-6">
-        <div className="w-full max-w-sm text-center">
-          <div className="text-5xl mb-6">📬</div>
-          <h1 className="text-2xl font-bold text-white mb-2">Check je mail!</h1>
-          <p className="text-zinc-400 text-sm leading-relaxed">
-            We hebben een link gestuurd naar <span className="text-white font-medium">{email}</span>.
-            Klik op de link in de mail om in te loggen.
-          </p>
-          <p className="text-zinc-600 text-xs mt-4">
-            Geen mail ontvangen? Check je spam of probeer opnieuw.
-          </p>
-          <button
-            onClick={() => setVerzonden(false)}
-            className="mt-6 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
-            ← Ander e-mailadres proberen
-          </button>
-        </div>
-      </div>
-    );
+    await ensureUserAndRedirect();
   }
 
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-black text-white tracking-tight">STEELBALLS</h1>
-          <p className="text-zinc-500 text-sm mt-1">WK Poule 2026</p>
+        <div className="flex justify-center mb-8">
+          <img src="/logo.png" alt="Stalenballen Cup" className="w-40 h-40 object-contain" />
         </div>
 
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
-          <div className="px-7 pt-7 pb-5">
-            <h2 className="text-xl font-bold text-white mb-4">Inloggen</h2>
+          {/* Tab switcher */}
+          <div className="flex border-b border-zinc-800">
+            <button
+              onClick={() => { setMode("inloggen"); setError(""); }}
+              className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${
+                mode === "inloggen"
+                  ? "text-white border-b-2 border-green-500 -mb-px"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Inloggen
+            </button>
+            <button
+              onClick={() => { setMode("registreren"); setError(""); }}
+              className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${
+                mode === "registreren"
+                  ? "text-white border-b-2 border-green-500 -mb-px"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Registreren
+            </button>
+          </div>
 
-            {/* Google knop */}
+          <div className="px-7 pt-6 pb-2">
+            {/* Google */}
             <button
               onClick={handleGoogle}
               disabled={loading !== null}
@@ -100,7 +126,11 @@ function LoginForm() {
                 <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
                 <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/>
               </svg>
-              {loading === "google" ? "Doorsturen..." : "Inloggen met Google"}
+              {loading === "google"
+                ? "Doorsturen..."
+                : mode === "inloggen"
+                ? "Inloggen met Google"
+                : "Registreren met Google"}
             </button>
 
             <div className="flex items-center gap-3 my-5">
@@ -108,10 +138,6 @@ function LoginForm() {
               <span className="text-xs text-zinc-600">of</span>
               <div className="flex-1 h-px bg-zinc-800" />
             </div>
-
-            <p className="text-zinc-400 text-sm mb-4">
-              Geen Google? Ontvang een inloglink per mail.
-            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="px-7 pb-7 space-y-4">
@@ -127,14 +153,42 @@ function LoginForm() {
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 required
               />
-              {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
             </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                Wachtwoord
+              </label>
+              <input
+                type="password"
+                value={wachtwoord}
+                onChange={(e) => setWachtwoord(e.target.value)}
+                placeholder="••••••••"
+                minLength={6}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                required
+              />
+            </div>
+            {error && <p className="text-red-400 text-xs">{error}</p>}
+            {mode === "inloggen" && (
+              <div className="text-right -mt-1">
+                <a
+                  href="/wachtwoord-vergeten"
+                  className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  Wachtwoord vergeten?
+                </a>
+              </div>
+            )}
             <button
               type="submit"
               disabled={loading !== null}
-              className="w-full bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors text-sm"
+              className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors text-sm"
             >
-              {loading === "email" ? "Versturen..." : "Stuur magic link →"}
+              {loading === "email"
+                ? "Even geduld..."
+                : mode === "inloggen"
+                ? "Inloggen →"
+                : "Account aanmaken →"}
             </button>
           </form>
         </div>

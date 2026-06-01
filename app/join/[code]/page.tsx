@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, joinPoule } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 
 export default function JoinPagina() {
   const { code } = useParams<{ code: string }>();
@@ -13,13 +14,27 @@ export default function JoinPagina() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    getPoule(code).then((p) => {
+    async function load() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const p = await getPoule(code);
       if (!p) { setNotFound(true); return; }
+      if (user && p.deelnemers.some((d) => d.userId === user.id)) {
+        router.replace(`/poule/${code}`);
+        return;
+      }
       setPoulenaam(p.naam);
-    });
-  }, [code]);
+    }
+    load();
+  }, [code, router]);
 
   async function handleJoin() {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push(`/login?redirect=/join/${code}`);
+      return;
+    }
     setLoading(true);
     try {
       const result = await joinPoule(code);
@@ -58,9 +73,9 @@ export default function JoinPagina() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-black text-white tracking-tight">
-            STEELBALLS
+            STALENBALLEN
           </Link>
-          <p className="text-zinc-500 text-sm mt-1">WK Poule 2026</p>
+          <p className="text-zinc-500 text-sm mt-1">Stalenballen Poule</p>
         </div>
 
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
@@ -70,7 +85,7 @@ export default function JoinPagina() {
             </p>
             <h1 className="text-2xl font-bold text-white">{poulenaam}</h1>
             <p className="text-zinc-400 text-sm mt-1 mb-6">
-              Doe mee en voorspel alle WK wedstrijden.
+              Doe mee en voorspel de wedstrijd.
             </p>
             <button
               onClick={handleJoin}
