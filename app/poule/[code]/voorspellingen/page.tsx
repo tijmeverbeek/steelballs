@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { getWedstrijdenVoorSoort } from "@/lib/matches";
+import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
@@ -17,13 +17,27 @@ function Stepper({
   value,
   onChange,
   color = "green",
+  disabled = false,
 }: {
   value: number | null;
   onChange: (v: number) => void;
   color?: "green" | "orange";
+  disabled?: boolean;
 }) {
   const activeBg = color === "green" ? "bg-green-500" : "bg-orange-500";
   const hasValue = value !== null;
+
+  if (disabled) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <div className="w-9 h-9" />
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-black bg-zinc-800/50 text-zinc-600">
+          {value ?? "—"}
+        </div>
+        <div className="w-9 h-9" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -91,6 +105,11 @@ export default function VoorspellingenPagina() {
 
       const geladen = await getPoule(code);
       if (!geladen) { router.push("/"); return; }
+
+      if ((geladen.soort ?? "wk") === "lms") {
+        router.push(`/poule/${code}/picks`);
+        return;
+      }
 
       setPoule(geladen);
       setPoulenaam(geladen.naam);
@@ -249,6 +268,16 @@ export default function VoorspellingenPagina() {
 
   const heeftBonusCategorieen = poule?.topscorerActief || poule?.geleKaartenActief || poule?.toernooiwinaarActief || poule?.eersteDoelpuntenmakerActief || poule?.eersteDoelpuntenminuutActief;
 
+  function isGestart(w: { datum: string; tijd: string }): boolean {
+    return new Date() >= new Date(`${w.datum}T${w.tijd}:00+02:00`);
+  }
+
+  function formatDeadline(w: { datum: string; tijd: string }): string {
+    return new Date(`${w.datum}T${w.tijd}:00`).toLocaleDateString("nl-NL", {
+      weekday: "short", day: "numeric", month: "short",
+    }) + " · " + w.tijd;
+  }
+
   if (!deelnemerid) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -380,45 +409,59 @@ export default function VoorspellingenPagina() {
                   />
                 </div>
               )}
-              {poule?.eersteDoelpuntenmakerActief && (
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-white">Eerste doelpuntenmaker</label>
-                    <span className="text-xs text-yellow-500 font-semibold">{EERSTE_DOELPUNTENMAKER_PUNTEN} pt</span>
-                  </div>
-                  <p className="text-xs text-zinc-500 mb-2">Wie scoort het eerste doelpunt van de CL finale?</p>
-                  <SpelerAutocomplete
-                    soort={poule.soort ?? "wk"}
-                    value={eersteDoelpuntenmakerInput}
-                    onChange={updateEersteDoelpuntenmaker}
-                    placeholder="Kies een speler..."
-                  />
-                </div>
-              )}
-              {poule?.eersteDoelpuntenminuutActief && (
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-white">Minuut eerste doelpunt</label>
-                    <span className="text-xs text-zinc-500 font-semibold">tiebreaker</span>
-                  </div>
-                  <p className="text-xs text-zinc-500 mb-2">In welke minuut valt het eerste doelpunt? Bij gelijke stand wordt degene met de nauwkeurigste minuut hoger geplaatst.</p>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={eersteDoelpuntenminuutInput ?? ""}
-                      onChange={(e) => {
-                        const v = e.target.value === "" ? null : parseInt(e.target.value);
-                        updateEersteDoelpuntenminuut(v && v > 0 ? v : null);
-                      }}
-                      placeholder="bijv. 34"
-                      className="w-32 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                    />
-                    <span className="text-sm text-zinc-500">minuut (1–120)</span>
-                  </div>
-                </div>
-              )}
+              {(poule?.eersteDoelpuntenmakerActief || poule?.eersteDoelpuntenminuutActief) && (() => {
+                const clGestart = isGestart(CL_FINALE);
+                return (
+                  <>
+                    {clGestart && (
+                      <div className="px-5 py-3 flex items-center gap-1.5">
+                        <span className="text-xs text-zinc-500">🔒</span>
+                        <span className="text-xs text-zinc-500">Wedstrijd gestart — bonus voorspellingen gesloten</span>
+                      </div>
+                    )}
+                    {poule?.eersteDoelpuntenmakerActief && (
+                      <div className={`px-5 py-4 ${clGestart ? "opacity-50 pointer-events-none" : ""}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-semibold text-white">Eerste doelpuntenmaker</label>
+                          <span className="text-xs text-yellow-500 font-semibold">{EERSTE_DOELPUNTENMAKER_PUNTEN} pt</span>
+                        </div>
+                        <p className="text-xs text-zinc-500 mb-2">Wie scoort het eerste doelpunt van de CL finale?</p>
+                        <SpelerAutocomplete
+                          soort={poule.soort ?? "wk"}
+                          value={eersteDoelpuntenmakerInput}
+                          onChange={updateEersteDoelpuntenmaker}
+                          placeholder="Kies een speler..."
+                        />
+                      </div>
+                    )}
+                    {poule?.eersteDoelpuntenminuutActief && (
+                      <div className={`px-5 py-4 ${clGestart ? "opacity-50 pointer-events-none" : ""}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-semibold text-white">Minuut eerste doelpunt</label>
+                          <span className="text-xs text-zinc-500 font-semibold">tiebreaker</span>
+                        </div>
+                        <p className="text-xs text-zinc-500 mb-2">In welke minuut valt het eerste doelpunt? Bij gelijke stand wordt degene met de nauwkeurigste minuut hoger geplaatst.</p>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number"
+                            min={1}
+                            max={120}
+                            disabled={clGestart}
+                            value={eersteDoelpuntenminuutInput ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value === "" ? null : parseInt(e.target.value);
+                              updateEersteDoelpuntenminuut(v && v > 0 ? v : null);
+                            }}
+                            placeholder="bijv. 34"
+                            className="w-32 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:opacity-50"
+                          />
+                          <span className="text-sm text-zinc-500">minuut (1–120)</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -449,20 +492,24 @@ export default function VoorspellingenPagina() {
                 {groepWedstrijden.map((w) => {
                   const vp = scores[w.id];
                   const heeftBeide = vp?.thuis !== null && vp?.uit !== null;
+                  const gestart = isGestart(w);
 
                   return (
                     <div
                       key={w.id}
-                      className={`px-5 py-5 transition-colors ${heeftBeide ? "bg-zinc-800/30" : ""}`}
+                      className={`px-5 py-5 transition-colors ${gestart ? "opacity-70" : heeftBeide ? "bg-zinc-800/30" : ""}`}
                     >
-                      <p className="text-xs text-zinc-600 text-center mb-4">
-                        {new Date(w.datum).toLocaleDateString("nl-NL", {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                        })}{" "}
-                        · {w.tijd}
-                      </p>
+                      {gestart ? (
+                        <div className="flex items-center justify-center gap-1.5 mb-3">
+                          <span className="text-xs text-zinc-500">🔒</span>
+                          <span className="text-xs text-zinc-500">Wedstrijd gestart — voorspelling gesloten</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1 mb-3">
+                          <span className="text-xs text-zinc-500">⏱</span>
+                          <span className="text-xs text-zinc-500">Sluit op <span className="text-zinc-400 font-medium">{formatDeadline(w)}</span></span>
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1 text-right">
@@ -475,12 +522,14 @@ export default function VoorspellingenPagina() {
                             value={vp?.thuis ?? null}
                             onChange={(v) => updateScore(w.id, "thuis", v)}
                             color="green"
+                            disabled={gestart}
                           />
                           <span className="text-zinc-700 font-bold text-lg">—</span>
                           <Stepper
                             value={vp?.uit ?? null}
                             onChange={(v) => updateScore(w.id, "uit", v)}
                             color="orange"
+                            disabled={gestart}
                           />
                         </div>
 

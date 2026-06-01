@@ -4,10 +4,12 @@ import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule } from "@/lib/api";
-import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
+import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, CL_MINUUT_PUNTEN } from "@/lib/storage";
 import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
-import { Poule, Deelnemer } from "@/lib/types";
+import { Poule, Deelnemer, LmsPick } from "@/lib/types";
+import { getWedstrijdenVoorRonde, LMS_RONDES } from "@/lib/lms";
+import { TeamLogo } from "@/components/TeamLogo";
 
 class ErrorBoundary extends Component<
   { children: React.ReactNode },
@@ -45,31 +47,21 @@ function deelnemerNaam(d: { user: { gebruikersnaam: string | null; email: string
   return d.user.gebruikersnaam ?? d.user.email.split("@")[0];
 }
 
-function Toggle({ aan, onChange }: { aan: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!aan)}
-      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${aan ? "bg-green-500" : "bg-zinc-700"}`}
-    >
-      <span
-        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${aan ? "translate-x-5" : ""}`}
-      />
-    </button>
-  );
-}
-
 type StandItem = {
   id: string;
   userId: string;
   gebruikersnaam: string | null;
   displayNaam: string;
+  isAdmin: boolean;
   punten: number;
   ingevuld: number;
   correctDoelpuntenmaker: boolean;
   minuutAfstand: number;
   eersteDoelpuntenmakerVoorspelling?: string | null;
   eersteDoelpuntenminuutVoorspelling?: number | null;
+  topscorerVoorspelling?: string | null;
+  geleKaartenVoorspelling?: string | null;
+  toernooiwinaarVoorspelling?: string | null;
   voorspellingen: Deelnemer["voorspellingen"];
 };
 
@@ -246,11 +238,139 @@ function EindstandModal({
   );
 }
 
+function LmsStand({
+  deelnemers,
+  mijnUserId,
+}: {
+  deelnemers: Deelnemer[];
+  mijnUserId: string | null;
+}) {
+  const actief = deelnemers.filter((d) => d.lmsActief !== false);
+  const uitgeschakeld = deelnemers
+    .filter((d) => d.lmsActief === false)
+    .sort((a, b) => (b.lmsUitgeschakeldRonde ?? 0) - (a.lmsUitgeschakeldRonde ?? 0));
+
+  function PickBadges({ picks }: { picks: LmsPick[] }) {
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {picks
+          .sort((a, b) => a.rondeNr - b.rondeNr)
+          .map((p) => {
+            const wedstrijden = getWedstrijdenVoorRonde(p.rondeNr);
+            const w = wedstrijden.find((x) => x.id === p.wedstrijdId);
+            const team = w ? (w.thuis.code === p.teamCode ? w.thuis : w.uit) : null;
+            return (
+              <span
+                key={p.rondeNr}
+                className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border ${
+                  p.uitkomst === "win"
+                    ? "bg-green-500/10 border-green-500/30 text-green-400"
+                    : p.uitkomst === "verlies" || p.uitkomst === "gelijk"
+                    ? "bg-red-500/10 border-red-500/30 text-red-400"
+                    : "bg-zinc-800 border-zinc-700 text-zinc-500"
+                }`}
+              >
+                {team?.vlag && <span>{team.vlag}</span>}
+                <span>{team?.naam ?? p.teamCode}</span>
+                {p.uitkomst === "win" && <span>✓</span>}
+                {(p.uitkomst === "verlies" || p.uitkomst === "gelijk") && <span>✗</span>}
+              </span>
+            );
+          })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-zinc-800">
+        <h2 className="font-bold text-white">Stand</h2>
+        <p className="text-xs text-zinc-500 mt-0.5">
+          {actief.length} speler{actief.length !== 1 ? "s" : ""} nog actief · {uitgeschakeld.length} uitgeschakeld
+        </p>
+      </div>
+
+      {actief.length > 0 && (
+        <div className="divide-y divide-zinc-800">
+          {actief.map((d) => {
+            const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
+            const picks = d.lmsPicks ?? [];
+            const winStreak = picks.filter((p) => p.uitkomst === "win").length;
+            return (
+              <div
+                key={d.id}
+                className={`px-5 py-3 ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-base w-7 text-center flex-shrink-0">🟢</span>
+                  <Initialen naam={naam} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">
+                      {naam}
+                      {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>}
+                      {d.user.isAdmin && <span className="ml-1.5 text-xs text-zinc-500 font-normal">beheerder</span>}
+                    </p>
+                    {picks.length > 0 && <PickBadges picks={picks} />}
+                  </div>
+                  {winStreak > 0 && (
+                    <div className="text-right flex-shrink-0">
+                      <span className="text-sm font-bold text-green-400">{winStreak}</span>
+                      <span className="text-xs text-zinc-600 ml-1">wins</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {uitgeschakeld.length > 0 && (
+        <>
+          <div className="px-5 py-2 bg-zinc-900/50 border-t border-zinc-800">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-600">Uitgeschakeld</p>
+          </div>
+          <div className="divide-y divide-zinc-800">
+            {uitgeschakeld.map((d) => {
+              const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
+              const picks = d.lmsPicks ?? [];
+              const ronde = LMS_RONDES.find((r) => r.nr === d.lmsUitgeschakeldRonde);
+              return (
+                <div key={d.id} className="px-5 py-3 opacity-50">
+                  <div className="flex items-center gap-3">
+                    <span className="text-base w-7 text-center flex-shrink-0">💀</span>
+                    <Initialen naam={naam} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-zinc-400 text-sm truncate">
+                        {naam}
+                        {d.userId === mijnUserId && <span className="ml-1.5 text-xs text-zinc-500 font-normal">jij</span>}
+                      </p>
+                      <p className="text-xs text-zinc-600 mt-0.5">
+                        Uitgeschakeld {ronde ? `in ${ronde.naam}` : `ronde ${d.lmsUitgeschakeldRonde}`}
+                      </p>
+                      {picks.length > 0 && <PickBadges picks={picks} />}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {deelnemers.length === 0 && (
+        <p className="px-5 py-4 text-sm text-zinc-600">Nog geen deelnemers.</p>
+      )}
+    </div>
+  );
+}
+
 function PoulePagina() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const [poule, setPoule] = useState<Poule | null>(null);
   const [mijnUserId, setMijnUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [gedeeld, setGedeeld] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [toonEindstand, setToonEindstand] = useState(false);
@@ -258,7 +378,12 @@ function PoulePagina() {
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setMijnUserId(user.id);
+      if (user) {
+        setMijnUserId(user.id);
+        fetch("/api/user").then((r) => r.json()).then((u) => {
+          if (u?.isAdmin) setIsAdmin(true);
+        }).catch(() => {});
+      }
     });
     getPoule(code).then((p) => {
       if (!p) { router.push("/"); return; }
@@ -279,7 +404,7 @@ function PoulePagina() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${poule?.naam} — Steelballs`,
+          title: `${poule?.naam} — Stalenballen`,
           text: poule?.soort === "cl_finale"
             ? `Doe mee aan de CL Finale poule "${poule?.naam}"! Voorspel de uitslag en bewijs wie de staalste ballen heeft.`
             : `Doe mee aan de WK poule "${poule?.naam}"! Voorspel alle wedstrijden en bewijs wie de staalste ballen heeft.`,
@@ -319,9 +444,10 @@ function PoulePagina() {
     );
   }
 
-  const isOrganisator = mijnUserId !== null && poule.organisatorId === mijnUserId;
+  const isOrganisator = mijnUserId !== null && (poule.organisatorId === mijnUserId || isAdmin);
   const huidigDeelnemer = poule.deelnemers.find((d) => d.userId === mijnUserId);
   const organisatorDeelnemer = poule.deelnemers.find((d) => d.userId === poule.organisatorId);
+  const organisatorIsBeheerder = organisatorDeelnemer?.user.isAdmin === true;
   const organisatorNaam = organisatorDeelnemer ? deelnemerNaam(organisatorDeelnemer) : null;
   const pouleWedstrijden = getWedstrijdenVoorSoort(poule.soort ?? "wk");
   const aantalWedstrijden = pouleWedstrijden.length;
@@ -335,18 +461,25 @@ function PoulePagina() {
       userId: d.userId,
       gebruikersnaam: d.user.gebruikersnaam,
       displayNaam: deelnemerNaam(d),
-      punten: berekenPunten(d.voorspellingen, poule.resultaten, d, poule),
+      isAdmin: d.user.isAdmin === true,
+      punten: poule.afgerond ? berekenPunten(d.voorspellingen, poule.resultaten, d, poule) : 0,
       ingevuld: d.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length,
       correctDoelpuntenmaker: heeftCorrectEersteDoelpuntenmaker(d, poule),
       minuutAfstand: berekenMinuutAfstand(d.eersteDoelpuntenminuutVoorspelling, poule.eersteDoelpuntenminuutResultaat),
       eersteDoelpuntenmakerVoorspelling: d.eersteDoelpuntenmakerVoorspelling,
       eersteDoelpuntenminuutVoorspelling: d.eersteDoelpuntenminuutVoorspelling,
+      topscorerVoorspelling: d.topscorerVoorspelling,
+      geleKaartenVoorspelling: d.geleKaartenVoorspelling,
+      toernooiwinaarVoorspelling: d.toernooiwinaarVoorspelling,
       voorspellingen: d.voorspellingen,
     }))
     .sort((a, b) => {
-      if (b.punten !== a.punten) return b.punten - a.punten;
-      if (a.correctDoelpuntenmaker !== b.correctDoelpuntenmaker) return a.correctDoelpuntenmaker ? -1 : 1;
-      return a.minuutAfstand - b.minuutAfstand;
+      if (poule.afgerond) {
+        if (b.punten !== a.punten) return b.punten - a.punten;
+        if (a.correctDoelpuntenmaker !== b.correctDoelpuntenmaker) return a.correctDoelpuntenmaker ? -1 : 1;
+        return a.minuutAfstand - b.minuutAfstand;
+      }
+      return b.ingevuld - a.ingevuld;
     });
 
   const eersteWedstrijden = pouleWedstrijden.slice(0, 6);
@@ -366,14 +499,16 @@ function PoulePagina() {
       <header className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-2xl mx-auto px-5 py-5">
           <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-300 font-medium transition-colors">
-            ← STEELBALLS
+            ← STALENBALLEN
           </Link>
           <div className="mt-3 flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-black text-white">{poule.naam}</h1>
               <p className="text-zinc-500 text-sm mt-0.5">
                 {poule.deelnemers.length} deelnemer{poule.deelnemers.length !== 1 ? "s" : ""}
-                {organisatorNaam && <> · Georganiseerd door {organisatorNaam}</>}
+                {organisatorIsBeheerder
+                  ? " · Georganiseerd door de beheerders"
+                  : organisatorNaam && <> · Georganiseerd door {organisatorNaam}</>}
               </p>
             </div>
             <button
@@ -416,8 +551,75 @@ function PoulePagina() {
           </div>
         )}
 
+        {/* ── Wedstrijden — verborgen voor LMS ── */}
+        {(poule.soort ?? "wk") !== "lms" && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+            <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
+            <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+              {(poule.soort ?? "wk") === "cl_finale" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
+            </Link>
+          </div>
+          <div className="divide-y divide-zinc-800">
+            {eersteWedstrijden.map((w) => {
+              const vpThuis = huidigDeelnemer?.voorspellingen.find((v) => v.wedstrijdId === w.id);
+              const heeftVp = vpThuis?.thuis != null && vpThuis?.uit != null;
+              return (
+                <div key={w.id} className="px-5 py-3.5 flex items-center gap-3">
+                  <Link href={`/wedstrijd/${w.id}`} className="flex-1 group">
+                    <p className="text-xs text-zinc-600 mb-1">
+                      {w.groep} · {new Date(w.datum).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} {w.tijd}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-sm font-semibold text-white group-hover:text-zinc-300 transition-colors">
+                      <TeamLogo team={w.thuis} size="xs" />
+                      <span>{w.thuis.naam}</span>
+                      <span className="text-zinc-600 font-normal mx-1">vs</span>
+                      <span>{w.uit.naam}</span>
+                      <TeamLogo team={w.uit} size="xs" />
+                    </div>
+                  </Link>
+                  {heeftVp ? (
+                    <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
+                      {vpThuis!.thuis} – {vpThuis!.uit}
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/poule/${code}/voorspellingen`}
+                      className="text-xs text-zinc-600 hover:text-zinc-400 whitespace-nowrap"
+                    >
+                      Voorspel →
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>}
+
+        {/* ── LMS: mijn pick CTA ── */}
+        {(poule.soort ?? "wk") === "lms" && huidigDeelnemer && (
+          <Link
+            href={`/poule/${code}/picks`}
+            className="bg-zinc-900 border border-green-500/40 hover:border-green-500 rounded-2xl p-5 flex items-center justify-between transition-colors group"
+          >
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-0.5">Last Man Standing</p>
+              <p className="font-bold text-white">
+                {(() => {
+                  const picks = huidigDeelnemer.lmsPicks ?? [];
+                  const wins = picks.filter((p) => p.uitkomst === "win").length;
+                  const actief = huidigDeelnemer.lmsActief !== false;
+                  if (!actief) return "Uitgeschakeld";
+                  if (wins === 0) return "Kies je eerste team →";
+                  return `${wins} win${wins !== 1 ? "s" : ""} — nog actief`;
+                })()}
+              </p>
+            </div>
+            <span className="text-green-400 text-lg group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+        )}
+
         {/* ── Jouw voorspellingen CTA ── */}
-        {huidigDeelnemer && (
+        {huidigDeelnemer && (poule.soort ?? "wk") !== "lms" && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -444,7 +646,7 @@ function PoulePagina() {
         )}
 
         {/* ── Bonus categorieën overzicht (voor deelnemers) ── */}
-        {heeftBonusCategorieen && huidigDeelnemer && (
+        {heeftBonusCategorieen && huidigDeelnemer && (poule.soort ?? "wk") !== "lms" && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <p className="text-xs font-semibold uppercase tracking-widest text-yellow-500 mb-3">Bonus voorspellingen</p>
             <div className="space-y-3">
@@ -459,10 +661,7 @@ function PoulePagina() {
                       {" · "}{TOPSCORER_PUNTEN} pt
                     </p>
                   </div>
-                  <Link
-                    href={`/poule/${code}/voorspellingen`}
-                    className="text-xs text-green-400 hover:text-green-300 font-medium"
-                  >
+                  <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
                     {huidigDeelnemer.topscorerVoorspelling ? "Wijzig →" : "Invullen →"}
                   </Link>
                 </div>
@@ -478,10 +677,7 @@ function PoulePagina() {
                       {" · "}{GELE_KAARTEN_PUNTEN} pt
                     </p>
                   </div>
-                  <Link
-                    href={`/poule/${code}/voorspellingen`}
-                    className="text-xs text-green-400 hover:text-green-300 font-medium"
-                  >
+                  <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
                     {huidigDeelnemer.geleKaartenVoorspelling ? "Wijzig →" : "Invullen →"}
                   </Link>
                 </div>
@@ -497,10 +693,7 @@ function PoulePagina() {
                       {" · "}{TOERNOOIWINNAAR_PUNTEN} pt
                     </p>
                   </div>
-                  <Link
-                    href={`/poule/${code}/voorspellingen`}
-                    className="text-xs text-green-400 hover:text-green-300 font-medium"
-                  >
+                  <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
                     {huidigDeelnemer.toernooiwinaarVoorspelling ? "Wijzig →" : "Invullen →"}
                   </Link>
                 </div>
@@ -529,7 +722,7 @@ function PoulePagina() {
                       {huidigDeelnemer.eersteDoelpuntenminuutVoorspelling != null
                         ? <span className="text-zinc-300">minuut {huidigDeelnemer.eersteDoelpuntenminuutVoorspelling}</span>
                         : "Nog niet ingevuld"}
-                      {" · "}tiebreaker
+                      {" ·"}tiebreaker
                     </p>
                   </div>
                   <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
@@ -542,59 +735,95 @@ function PoulePagina() {
         )}
 
         {/* ── Stand ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800">
-            <h2 className="font-bold text-white">Stand</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">Punten worden bijgewerkt zodra uitslagen bekend zijn</p>
-          </div>
-          <div className="divide-y divide-zinc-800">
-            {stand.map((d, i) => (
-              <div
-                key={d.id}
-                onClick={() => router.push(`/speler/${encodeURIComponent(d.userId)}`)}
-                className={`px-5 py-4 flex items-center gap-3 active:bg-zinc-800 transition-colors cursor-pointer ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
-              >
-                <span className="text-lg w-7 text-center flex-shrink-0">
-                  {poule.afgerond && i === 0 ? "🏆" : i < 3 ? MEDAILLES[i] : <span className="text-sm text-zinc-600 font-bold">{i + 1}</span>}
-                </span>
-                <Initialen naam={d.displayNaam} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white text-sm truncate">
-                    {d.displayNaam}
-                    {d.userId === mijnUserId && (
-                      <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
+        {(poule.soort ?? "wk") === "lms" ? (
+          <LmsStand deelnemers={poule.deelnemers} mijnUserId={mijnUserId} />
+        ) : (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="font-bold text-white">Stand</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Punten worden bijgewerkt zodra uitslagen bekend zijn</p>
+            </div>
+            <div className="divide-y divide-zinc-800">
+              {stand.map((d, i) => (
+                <div
+                  key={d.id}
+                  onClick={() => router.push(`/speler/${encodeURIComponent(d.userId)}`)}
+                  className={`px-5 py-4 flex items-center gap-3 active:bg-zinc-800 transition-colors cursor-pointer ${d.userId === mijnUserId ? "bg-zinc-800/50" : ""}`}
+                >
+                  <span className="text-lg w-7 text-center flex-shrink-0">
+                    {poule.afgerond && i === 0 ? "🏆" : i < 3 ? MEDAILLES[i] : <span className="text-sm text-zinc-600 font-bold">{i + 1}</span>}
+                  </span>
+                  <Initialen naam={d.displayNaam} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm truncate">
+                      {d.displayNaam}
+                      {d.userId === mijnUserId && (
+                        <span className="ml-1.5 text-xs text-green-400 font-normal">jij</span>
+                      )}
+                      {d.isAdmin && (
+                        <span className="ml-1.5 text-xs text-zinc-500 font-normal">beheerder</span>
+                      )}
+                      {poule.afgerond && i === 0 && d.userId !== mijnUserId && (
+                        <span className="ml-1.5 text-xs text-yellow-400 font-normal">winnaar</span>
+                      )}
+                      {poule.afgerond && i === 0 && d.userId === mijnUserId && (
+                        <span className="ml-1.5 text-xs text-yellow-400 font-normal">jij gewonnen!</span>
+                      )}
+                    </p>
+                    {!poule.afgerond && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="h-1 w-24 bg-zinc-700 rounded-full">
+                          <div
+                            className="h-1 bg-zinc-400 rounded-full"
+                            style={{ width: `${(d.ingevuld / aantalWedstrijden) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-zinc-600">{d.ingevuld}/{aantalWedstrijden}</span>
+                      </div>
                     )}
-                    {d.userId === poule.organisatorId && (
-                      <span className="ml-1.5 text-xs text-zinc-500 font-normal">organisator</span>
+                    {poule.afgerond && (
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                        {(poule.soort ?? "wk") === "cl_finale" && (() => {
+                          const vp = d.voorspellingen.find((v) => v.wedstrijdId === "CL1");
+                          return vp?.thuis != null && vp?.uit != null ? (
+                            <span className="text-xs text-zinc-400">⚽ {vp.thuis}–{vp.uit}</span>
+                          ) : null;
+                        })()}
+                        {poule.eersteDoelpuntenmakerActief && d.eersteDoelpuntenmakerVoorspelling && (
+                          <span className="text-xs text-zinc-400">🥅 {d.eersteDoelpuntenmakerVoorspelling}{d.eersteDoelpuntenminuutVoorspelling != null ? ` (${d.eersteDoelpuntenminuutVoorspelling}')` : ""}</span>
+                        )}
+                        {poule.topscorerActief && d.topscorerVoorspelling && (
+                          <span className="text-xs text-zinc-400">💟 {d.topscorerVoorspelling}</span>
+                        )}
+                        {poule.toernooiwinaarActief && d.toernooiwinaarVoorspelling && (
+                          <span className="text-xs text-zinc-400">🏆 {d.toernooiwinaarVoorspelling}</span>
+                        )}
+                        {poule.geleKaartenActief && d.geleKaartenVoorspelling && (
+                          <span className="text-xs text-zinc-400">🟨 {d.geleKaartenVoorspelling}</span>
+                        )}
+                      </div>
                     )}
-                    {poule.afgerond && i === 0 && d.userId !== mijnUserId && (
-                      <span className="ml-1.5 text-xs text-yellow-400 font-normal">winnaar</span>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    {poule.afgerond ? (
+                      <>
+                        <span className="text-xl font-black text-white">{d.punten}</span>
+                        <span className="text-xs text-zinc-600 ml-1">pt</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-bold text-zinc-400">{d.ingevuld}/{aantalWedstrijden}</span>
+                      </>
                     )}
-                    {poule.afgerond && i === 0 && d.userId === mijnUserId && (
-                      <span className="ml-1.5 text-xs text-yellow-400 font-normal">jij gewonnen!</span>
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="h-1 w-24 bg-zinc-700 rounded-full">
-                      <div
-                        className="h-1 bg-zinc-400 rounded-full"
-                        style={{ width: `${(d.ingevuld / aantalWedstrijden) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-zinc-600">{d.ingevuld}/{aantalWedstrijden}</span>
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <span className="text-xl font-black text-white">{d.punten}</span>
-                  <span className="text-xs text-zinc-600 ml-1">pt</span>
-                </div>
-              </div>
-            ))}
-            {stand.length === 0 && (
-              <p className="px-5 py-4 text-sm text-zinc-600">Nog geen deelnemers.</p>
-            )}
+              ))}
+              {stand.length === 0 && (
+                <p className="px-5 py-4 text-sm text-zinc-600">Nog geen deelnemers.</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── Poule-instellingen knop (alleen organisator) ── */}
         {isOrganisator && (
@@ -629,49 +858,6 @@ function PoulePagina() {
           </div>
         </div>
 
-        {/* ── Eerste wedstrijden ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-            <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
-            <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
-              {(poule.soort ?? "wk") === "cl_finale" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
-            </Link>
-          </div>
-          <div className="divide-y divide-zinc-800">
-            {eersteWedstrijden.map((w) => {
-              const vpThuis = huidigDeelnemer?.voorspellingen.find((v) => v.wedstrijdId === w.id);
-              const heeftVp = vpThuis?.thuis != null && vpThuis?.uit != null;
-              return (
-                <div key={w.id} className="px-5 py-3.5 flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-zinc-600 mb-1">
-                      {w.groep} · {new Date(w.datum).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })} {w.tijd}
-                    </p>
-                    <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
-                      <span>{w.thuis.vlag}</span>
-                      <span>{w.thuis.naam}</span>
-                      <span className="text-zinc-600 font-normal mx-1">vs</span>
-                      <span>{w.uit.naam}</span>
-                      <span>{w.uit.vlag}</span>
-                    </div>
-                  </div>
-                  {heeftVp ? (
-                    <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
-                      {vpThuis!.thuis} – {vpThuis!.uit}
-                    </div>
-                  ) : (
-                    <Link
-                      href={`/poule/${code}/voorspellingen`}
-                      className="text-xs text-zinc-600 hover:text-zinc-400 whitespace-nowrap"
-                    >
-                      Voorspel →
-                    </Link>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
       </main>
     </div>
