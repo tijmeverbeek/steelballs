@@ -2,11 +2,15 @@
   "crons": [
     {
       "path": "/api/sync",
-      "schedule": "0 6 * * *"
+      "schedule": "0 */2 * * *"
     },
     {
       "path": "/api/sync/stats",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/sync/events",
+      "schedule": "0 */3 * * *"
     }
   ]
 }

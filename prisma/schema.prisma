@@ -102,3 +102,13 @@ model FeatureFlag {
   beschrijving String   @default("")
   bijgewerktOp DateTime @updatedAt
 }
+
+model Speler {
+  id      String @id @default(cuid())
+  naam    String
+  positie String
+  team    String
+  soort   String
+
+  @@unique([naam, team, soort])
+}

@@ -42,6 +42,40 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncingSpelers, setSyncingSpelers] = useState(false);
+  const [syncSpelersResult, setSyncSpelersResult] = useState<string | null>(null);
+  const [syncingEvents, setSyncingEvents] = useState(false);
+  const [syncEventsResult, setSyncEventsResult] = useState<string | null>(null);
+
+  async function syncSpelers() {
+    setSyncingSpelers(true);
+    setSyncSpelersResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-spelers", { method: "POST" });
+      const data = await res.json();
+      if (data.success) setSyncSpelersResult(`✓ ${data.opgeslagen} spelers gesynchroniseerd`);
+      else setSyncSpelersResult(`Fout: ${data.error}`);
+    } catch {
+      setSyncSpelersResult("Verbindingsfout");
+    } finally {
+      setSyncingSpelers(false);
+    }
+  }
+
+  async function syncEvents() {
+    setSyncingEvents(true);
+    setSyncEventsResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-events", { method: "POST" });
+      const data = await res.json();
+      if (data.success) setSyncEventsResult(`✓ ${data.bijgewerkt} poules bijgewerkt`);
+      else setSyncEventsResult(`Fout: ${data.error}`);
+    } catch {
+      setSyncEventsResult("Verbindingsfout");
+    } finally {
+      setSyncingEvents(false);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/admin/stats")
@@ -130,6 +164,47 @@ export default function AdminDashboard() {
             <p className="text-sm font-bold text-white mb-1">Feature flags</p>
             <p className="text-xs text-zinc-500">Functies in- en uitschakelen</p>
           </Link>
+        </div>
+
+        {/* Data synchronisatie */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mt-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-4">Data synchronisatie</p>
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={syncSpelers}
+                  disabled={syncingSpelers}
+                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors"
+                >
+                  {syncingSpelers ? "Bezig…" : "WK selecties synchroniseren"}
+                </button>
+                {syncSpelersResult && (
+                  <span className={`text-sm ${syncSpelersResult.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+                    {syncSpelersResult}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-zinc-600 mt-1.5">Haalt alle WK 2026 selecties op via api-football en slaat ze op in de database</p>
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={syncEvents}
+                  disabled={syncingEvents}
+                  className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors"
+                >
+                  {syncingEvents ? "Bezig…" : "Eerste doelpuntenmaker synchroniseren"}
+                </button>
+                {syncEventsResult && (
+                  <span className={`text-sm ${syncEventsResult.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+                    {syncEventsResult}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-zinc-600 mt-1.5">Haalt eerste doelpuntenmaker + minuut op uit wedstrijdevents en schrijft ze naar alle actieve poules</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
