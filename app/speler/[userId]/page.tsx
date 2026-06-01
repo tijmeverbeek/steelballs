@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface SpelerProfiel {
   gebruikersnaam: string | null;
+  naam: string | null;
   email: string;
   aantalWinsten: number;
   aantalPoules: number;
@@ -35,19 +37,72 @@ export default function SpelerPagina() {
   const router = useRouter();
   const [profiel, setProfiel] = useState<SpelerProfiel | null>(null);
   const [laden, setLaden] = useState(true);
+  const [isEigenProfiel, setIsEigenProfiel] = useState(false);
+  const [bewerkModus, setBewerkModus] = useState(false);
+  const [nieuweNaam, setNieuweNaam] = useState("");
+  const [naamOpslaan, setNaamOpslaan] = useState(false);
+  const [naamFout, setNaamFout] = useState("");
+  const [bewerkRealNaam, setBewerkRealNaam] = useState(false);
+  const [nieuweRealNaam, setNieuweRealNaam] = useState("");
+  const [realNaamOpslaan, setRealNaamOpslaan] = useState(false);
+  const [realNaamFout, setRealNaamFout] = useState("");
 
   useEffect(() => {
-    fetch(`/api/speler/${encodeURIComponent(userId)}`)
-      .then((r) => {
-        if (r.status === 404) { router.push("/"); return null; }
-        return r.json();
-      })
-      .then((data) => {
-        if (data) setProfiel(data);
-        setLaden(false);
-      })
-      .catch(() => setLaden(false));
+    async function load() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id === userId) setIsEigenProfiel(true);
+
+      const r = await fetch(`/api/speler/${encodeURIComponent(userId)}`);
+      if (r.status === 404) { router.push("/"); return; }
+      const data = await r.json();
+      setProfiel(data);
+      setNieuweNaam(data.gebruikersnaam ?? "");
+      setNieuweRealNaam(data.naam ?? "");
+      setLaden(false);
+    }
+    load().catch(() => setLaden(false));
   }, [userId, router]);
+
+  async function handleNaamOpslaan(e: React.FormEvent) {
+    e.preventDefault();
+    setNaamOpslaan(true);
+    setNaamFout("");
+    const res = await fetch("/api/user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gebruikersnaam: nieuweNaam }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setNaamFout(data.error ?? "Er ging iets mis.");
+      setNaamOpslaan(false);
+      return;
+    }
+    setProfiel((p) => p ? { ...p, gebruikersnaam: data.gebruikersnaam } : p);
+    setBewerkModus(false);
+    setNaamOpslaan(false);
+  }
+
+  async function handleRealNaamOpslaan(e: React.FormEvent) {
+    e.preventDefault();
+    setRealNaamOpslaan(true);
+    setRealNaamFout("");
+    const res = await fetch("/api/user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ naam: nieuweRealNaam }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setRealNaamFout(data.error ?? "Er ging iets mis.");
+      setRealNaamOpslaan(false);
+      return;
+    }
+    setProfiel((p) => p ? { ...p, naam: data.naam } : p);
+    setBewerkRealNaam(false);
+    setRealNaamOpslaan(false);
+  }
 
   if (laden) {
     return (
@@ -71,7 +126,7 @@ export default function SpelerPagina() {
       <header className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-2xl mx-auto px-5 py-5">
           <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-300 font-medium transition-colors">
-            ← STEELBALLS
+            ← STALENBALLEN
           </Link>
         </div>
       </header>
@@ -80,11 +135,14 @@ export default function SpelerPagina() {
 
         {/* ── Profiel header ── */}
         <div className="flex items-center gap-5">
-          <Initialen naam={profiel.gebruikersnaam ?? profiel.email.split("@")[0]} />
+          <Initialen naam={profiel.naam ?? profiel.gebruikersnaam ?? profiel.email.split("@")[0]} />
           <div>
             <h1 className="text-2xl font-black text-white">
               {profiel.gebruikersnaam ?? profiel.email.split("@")[0]}
             </h1>
+            {profiel.naam && (
+              <p className="text-zinc-400 text-sm mt-0.5">Naam: {profiel.naam}</p>
+            )}
             {profiel.aantalWinsten > 0 ? (
               <p className="text-yellow-400 font-semibold text-sm mt-0.5">
                 🏆 {profiel.aantalWinsten} toernooi{profiel.aantalWinsten !== 1 ? "en" : ""} gewonnen
@@ -94,6 +152,112 @@ export default function SpelerPagina() {
             )}
           </div>
         </div>
+
+        {/* ── Gebruikersnaam wijzigen ── */}
+        {isEigenProfiel && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4">
+            {!bewerkModus ? (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-zinc-400">Gebruikersnaam</p>
+                <button
+                  onClick={() => setBewerkModus(true)}
+                  className="text-xs text-green-400 hover:text-green-300 font-semibold transition-colors"
+                >
+                  Wijzigen
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleNaamOpslaan} className="space-y-3">
+                <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wide">
+                  Nieuwe gebruikersnaam
+                </label>
+                <input
+                  type="text"
+                  value={nieuweNaam}
+                  onChange={(e) => { setNieuweNaam(e.target.value); setNaamFout(""); }}
+                  minLength={2}
+                  maxLength={30}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                />
+                {naamFout && <p className="text-red-400 text-xs">{naamFout}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={naamOpslaan}
+                    className="flex-1 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors"
+                  >
+                    {naamOpslaan ? "Opslaan..." : "Opslaan"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setBewerkModus(false); setNaamFout(""); setNieuweNaam(profiel?.gebruikersnaam ?? ""); }}
+                    className="px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* ── Echte naam wijzigen ── */}
+        {isEigenProfiel && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4">
+            {!bewerkRealNaam ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-zinc-400">Echte naam</p>
+                  {!profiel.naam && (
+                    <p className="text-xs text-zinc-600 mt-0.5">
+                      Vul je echte naam in zodat de organisator je herkent →
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => { setBewerkRealNaam(true); setNieuweRealNaam(profiel.naam ?? ""); }}
+                  className="text-xs text-green-400 hover:text-green-300 font-semibold transition-colors"
+                >
+                  {profiel.naam ? "Wijzigen" : "Invullen"}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleRealNaamOpslaan} className="space-y-3">
+                <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wide">
+                  Echte naam
+                </label>
+                <input
+                  type="text"
+                  value={nieuweRealNaam}
+                  onChange={(e) => { setNieuweRealNaam(e.target.value); setRealNaamFout(""); }}
+                  minLength={1}
+                  maxLength={50}
+                  placeholder="bijv. Tijme Verbeek"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                />
+                {realNaamFout && <p className="text-red-400 text-xs">{realNaamFout}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={realNaamOpslaan}
+                    className="flex-1 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors"
+                  >
+                    {realNaamOpslaan ? "Opslaan..." : "Opslaan"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setBewerkRealNaam(false); setRealNaamFout(""); }}
+                    className="px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
 
         {/* ── Statistieken ── */}
         <div className="grid grid-cols-3 gap-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Speler, getSpelers } from "@/lib/players";
+import { Speler, getSpelers } from "@/lib/players"; // getSpelers used as initial fallback
 
 const POSITIE_STIJL: Record<string, string> = {
   AAN: "text-red-400 bg-red-500/10",
@@ -30,7 +30,7 @@ export function SpelerAutocomplete({
   ringColor?: "yellow" | "green";
   className?: string;
 }) {
-  const spelers = getSpelers(soort);
+  const [spelers, setSpelers] = useState<Speler[]>(() => getSpelers(soort));
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
   const [highlighted, setHighlighted] = useState(0);
@@ -39,6 +39,18 @@ export function SpelerAutocomplete({
 
   // Sync display value when parent resets it (e.g. on page load)
   useEffect(() => { setQuery(value); }, [value]);
+
+  // Load squad from DB via API, fall back to static list on error
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/spelers?soort=${encodeURIComponent(soort)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: Speler[] | null) => {
+        if (!cancelled && Array.isArray(data) && data.length > 0) setSpelers(data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [soort]);
 
   // Close on outside click
   useEffect(() => {

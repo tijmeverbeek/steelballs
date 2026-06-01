@@ -7,58 +7,6 @@ import { createPoule, joinPoule } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { getWedstrijdenVoorSoort } from "@/lib/matches";
 
-function SteelBallsLogo({ size = 140 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size * 0.9}
-      viewBox="0 0 160 144"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <radialGradient id="s1" cx="32%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="12%" stopColor="#e4e4e4" />
-          <stop offset="40%" stopColor="#8c8c8c" />
-          <stop offset="75%" stopColor="#3e3e3e" />
-          <stop offset="100%" stopColor="#141414" />
-        </radialGradient>
-        <radialGradient id="s2" cx="32%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="12%" stopColor="#e4e4e4" />
-          <stop offset="40%" stopColor="#8c8c8c" />
-          <stop offset="75%" stopColor="#3e3e3e" />
-          <stop offset="100%" stopColor="#141414" />
-        </radialGradient>
-        <radialGradient id="s3" cx="32%" cy="26%" r="72%" gradientUnits="objectBoundingBox">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="12%" stopColor="#e4e4e4" />
-          <stop offset="40%" stopColor="#8c8c8c" />
-          <stop offset="75%" stopColor="#3e3e3e" />
-          <stop offset="100%" stopColor="#141414" />
-        </radialGradient>
-        <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="3.5" />
-          <feOffset dx="1" dy="5" result="blur" />
-          <feFlood floodColor="#000" floodOpacity="0.55" result="color" />
-          <feComposite in="color" in2="blur" operator="in" result="shadow" />
-          <feMerge>
-            <feMergeNode in="shadow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      <ellipse cx="80" cy="138" rx="58" ry="7" fill="rgba(0,0,0,0.35)" />
-      <circle cx="43" cy="100" r="33" fill="url(#s1)" filter="url(#sh)" />
-      <circle cx="117" cy="100" r="33" fill="url(#s2)" filter="url(#sh)" />
-      <circle cx="80" cy="44" r="33" fill="url(#s3)" filter="url(#sh)" />
-      <ellipse cx="67" cy="32" rx="11" ry="7" fill="rgba(255,255,255,0.72)" transform="rotate(-22 67 32)" />
-      <ellipse cx="30" cy="89" rx="11" ry="7" fill="rgba(255,255,255,0.65)" transform="rotate(-22 30 89)" />
-      <ellipse cx="104" cy="89" rx="11" ry="7" fill="rgba(255,255,255,0.65)" transform="rotate(-22 104 89)" />
-    </svg>
-  );
-}
 
 interface UserPoule {
   id: string;
@@ -80,9 +28,10 @@ export default function Home() {
   const [aantalWinsten, setAantalWinsten] = useState<number>(0);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
-  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale">("wk");
+  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "lms">("wk");
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState<"create" | "join" | null>(null);
   const [createError, setCreateError] = useState("");
 
@@ -94,9 +43,10 @@ export default function Home() {
       setIngelogd(true);
       setMijnUserId(user.id);
 
-      const [userRes, poulesRes] = await Promise.all([
+      const [userRes, poulesRes, adminRes] = await Promise.all([
         fetch("/api/user"),
         fetch("/api/user/poules"),
+        fetch("/api/admin/stats"),
       ]);
       if (userRes.ok) {
         const u = await userRes.json();
@@ -105,6 +55,9 @@ export default function Home() {
       }
       if (poulesRes.ok) {
         setMijnPoules(await poulesRes.json());
+      }
+      if (adminRes.ok) {
+        setIsAdmin(true);
       }
     }
     load();
@@ -163,18 +116,17 @@ export default function Home() {
       <div className="min-h-screen flex flex-col bg-zinc-950 text-white">
         <main className="flex-1 max-w-2xl mx-auto w-full px-6 flex flex-col items-center justify-center py-20 text-center">
           <div className="flex justify-center mb-6">
-            <SteelBallsLogo size={120} />
+            <img src="/logo.png" alt="Stalenballen Cup" className="w-56 h-56 object-contain" />
           </div>
-          <h1 className="text-5xl font-black tracking-tight mb-3 text-white">STEELBALLS</h1>
           <p className="text-xl font-semibold text-zinc-200 mb-2">Strijd met je vrienden.</p>
           <p className="text-base text-zinc-400 mb-8">Kom erachter wie de staalste ballen heeft.</p>
 
           <div className="inline-flex items-center gap-3 bg-white/5 border border-white/10 rounded-full px-5 py-2 text-sm text-zinc-400 mb-12">
-            <span className="text-green-400 font-medium">⚽ WK 2026</span>
+            <span className="text-blue-400 font-medium">🏆 CL Finale</span>
             <span className="text-zinc-600">·</span>
-            <span>11 juni – 19 juli</span>
+            <span>PSG vs Arsenal</span>
             <span className="text-zinc-600">·</span>
-            <span>VS · Canada · Mexico</span>
+            <span>2025/26</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-12">
@@ -199,7 +151,7 @@ export default function Home() {
           </Link>
         </main>
         <footer className="text-center text-xs text-zinc-700 py-6 border-t border-zinc-900">
-          Steelballs · FIFA World Cup 2026 · USA · Canada · Mexico
+          Stalenballen Cup · FIFA World Cup 2026 · USA · Canada · Mexico
         </footer>
       </div>
     );
@@ -218,17 +170,16 @@ export default function Home() {
         />
         <div className="relative max-w-3xl mx-auto px-6 pt-16 pb-12 text-center">
           <div className="flex justify-center mb-5">
-            <SteelBallsLogo size={120} />
+            <img src="/logo.png" alt="Stalenballen Cup" className="w-56 h-56 object-contain" />
           </div>
-          <h1 className="text-5xl font-black tracking-tight mb-3 text-white">STEELBALLS</h1>
           <p className="text-xl font-semibold text-zinc-200 mb-1">Strijd met je vrienden.</p>
           <p className="text-base text-zinc-400 mb-6">Kom erachter wie de staalste ballen heeft.</p>
           <div className="inline-flex items-center gap-3 bg-white/5 border border-white/10 rounded-full px-5 py-2 text-sm text-zinc-400">
-            <span className="text-green-400 font-medium">⚽ WK 2026</span>
+            <span className="text-blue-400 font-medium">🏆 CL Finale</span>
             <span className="text-zinc-600">·</span>
-            <span>11 juni – 19 juli</span>
+            <span>PSG vs Arsenal</span>
             <span className="text-zinc-600">·</span>
-            <span>VS · Canada · Mexico</span>
+            <span>2025/26</span>
           </div>
         </div>
       </header>
@@ -254,13 +205,58 @@ export default function Home() {
               </p>
             )}
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            Uitloggen
-          </button>
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-xs text-zinc-400 hover:text-white transition-colors font-medium"
+              >
+                ⚙ Admin
+              </Link>
+            )}
+            <button
+              onClick={handleLogout}
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              Uitloggen
+            </button>
+          </div>
         </div>
+
+        {/* ── CL Finale banner ── */}
+        {(() => {
+          const doetMee = mijnPoules?.some((p) => p.code === "SGPZ3B") ?? false;
+          const href = doetMee ? "/poule/SGPZ3B" : "/join/SGPZ3B";
+          return (
+            <Link href={href} className="block relative overflow-hidden rounded-2xl border border-blue-500/40 bg-gradient-to-br from-blue-950/80 via-zinc-900 to-zinc-950 hover:border-blue-400/60 transition-colors">
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.15) 0%, transparent 70%)" }} />
+              <div className="relative px-6 pt-5 pb-6">
+                <div className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-4">
+                  🏆 Champions League Finale · {doetMee ? "Jij doet mee" : "Doe mee"}
+                </div>
+                <div className="flex items-center justify-center gap-4 mb-5">
+                  <div className="flex flex-col items-center gap-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg" alt="PSG" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    <span className="text-sm font-black text-white">PSG</span>
+                  </div>
+                  <span className="text-2xl font-black text-zinc-600">VS</span>
+                  <div className="flex flex-col items-center gap-2">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" className="w-16 h-16 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    <span className="text-sm font-black text-white">Arsenal</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-zinc-400 text-sm">
+                    {doetMee ? "Bekijk jouw voorspelling en de stand." : "Voorspel de uitslag en bewijs wie de staalste ballen heeft."}
+                  </p>
+                  <span className="shrink-0 ml-4 bg-blue-500 hover:bg-blue-400 text-white font-bold px-4 py-2 rounded-xl text-sm">
+                    {doetMee ? "Naar poule →" : "Meedoen →"}
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })()}
 
         {/* ── Jouw poules ── */}
         {mijnPoules !== null && mijnPoules.length > 0 && (
@@ -302,64 +298,7 @@ export default function Home() {
         )}
 
         {/* ── Acties ── */}
-        <div className="grid md:grid-cols-2 gap-5">
-
-          {/* Poule aanmaken */}
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
-            <div className="px-7 pt-6 pb-3">
-              <div className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-1.5">
-                Nieuwe poule
-              </div>
-              <h2 className="text-xl font-bold text-white">Maak een poule</h2>
-              <p className="text-zinc-400 text-sm mt-1">
-                Geef je poule een naam en nodig vrienden uit.
-              </p>
-            </div>
-            <form onSubmit={handleCreate} className="px-7 pb-7 pt-2 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
-                  Naam van de poule
-                </label>
-                <input
-                  type="text"
-                  value={poulenaam}
-                  onChange={(e) => setPoulenaam(e.target.value)}
-                  placeholder="Bijv. De Harde Kern 2026"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
-                  Type poule
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPouleSoort("wk")}
-                    className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "wk" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
-                  >
-                    WK 2026
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPouleSoort("cl_finale")}
-                    className={`py-2.5 rounded-xl text-sm font-semibold transition-colors border ${pouleSoort === "cl_finale" ? "bg-green-500 border-green-500 text-black" : "bg-zinc-800 border-zinc-700 text-zinc-300"}`}
-                  >
-                    CL Finale
-                  </button>
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={loading === "create"}
-                className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors text-sm"
-              >
-                {loading === "create" ? "Aanmaken..." : "Maak poule aan →"}
-              </button>
-              {createError && <p className="text-red-400 text-xs">{createError}</p>}
-            </form>
-          </div>
+        <div className={`grid gap-5 ${isAdmin ? "md:grid-cols-2" : "md:grid-cols-1 max-w-md"}`}>
 
           {/* Poule joinen */}
           <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
@@ -397,6 +336,57 @@ export default function Home() {
               </button>
             </form>
           </div>
+
+          {/* Poule aanmaken — alleen voor admins */}
+          {isAdmin && <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+            <div className="px-7 pt-6 pb-3">
+              <div className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-1.5">
+                Nieuwe poule
+              </div>
+              <h2 className="text-xl font-bold text-white">Maak een poule</h2>
+              <p className="text-zinc-400 text-sm mt-1">
+                Maak een nieuwe poule aan en nodig vrienden uit.
+              </p>
+            </div>
+            <form onSubmit={handleCreate} className="px-7 pb-7 pt-2 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                  Naam
+                </label>
+                <input
+                  type="text"
+                  value={poulenaam}
+                  onChange={(e) => { setPoulenaam(e.target.value); setCreateError(""); }}
+                  placeholder="bijv. Vrienden 2026"
+                  maxLength={40}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                  Type
+                </label>
+                <select
+                  value={pouleSoort}
+                  onChange={(e) => setPouleSoort(e.target.value as "wk" | "cl_finale" | "lms")}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="wk">WK 2026</option>
+                  <option value="cl_finale">CL Finale</option>
+                  <option value="lms">Last Man Standing</option>
+                </select>
+              </div>
+              {createError && <p className="text-red-400 text-xs">{createError}</p>}
+              <button
+                type="submit"
+                disabled={loading === "create"}
+                className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-colors text-sm"
+              >
+                {loading === "create" ? "Aanmaken..." : "Poule aanmaken →"}
+              </button>
+            </form>
+          </div>}
         </div>
 
         {/* Hoe werkt het */}
@@ -422,7 +412,7 @@ export default function Home() {
       </main>
 
       <footer className="text-center text-xs text-zinc-700 py-6 border-t border-zinc-900">
-        Steelballs · FIFA World Cup 2026 · USA · Canada · Mexico
+        Stalenballen Cup · FIFA World Cup 2026 · USA · Canada · Mexico
       </footer>
     </div>
   );
