@@ -71,8 +71,62 @@ const CL_FINALE_SPELERS: Speler[] = [
 // WK 2026 selecties worden hier toegevoegd zodra ze bekend zijn (begin juni 2026)
 const WK_SPELERS: Speler[] = [];
 
+// NED vs ALG oefenwedstrijd 3 juni 2026
+const OEF_NED_ALG_SPELERS: Speler[] = [
+  // ── Nederland – Aanvallers ────────────────────────────────
+  { naam: "Cody Gakpo",              positie: "AAN", team: "NED" },
+  { naam: "Memphis Depay",           positie: "AAN", team: "NED" },
+  { naam: "Brian Brobbey",           positie: "AAN", team: "NED" },
+  { naam: "Donyell Malen",           positie: "AAN", team: "NED" },
+  { naam: "Wout Weghorst",           positie: "AAN", team: "NED" },
+  { naam: "Noa Lang",                positie: "AAN", team: "NED" },
+  // ── Nederland – Middenvelders ─────────────────────────────
+  { naam: "Tijjani Reijnders",       positie: "MID", team: "NED" },
+  { naam: "Frenkie de Jong",         positie: "MID", team: "NED" },
+  { naam: "Ryan Gravenberch",        positie: "MID", team: "NED" },
+  { naam: "Teun Koopmeiners",        positie: "MID", team: "NED" },
+  { naam: "Jerdy Schouten",          positie: "MID", team: "NED" },
+  { naam: "Xavi Simons",             positie: "MID", team: "NED" },
+  // ── Nederland – Verdedigers ───────────────────────────────
+  { naam: "Virgil van Dijk",         positie: "VER", team: "NED" },
+  { naam: "Denzel Dumfries",         positie: "VER", team: "NED" },
+  { naam: "Nathan Aké",              positie: "VER", team: "NED" },
+  { naam: "Matthijs de Ligt",        positie: "VER", team: "NED" },
+  { naam: "Jurrien Timber",          positie: "VER", team: "NED" },
+  { naam: "Stefan de Vrij",         positie: "VER", team: "NED" },
+  { naam: "Daley Blind",             positie: "VER", team: "NED" },
+  // ── Nederland – Doelmannen ────────────────────────────────
+  { naam: "Bart Verbruggen",         positie: "DOE", team: "NED" },
+  { naam: "Mark Flekken",            positie: "DOE", team: "NED" },
+  { naam: "Justin Bijlow",           positie: "DOE", team: "NED" },
+
+  // ── Algerije – Aanvallers ─────────────────────────────────
+  { naam: "Riyad Mahrez",            positie: "AAN", team: "ALG" },
+  { naam: "Islam Slimani",           positie: "AAN", team: "ALG" },
+  { naam: "Youcef Atal",             positie: "AAN", team: "ALG" },
+  { naam: "Adam Ounas",              positie: "AAN", team: "ALG" },
+  { naam: "Amir Sayoud",             positie: "AAN", team: "ALG" },
+  { naam: "Farès Chaïbi",            positie: "AAN", team: "ALG" },
+  // ── Algerije – Middenvelders ──────────────────────────────
+  { naam: "Sofiane Feghouli",        positie: "MID", team: "ALG" },
+  { naam: "Ramiz Zerrouki",          positie: "MID", team: "ALG" },
+  { naam: "Haris Belkebla",          positie: "MID", team: "ALG" },
+  { naam: "Mehdi Zerkane",           positie: "MID", team: "ALG" },
+  { naam: "Nabil Bentaleb",          positie: "MID", team: "ALG" },
+  // ── Algerije – Verdedigers ────────────────────────────────
+  { naam: "Ramy Bensebaini",         positie: "VER", team: "ALG" },
+  { naam: "Aïssa Mandi",             positie: "VER", team: "ALG" },
+  { naam: "Djamel Benlamri",         positie: "VER", team: "ALG" },
+  { naam: "Yassine Meriah",          positie: "VER", team: "ALG" },
+  { naam: "Abdelkader Bedrane",      positie: "VER", team: "ALG" },
+  // ── Algerije – Doelmannen ─────────────────────────────────
+  { naam: "Raïs M'Bolhi",            positie: "DOE", team: "ALG" },
+  { naam: "Alexandre Oukidja",       positie: "DOE", team: "ALG" },
+];
+
 export function getSpelers(soort: string): Speler[] {
   if (soort === "cl_finale") return CL_FINALE_SPELERS;
+  if (soort === "oefenwedstrijd") return OEF_NED_ALG_SPELERS;
   if (soort === "wk") return WK_SPELERS;
   return [];
 }
