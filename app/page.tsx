@@ -29,7 +29,7 @@ export default function Home() {
   const [aantalWinsten, setAantalWinsten] = useState<number>(0);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
-  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "lms">("wk");
+  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "lms" | "oefenwedstrijd">("wk");
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -367,10 +367,11 @@ export default function Home() {
                 </label>
                 <select
                   value={pouleSoort}
-                  onChange={(e) => setPouleSoort(e.target.value as "wk" | "cl_finale" | "lms")}
+                  onChange={(e) => setPouleSoort(e.target.value as "wk" | "cl_finale" | "lms" | "oefenwedstrijd")}
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <option value="wk">WK 2026</option>
+                  <option value="oefenwedstrijd">🇳🇱 Uitzwaai — NED vs ALG</option>
                   <option value="cl_finale">CL Finale</option>
                   <option value="lms">Last Man Standing</option>
                 </select>

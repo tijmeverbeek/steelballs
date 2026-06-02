@@ -18,11 +18,19 @@ export async function POST(req: Request) {
     code = generateCode();
   }
 
+  const geldigeSoort = ["cl_finale", "lms", "oefenwedstrijd"].includes(soort) ? soort : "wk";
+  const isOefenwedstrijd = geldigeSoort === "oefenwedstrijd";
+
+  if (isOefenwedstrijd) {
+    await prisma.poule.updateMany({ where: { featured: true }, data: { featured: false } });
+  }
+
   const poule = await prisma.poule.create({
     data: {
       naam,
       code,
-      soort: ["cl_finale", "lms"].includes(soort) ? soort : "wk",
+      soort: geldigeSoort,
+      featured: isOefenwedstrijd,
       organisatorId: authUser.id,
       deelnemers: {
         create: { userId: authUser.id },
