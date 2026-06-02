@@ -45,4 +45,5 @@ export interface Poule {
   geleKaartenResultaat?: string | null;
   toernooiwinaarResultaat?: string | null;
   liveStats?: Record<string, string>;
+  featured?: boolean;
 }

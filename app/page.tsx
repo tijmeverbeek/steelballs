@@ -67,6 +67,7 @@ interface UserPoule {
   deelnemerId: string;
   ingevuld: number;
   aangemaaktOp: string;
+  featured?: boolean;
 }
 
 export default function Home() {
@@ -79,6 +80,7 @@ export default function Home() {
   const [joinError, setJoinError] = useState("");
   const [loading, setLoading] = useState<"create" | "join" | null>(null);
   const [createError, setCreateError] = useState("");
+  const [featuredPoule, setFeaturedPoule] = useState<{ code: string; naam: string } | null | undefined>(undefined);
 
   useEffect(() => {
     async function load() {
@@ -98,6 +100,8 @@ export default function Home() {
       if (poulesRes.ok) {
         setMijnPoules(await poulesRes.json());
       }
+      const featuredRes = await fetch("/api/featured-poule");
+      if (featuredRes.ok) setFeaturedPoule(await featuredRes.json());
     }
     load();
   }, []);
@@ -245,6 +249,38 @@ export default function Home() {
           </button>
         </div>
 
+        {/* ── Uitzwaai wedstrijd kaart ── */}
+        {featuredPoule && (
+          <div className="rounded-2xl border border-blue-500/30 bg-zinc-900/80 overflow-hidden">
+            <div className="px-5 pt-4 pb-2">
+              <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-3">
+                🇳🇱 Nederland Uitzwaai · Doe mee
+              </p>
+              <div className="flex items-center justify-center gap-8 py-2">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-5xl">🇳🇱</span>
+                  <span className="font-bold text-white text-sm">Nederland</span>
+                </div>
+                <span className="text-zinc-400 font-bold text-lg">VS</span>
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-5xl">🇩🇿</span>
+                  <span className="font-bold text-white text-sm">Algerije</span>
+                </div>
+              </div>
+              <p className="text-center text-xs text-zinc-500 mt-2">Oefenwedstrijd · 3 juni · 20:45</p>
+            </div>
+            <div className="flex items-center justify-between px-5 py-4 border-t border-zinc-800">
+              <p className="text-sm text-zinc-400">Voorspel de uitslag en bewijs wie de staalste ballen heeft.</p>
+              <Link
+                href={`/poule/${featuredPoule.code}`}
+                className="ml-4 shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 rounded-xl transition-colors text-sm"
+              >
+                Meedoen →
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* ── Jouw poules ── */}
         {mijnPoules !== null && mijnPoules.length > 0 && (
           <div>
@@ -266,10 +302,10 @@ export default function Home() {
                     <div className="flex-1 h-1.5 bg-zinc-800 rounded-full">
                       <div
                         className="h-1.5 bg-green-500 rounded-full transition-all"
-                        style={{ width: `${(p.ingevuld / aantalWedstrijden) * 100}%` }}
+                        style={{ width: `${(p.ingevuld / (p.featured ? 1 : aantalWedstrijden)) * 100}%` }}
                       />
                     </div>
-                    <span className="text-xs text-zinc-500">{p.ingevuld}/{aantalWedstrijden} voorspeld</span>
+                    <span className="text-xs text-zinc-500">{p.ingevuld}/{p.featured ? 1 : aantalWedstrijden} voorspeld</span>
                   </div>
                 </Link>
               ))}

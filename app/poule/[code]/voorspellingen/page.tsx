@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { wedstrijden, getGroepen } from "@/lib/matches";
+import { wedstrijden, oefenwedstrijden, getGroepen } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN } from "@/lib/storage";
 
@@ -71,7 +71,15 @@ export default function VoorspellingenPagina() {
   const geleKaartenRef = useRef("");
   const toernooiwinaarRef = useRef("");
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
-  const groepen = useMemo(() => getGroepen(), []);
+  const [isOefenPoule, setIsOefenPoule] = useState(false);
+  const actieveWedstrijden = useMemo(
+    () => (isOefenPoule ? oefenwedstrijden : wedstrijden),
+    [isOefenPoule]
+  );
+  const groepen = useMemo(
+    () => (isOefenPoule ? ["Oefenwedstrijd"] : getGroepen()),
+    [isOefenPoule]
+  );
 
   useEffect(() => {
     async function load() {
@@ -84,6 +92,7 @@ export default function VoorspellingenPagina() {
 
       setPoule(geladen);
       setPoulenaam(geladen.naam);
+      setIsOefenPoule(geladen.featured === true);
 
       const deelnemer = geladen.deelnemers.find((d) => d.userId === user.id);
       if (!deelnemer) {
@@ -119,7 +128,7 @@ export default function VoorspellingenPagina() {
       const id = deelnemerRef.current;
       if (!id) return;
       setSaveStatus("saving");
-      const vps: Voorspelling[] = wedstrijden.map((w) => ({
+      const vps: Voorspelling[] = actieveWedstrijden.map((w) => ({
         wedstrijdId: w.id,
         thuis: latestScores[w.id]?.thuis ?? null,
         uit: latestScores[w.id]?.uit ?? null,
@@ -140,13 +149,13 @@ export default function VoorspellingenPagina() {
         setTimeout(() => setSaveStatus("idle"), 3000);
       }
     },
-    [code]
+    [code, actieveWedstrijden]
   );
 
   function autoFill() {
     setScores((prev) => {
       const updated = { ...prev };
-      for (const w of wedstrijden) {
+      for (const w of actieveWedstrijden) {
         if (updated[w.id]?.thuis != null && updated[w.id]?.uit != null) continue;
         const goals = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 4];
         const thuis = goals[Math.floor(Math.random() * goals.length)];
@@ -223,7 +232,7 @@ export default function VoorspellingenPagina() {
           <div className="text-center">
             <div className="text-sm font-bold text-white">
               {totalIngevuld}
-              <span className="text-zinc-500">/{wedstrijden.length}</span>
+              <span className="text-zinc-500">/{actieveWedstrijden.length}</span>
             </div>
             <div className="text-xs text-zinc-500">voorspeld</div>
           </div>
@@ -245,14 +254,14 @@ export default function VoorspellingenPagina() {
         <div className="h-0.5 bg-zinc-800">
           <div
             className="h-0.5 bg-green-500 transition-all duration-500"
-            style={{ width: `${(totalIngevuld / wedstrijden.length) * 100}%` }}
+            style={{ width: `${(totalIngevuld / actieveWedstrijden.length) * 100}%` }}
           />
         </div>
 
         <div className="max-w-2xl mx-auto px-4 flex gap-1 overflow-x-auto py-2">
           {groepen.map((g) => {
             const letter = g.replace("Groep ", "");
-            const gWedstrijden = wedstrijden.filter((w) => w.groep === g);
+            const gWedstrijden = actieveWedstrijden.filter((w) => w.groep === g);
             const ingevuld = gWedstrijden.filter(
               (w) => scores[w.id]?.thuis !== null && scores[w.id]?.uit !== null
             ).length;
@@ -339,7 +348,7 @@ export default function VoorspellingenPagina() {
         )}
 
         {groepen.map((groep) => {
-          const groepWedstrijden = wedstrijden.filter((w) => w.groep === groep);
+          const groepWedstrijden = actieveWedstrijden.filter((w) => w.groep === groep);
           const ingevuld = groepWedstrijden.filter(
             (w) => scores[w.id]?.thuis !== null && scores[w.id]?.uit !== null
           ).length;

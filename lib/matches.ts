@@ -96,10 +96,22 @@ function genereerMatches(): Wedstrijd[] {
   return matches.sort((a, b) => `${a.datum}${a.tijd}`.localeCompare(`${b.datum}${b.tijd}`));
 }
 
+export const oefenwedstrijden: Wedstrijd[] = [
+  {
+    id: "OEF1",
+    thuis: { code: "NED", naam: "Nederland", vlag: "🇳🇱" },
+    uit: { code: "ALG", naam: "Algerije", vlag: "🇩🇿" },
+    datum: "2026-06-03",
+    tijd: "20:45",
+    groep: "Oefenwedstrijd",
+    fase: "groepsfase",
+  },
+];
+
 export const wedstrijden: Wedstrijd[] = genereerMatches();
 
 export function getWedstrijd(id: string): Wedstrijd | undefined {
-  return wedstrijden.find((w) => w.id === id);
+  return [...wedstrijden, ...oefenwedstrijden].find((w) => w.id === id);
 }
 
 export function getGroepen(): string[] {

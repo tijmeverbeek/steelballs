@@ -28,6 +28,7 @@ model Poule {
   topscorerResultaat        String?
   geleKaartenResultaat      String?
   toernooiwinaarResultaat   String?
+  featured             Boolean     @default(false)
   deelnemers           Deelnemer[]
 }
 
