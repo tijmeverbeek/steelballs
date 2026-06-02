@@ -59,7 +59,8 @@ export default function InstellingenPagina() {
       setToernooiwinaarResultaatInput(p.toernooiwinaarResultaat ?? "");
       setEersteDoelpuntenmakerResultaatInput(p.eersteDoelpuntenmakerResultaat ?? "");
       setEersteDoelpuntenminuutResultaatInput(p.eersteDoelpuntenminuutResultaat ?? null);
-      const clResult = p.resultaten["CL1"];
+      const singleMatchId = p.soort === "nl_oefen" ? "NL1" : "CL1";
+      const clResult = p.resultaten[singleMatchId];
       setClFinaleThuis(clResult ? String(clResult.thuis) : "");
       setClFinaleUit(clResult ? String(clResult.uit) : "");
     });
@@ -106,20 +107,21 @@ export default function InstellingenPagina() {
 
   async function slaClFinaleResultaatOp() {
     if (!poule || clFinaleThuis === "" || clFinaleUit === "") return;
+    const wedstrijdId = poule.soort === "nl_oefen" ? "NL1" : "CL1";
     setClBezig(true);
     setClFout("");
     try {
       const res = await fetch(`/api/poules/${code}/resultaat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wedstrijdId: "CL1", thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) }),
+        body: JSON.stringify({ wedstrijdId, thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setClFout(data.error ?? `Fout ${res.status} — controleer of je de beheerder bent van deze poule`);
         return;
       }
-      setPoule({ ...poule, resultaten: { ...poule.resultaten, CL1: { thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) } } });
+      setPoule({ ...poule, resultaten: { ...poule.resultaten, [wedstrijdId]: { thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) } } });
       toonOpgeslagen();
     } catch (e) {
       setClFout("Verbindingsfout — probeer het opnieuw");
@@ -214,8 +216,10 @@ export default function InstellingenPagina() {
     );
   }
 
-  const isCL = (poule.soort ?? "wk") === "cl_finale";
-  const isLMS = (poule.soort ?? "wk") === "lms";
+  const soort = poule.soort ?? "wk";
+  const isCL = soort === "cl_finale";
+  const isNL = soort === "nl_oefen";
+  const isLMS = soort === "lms";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -233,7 +237,7 @@ export default function InstellingenPagina() {
 
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-5">
 
-        {/* Bonus categorieën — alleen voor wk/cl_finale */}
+        {/* Bonus categorieën — alleen voor wk/cl_finale/nl_oefen */}
         {!isLMS && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800">
             <h2 className="font-bold text-white">Bonus categorieën</h2>
@@ -241,7 +245,7 @@ export default function InstellingenPagina() {
           </div>
           <div className="p-5 space-y-5">
 
-            {!isCL && (
+            {!isCL && !isNL && (
               <>
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -307,13 +311,13 @@ export default function InstellingenPagina() {
               </>
             )}
 
-            {isCL && (
+            {(isCL || isNL) && (
               <>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <div>
                       <p className="text-sm font-semibold text-white">Eerste doelpuntenmaker</p>
-                      <p className="text-xs text-zinc-500">Wie scoort het eerste doelpunt van de CL finale? ({EERSTE_DOELPUNTENMAKER_PUNTEN} pt)</p>
+                      <p className="text-xs text-zinc-500">Wie scoort het eerste doelpunt? ({EERSTE_DOELPUNTENMAKER_PUNTEN} pt)</p>
                     </div>
                     <Toggle aan={poule.eersteDoelpuntenmakerActief} onChange={(v) => toggleInstelling("eersteDoelpuntenmakerActief", v)} />
                   </div>
@@ -347,8 +351,8 @@ export default function InstellingenPagina() {
                 <div className="border-t border-zinc-800" />
 
                 <div>
-                  <p className="text-sm font-semibold text-white mb-1">CL Finale uitslag</p>
-                  <p className="text-xs text-zinc-500 mb-3">PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal — vul de eindstand in na de wedstrijd</p>
+                  <p className="text-sm font-semibold text-white mb-1">{isCL ? "CL Finale uitslag" : "Uitslag oefenwedstrijd"}</p>
+                  <p className="text-xs text-zinc-500 mb-3">{isCL ? "PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal" : "Nederland 🇳🇱"} — vul de eindstand in na de wedstrijd</p>
                   <div className="flex items-center gap-2">
                     <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
                     <span className="text-zinc-600 font-bold">–</span>
@@ -373,7 +377,6 @@ export default function InstellingenPagina() {
               <p className="text-xs text-zinc-500 mt-0.5">Verwerk een ronde om picks te beoordelen en spelers uit te schakelen</p>
             </div>
             <div className="p-5 space-y-4">
-              {/* Ronde selector */}
               <div className="flex gap-2 flex-wrap">
                 {LMS_RONDES.map((r) => (
                   <button
@@ -396,7 +399,6 @@ export default function InstellingenPagina() {
                     {LMS_RONDES.find((r) => r.nr === lmsVerwerkRonde)?.naam}
                   </p>
 
-                  {/* Overzicht picks voor deze ronde */}
                   <div className="space-y-1.5">
                     {poule.deelnemers.map((d) => {
                       const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
@@ -506,7 +508,7 @@ export default function InstellingenPagina() {
         {/* Toernooi afronden */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
           <p className="text-sm font-semibold text-white mb-1">Toernooi afronden</p>
-          <p className="text-xs text-zinc-500 mb-3">Sluit het toernooi af, bepaal de winnaar en ken de trofée toe. Dit kan niet ongedaan worden gemaakt.</p>
+          <p className="text-xs text-zinc-500 mb-3">Sluit het toernooi af, bepaal de winnaar en ken de trofee toe. Dit kan niet ongedaan worden gemaakt.</p>
           {poule.afgerond ? (
             <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
               <span>✓</span><span>Toernooi is afgerond</span>

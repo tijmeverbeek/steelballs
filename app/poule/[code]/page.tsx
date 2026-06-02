@@ -47,6 +47,20 @@ function deelnemerNaam(d: { user: { gebruikersnaam: string | null; email: string
   return d.user.gebruikersnaam ?? d.user.email.split("@")[0];
 }
 
+function Toggle({ aan, onChange }: { aan: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!aan)}
+      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${aan ? "bg-green-500" : "bg-zinc-700"}`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${aan ? "translate-x-5" : ""}`}
+      />
+    </button>
+  );
+}
+
 type StandItem = {
   id: string;
   userId: string;
@@ -78,11 +92,14 @@ function EindstandModal({
 }) {
   const isWinnaar = mijnUserId !== null && poule.winnaarId === mijnUserId;
   const winnaar = stand[0];
-  const clResultaat = poule.resultaten["CL1"];
+  const singleMatchId = poule.soort === "nl_oefen" ? "NL1" : "CL1";
+  const clResultaat = poule.resultaten[singleMatchId];
 
   function keuzeRegel(deelnemer: StandItem) {
-    const vp = deelnemer.voorspellingen.find((v) => v.wedstrijdId === "CL1");
+    const vp = deelnemer.voorspellingen.find((v) => v.wedstrijdId === singleMatchId);
     const punten = deelnemer.punten;
+    const wedstrijdLabel = poule.soort === "nl_oefen" ? "Nederland" : "PSG";
+    const wedstrijdLabel2 = poule.soort === "nl_oefen" ? "Tegenstander" : "Arsenal";
     return (
       <div className="space-y-1.5">
         {clResultaat && vp?.thuis != null && vp?.uit != null && (
@@ -91,7 +108,7 @@ function EindstandModal({
               {vp.thuis === clResultaat.thuis && vp.uit === clResultaat.uit ? "✓" : "○"}
             </span>
             <span className="text-zinc-300">
-              PSG {vp.thuis}–{vp.uit} Arsenal
+              {wedstrijdLabel} {vp.thuis}–{vp.uit} {wedstrijdLabel2}
               {clResultaat && (
                 <span className="text-zinc-600 ml-1">(werkelijk: {clResultaat.thuis}–{clResultaat.uit})</span>
               )}
@@ -407,6 +424,8 @@ function PoulePagina() {
           title: `${poule?.naam} — Stalenballen`,
           text: poule?.soort === "cl_finale"
             ? `Doe mee aan de CL Finale poule "${poule?.naam}"! Voorspel de uitslag en bewijs wie de staalste ballen heeft.`
+            : poule?.soort === "nl_oefen"
+            ? `Doe mee aan de NL oefenwedstrijd poule "${poule?.naam}"! Voorspel de uitslag en bewijs wie de staalste ballen heeft.`
             : `Doe mee aan de WK poule "${poule?.naam}"! Voorspel alle wedstrijden en bewijs wie de staalste ballen heeft.`,
           url,
         });
@@ -554,9 +573,9 @@ function PoulePagina() {
         {/* ── Wedstrijden — verborgen voor LMS ── */}
         {(poule.soort ?? "wk") !== "lms" && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-            <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
+            <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" || (poule.soort ?? "wk") === "nl_oefen" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
             <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
-              {(poule.soort ?? "wk") === "cl_finale" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
+              {(poule.soort ?? "wk") === "cl_finale" || (poule.soort ?? "wk") === "nl_oefen" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
             </Link>
           </div>
           <div className="divide-y divide-zinc-800">
@@ -661,7 +680,10 @@ function PoulePagina() {
                       {" · "}{TOPSCORER_PUNTEN} pt
                     </p>
                   </div>
-                  <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+                  <Link
+                    href={`/poule/${code}/voorspellingen`}
+                    className="text-xs text-green-400 hover:text-green-300 font-medium"
+                  >
                     {huidigDeelnemer.topscorerVoorspelling ? "Wijzig →" : "Invullen →"}
                   </Link>
                 </div>
@@ -677,7 +699,10 @@ function PoulePagina() {
                       {" · "}{GELE_KAARTEN_PUNTEN} pt
                     </p>
                   </div>
-                  <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+                  <Link
+                    href={`/poule/${code}/voorspellingen`}
+                    className="text-xs text-green-400 hover:text-green-300 font-medium"
+                  >
                     {huidigDeelnemer.geleKaartenVoorspelling ? "Wijzig →" : "Invullen →"}
                   </Link>
                 </div>
@@ -693,7 +718,10 @@ function PoulePagina() {
                       {" · "}{TOERNOOIWINNAAR_PUNTEN} pt
                     </p>
                   </div>
-                  <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+                  <Link
+                    href={`/poule/${code}/voorspellingen`}
+                    className="text-xs text-green-400 hover:text-green-300 font-medium"
+                  >
                     {huidigDeelnemer.toernooiwinaarVoorspelling ? "Wijzig →" : "Invullen →"}
                   </Link>
                 </div>
@@ -722,7 +750,7 @@ function PoulePagina() {
                       {huidigDeelnemer.eersteDoelpuntenminuutVoorspelling != null
                         ? <span className="text-zinc-300">minuut {huidigDeelnemer.eersteDoelpuntenminuutVoorspelling}</span>
                         : "Nog niet ingevuld"}
-                      {" ·"}tiebreaker
+                      {" · "}tiebreaker
                     </p>
                   </div>
                   <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
@@ -783,8 +811,9 @@ function PoulePagina() {
                     )}
                     {poule.afgerond && (
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                        {(poule.soort ?? "wk") === "cl_finale" && (() => {
-                          const vp = d.voorspellingen.find((v) => v.wedstrijdId === "CL1");
+                        {((poule.soort ?? "wk") === "cl_finale" || (poule.soort ?? "wk") === "nl_oefen") && (() => {
+                          const matchId = (poule.soort ?? "wk") === "nl_oefen" ? "NL1" : "CL1";
+                          const vp = d.voorspellingen.find((v) => v.wedstrijdId === matchId);
                           return vp?.thuis != null && vp?.uit != null ? (
                             <span className="text-xs text-zinc-400">⚽ {vp.thuis}–{vp.uit}</span>
                           ) : null;
@@ -793,7 +822,7 @@ function PoulePagina() {
                           <span className="text-xs text-zinc-400">🥅 {d.eersteDoelpuntenmakerVoorspelling}{d.eersteDoelpuntenminuutVoorspelling != null ? ` (${d.eersteDoelpuntenminuutVoorspelling}')` : ""}</span>
                         )}
                         {poule.topscorerActief && d.topscorerVoorspelling && (
-                          <span className="text-xs text-zinc-400">💟 {d.topscorerVoorspelling}</span>
+                          <span className="text-xs text-zinc-400">👟 {d.topscorerVoorspelling}</span>
                         )}
                         {poule.toernooiwinaarActief && d.toernooiwinaarVoorspelling && (
                           <span className="text-xs text-zinc-400">🏆 {d.toernooiwinaarVoorspelling}</span>
