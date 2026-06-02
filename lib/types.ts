@@ -66,4 +66,5 @@ export interface Poule {
   afgerond: boolean;
   winnaarId?: string | null;
   liveStats?: Record<string, string>;
+  featured?: boolean;
 }

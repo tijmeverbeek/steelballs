@@ -13,6 +13,8 @@ import { syncEersteDoelpuntenmakers } from "@/lib/sync-events";
 
 export const dynamic = "force-dynamic";
 
+export const dynamic = "force-dynamic";
+
 function isGeautoriseerd(req: Request): boolean {
   // Vercel cron stuurt automatisch: Authorization: Bearer <CRON_SECRET>
   const authHeader = req.headers.get("authorization");

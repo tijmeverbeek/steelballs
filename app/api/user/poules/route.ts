@@ -19,6 +19,7 @@ export async function GET() {
     ...d.poule,
     deelnemerId: d.id,
     ingevuld: d.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length,
+    featured: d.poule.featured,
   }));
 
   return NextResponse.json(poules);

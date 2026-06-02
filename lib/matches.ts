@@ -10,6 +10,16 @@ export const CL_FINALE: Wedstrijd = {
   fase: "knockout",
 };
 
+export const OEF_NED_ALG: Wedstrijd = {
+  id: "OEF1",
+  thuis: { code: "NED", naam: "Nederland", vlag: "🇳🇱" },
+  uit: { code: "ALG", naam: "Algerije", vlag: "🇩🇿" },
+  datum: "2026-06-03",
+  tijd: "20:45",
+  groep: "Oefenwedstrijd",
+  fase: "groepsfase",
+};
+
 const groepen: Record<string, Team[]> = {
   A: [
     { code: "NED", naam: "Nederland", vlag: "🇳🇱" },
@@ -108,17 +118,20 @@ function genereerMatches(): Wedstrijd[] {
 
 const WK_WEDSTRIJDEN: Wedstrijd[] = genereerMatches();
 const CL_FINALE_WEDSTRIJDEN: Wedstrijd[] = [CL_FINALE];
+const OEF_NED_ALG_WEDSTRIJDEN: Wedstrijd[] = [OEF_NED_ALG];
 
 export const wedstrijden: Wedstrijd[] = [CL_FINALE, ...WK_WEDSTRIJDEN];
 
 export function getWedstrijdenVoorSoort(soort: string): Wedstrijd[] {
-  return soort === "cl_finale" ? CL_FINALE_WEDSTRIJDEN : WK_WEDSTRIJDEN;
+  if (soort === "cl_finale") return CL_FINALE_WEDSTRIJDEN;
+  if (soort === "oefenwedstrijd") return OEF_NED_ALG_WEDSTRIJDEN;
+  return WK_WEDSTRIJDEN;
 }
 
 export function getWedstrijd(id: string): Wedstrijd | undefined {
-  return wedstrijden.find((w) => w.id === id);
+  return [...WK_WEDSTRIJDEN, CL_FINALE, OEF_NED_ALG].find((w) => w.id === id);
 }
 
 export function getGroepen(): string[] {
-  return [...new Set(wedstrijden.map((w) => w.groep))].sort();
+  return [...new Set(WK_WEDSTRIJDEN.map((w) => w.groep))].sort();
 }

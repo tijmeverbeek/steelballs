@@ -38,6 +38,7 @@ model Poule {
   eersteDoelpuntenminuutResultaat    Int?
   afgerond                           Boolean  @default(false)
   winnaarId                          String?
+  featured                           Boolean  @default(false)
   deelnemers           Deelnemer[]
 }
 
@@ -68,7 +69,7 @@ model LmsPick {
   rondeNr     Int
   teamCode    String
   wedstrijdId String
-  uitkomst    String?   // "win" | "verlies" | "gelijk" | null (pending)
+  uitkomst    String?
 
   @@unique([deelnemerId, rondeNr])
 }
