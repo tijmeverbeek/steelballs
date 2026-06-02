@@ -28,7 +28,8 @@ export default function Home() {
   const [aantalWinsten, setAantalWinsten] = useState<number>(0);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [poulenaam, setPoulenaam] = useState("");
-  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "lms">("wk");
+  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "nl_oefen" | "lms">("wk");
+  const [nlWedstrijd, setNlWedstrijd] = useState<{ wedstrijd: { thuis: { naam: string; vlag: string }; uit: { naam: string; vlag: string }; datum: string; tijd: string } | null; pouleCode: string | null } | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -43,10 +44,11 @@ export default function Home() {
       setIngelogd(true);
       setMijnUserId(user.id);
 
-      const [userRes, poulesRes, adminRes] = await Promise.all([
+      const [userRes, poulesRes, adminRes, nlRes] = await Promise.all([
         fetch("/api/user"),
         fetch("/api/user/poules"),
         fetch("/api/admin/stats"),
+        fetch("/api/nl-wedstrijd"),
       ]);
       if (userRes.ok) {
         const u = await userRes.json();
@@ -58,6 +60,9 @@ export default function Home() {
       }
       if (adminRes.ok) {
         setIsAdmin(true);
+      }
+      if (nlRes.ok) {
+        setNlWedstrijd(await nlRes.json());
       }
     }
     load();
@@ -258,6 +263,49 @@ export default function Home() {
           );
         })()}
 
+        {/* ── NL Oefenwedstrijd banner ── */}
+        {nlWedstrijd?.pouleCode && (() => {
+          const { wedstrijd, pouleCode } = nlWedstrijd;
+          const doetMee = mijnPoules?.some((p) => p.code === pouleCode) ?? false;
+          const href = doetMee ? `/poule/${pouleCode}` : `/join/${pouleCode}`;
+          const opponent = wedstrijd
+            ? (wedstrijd.thuis.naam === "Nederland" ? wedstrijd.uit : wedstrijd.thuis)
+            : null;
+          const datumStr = wedstrijd
+            ? new Date(wedstrijd.datum + "T00:00:00").toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" }) + " · " + wedstrijd.tijd
+            : null;
+          return (
+            <Link href={href} className="block relative overflow-hidden rounded-2xl border border-orange-500/40 bg-gradient-to-br from-orange-950/60 via-zinc-900 to-zinc-950 hover:border-orange-400/60 transition-colors">
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(251,146,60,0.12) 0%, transparent 70%)" }} />
+              <div className="relative px-6 pt-5 pb-6">
+                <div className="text-xs font-semibold uppercase tracking-widest text-orange-400 mb-4">
+                  🇳🇱 NL Oefenwedstrijd · {doetMee ? "Jij doet mee" : "Doe mee"}
+                </div>
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-4xl">🇳🇱</span>
+                    <span className="text-sm font-black text-white">Nederland</span>
+                  </div>
+                  <span className="text-2xl font-black text-zinc-600">VS</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-4xl">{opponent?.vlag || "🏳️"}</span>
+                    <span className="text-sm font-black text-white">{opponent?.naam || "Tegenstander"}</span>
+                  </div>
+                </div>
+                {datumStr && <p className="text-center text-xs text-zinc-500 mb-4">{datumStr}</p>}
+                <div className="flex items-center justify-between">
+                  <p className="text-zinc-400 text-sm">
+                    {doetMee ? "Bekijk jouw voorspelling en de stand." : "Voorspel de uitslag en bewijs wie de staalste ballen heeft."}
+                  </p>
+                  <span className="shrink-0 ml-4 bg-orange-500 hover:bg-orange-400 text-white font-bold px-4 py-2 rounded-xl text-sm">
+                    {doetMee ? "Naar poule →" : "Meedoen →"}
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })()}
+
         {/* ── Jouw poules ── */}
         {mijnPoules !== null && mijnPoules.length > 0 && (
           <div>
@@ -369,11 +417,12 @@ export default function Home() {
                 </label>
                 <select
                   value={pouleSoort}
-                  onChange={(e) => setPouleSoort(e.target.value as "wk" | "cl_finale" | "lms")}
+                  onChange={(e) => setPouleSoort(e.target.value as "wk" | "cl_finale" | "nl_oefen" | "lms")}
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <option value="wk">WK 2026</option>
                   <option value="cl_finale">CL Finale</option>
+                  <option value="nl_oefen">NL Oefenwedstrijd</option>
                   <option value="lms">Last Man Standing</option>
                 </select>
               </div>

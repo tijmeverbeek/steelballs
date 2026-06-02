@@ -7,7 +7,7 @@ import Link from "next/link";
 interface AdminStats {
   gebruikers: number;
   poules: number;
-  poulesSoort: { wk: number; cl_finale: number; lms: number };
+  poulesSoort: { wk: number; cl_finale: number; nl_oefen: number; lms: number };
   actievePoules: number;
   voorspellingen: number;
 }
@@ -67,6 +67,8 @@ export default function AdminDashboard() {
   const [syncSpelersResult, setSyncSpelersResult] = useState<string | null>(null);
   const [syncingAlles, setSyncingAlles] = useState(false);
   const [syncAllesResult, setSyncAllesResult] = useState<string | null>(null);
+  const [syncingNlWedstrijd, setSyncingNlWedstrijd] = useState(false);
+  const [syncNlWedstrijdResult, setSyncNlWedstrijdResult] = useState<string | null>(null);
   const [testingSync, setTestingSync] = useState(false);
   const [testRapport, setTestRapport] = useState<SyncTestRapport | null>(null);
 
@@ -82,6 +84,25 @@ export default function AdminDashboard() {
       setSyncSpelersResult("Verbindingsfout");
     } finally {
       setSyncingSpelers(false);
+    }
+  }
+
+  async function syncNlWedstrijd() {
+    setSyncingNlWedstrijd(true);
+    setSyncNlWedstrijdResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-nl-wedstrijd", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        const w = data.wedstrijd;
+        setSyncNlWedstrijdResult(`✓ ${w.thuisNaam} vs ${w.uitNaam} op ${w.datum} om ${w.tijd}`);
+      } else {
+        setSyncNlWedstrijdResult(`Fout: ${data.error}`);
+      }
+    } catch {
+      setSyncNlWedstrijdResult("Verbindingsfout");
+    } finally {
+      setSyncingNlWedstrijd(false);
     }
   }
 
@@ -177,7 +198,7 @@ export default function AdminDashboard() {
         {/* Poule type breakdown */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-4">Poule types</p>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
               <span className="bg-zinc-800 text-blue-400 text-xs font-semibold px-2 py-0.5 rounded-full block mb-2">WK</span>
               <p className="text-3xl font-black">{stats.poulesSoort.wk}</p>
@@ -185,6 +206,10 @@ export default function AdminDashboard() {
             <div className="text-center">
               <span className="bg-zinc-800 text-yellow-400 text-xs font-semibold px-2 py-0.5 rounded-full block mb-2">CL Finale</span>
               <p className="text-3xl font-black">{stats.poulesSoort.cl_finale}</p>
+            </div>
+            <div className="text-center">
+              <span className="bg-zinc-800 text-orange-400 text-xs font-semibold px-2 py-0.5 rounded-full block mb-2">NL Oefen</span>
+              <p className="text-3xl font-black">{stats.poulesSoort.nl_oefen ?? 0}</p>
             </div>
             <div className="text-center">
               <span className="bg-zinc-800 text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full block mb-2">LMS</span>
@@ -250,6 +275,23 @@ export default function AdminDashboard() {
                 )}
               </div>
               <p className="text-xs text-zinc-600 mt-1.5">Eenmalig uitvoeren zodra de WK-selecties beschikbaar zijn in api-football (begin juni). Daarna werkt de autocomplete met échte namen.</p>
+            </div>
+            <div className="border-t border-zinc-800 pt-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={syncNlWedstrijd}
+                  disabled={syncingNlWedstrijd}
+                  className="bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors"
+                >
+                  {syncingNlWedstrijd ? "Bezig…" : "NL wedstrijd ophalen"}
+                </button>
+                {syncNlWedstrijdResult && (
+                  <span className={`text-sm ${syncNlWedstrijdResult.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+                    {syncNlWedstrijdResult}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-zinc-600 mt-1.5">Haalt de eerstvolgende NL wedstrijd op uit API-football en slaat deze op. Vereist voor het NL banner op de homepage.</p>
             </div>
           </div>
         </div>
