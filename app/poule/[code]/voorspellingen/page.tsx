@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
+import { getWedstrijdenVoorSoort, CL_FINALE, NL_OEFENWEDSTRIJD } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
@@ -93,7 +93,6 @@ export default function VoorspellingenPagina() {
   const wedstrijden = useMemo(() => getWedstrijdenVoorSoort(poule?.soort ?? "wk"), [poule?.soort]);
   const groepen = useMemo(() => [...new Set(wedstrijden.map((w) => w.groep))].sort(), [wedstrijden]);
 
-  // Keep a ref in sync so doAutoSave never captures a stale closure
   const wedstrijdenRef = useRef(wedstrijden);
   useEffect(() => { wedstrijdenRef.current = wedstrijden; }, [wedstrijden]);
 
@@ -149,7 +148,6 @@ export default function VoorspellingenPagina() {
     setActieveGroep(groepen[0] ?? null);
   }, [code, router, groepen]);
 
-  // Warn before closing if there are unsaved changes
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (saveStatus === "pending" || saveStatus === "saving") {
@@ -172,7 +170,6 @@ export default function VoorspellingenPagina() {
       const id = deelnemerRef.current;
       if (!id) return;
       setSaveStatus("saving");
-      // Use ref to avoid stale closure — wedstrijden changes when poule loads
       const vps: Voorspelling[] = wedstrijdenRef.current.map((w) => ({
         wedstrijdId: w.id,
         thuis: latestScores[w.id]?.thuis ?? null,
@@ -410,7 +407,9 @@ export default function VoorspellingenPagina() {
                 </div>
               )}
               {(poule?.eersteDoelpuntenmakerActief || poule?.eersteDoelpuntenminuutActief) && (() => {
-                const clGestart = isGestart(CL_FINALE);
+                const lockWedstrijd = poule?.soort === "nl_oefen" ? NL_OEFENWEDSTRIJD : CL_FINALE;
+                const clGestart = isGestart(lockWedstrijd);
+                const wedstrijdNaam = poule?.soort === "nl_oefen" ? "NL oefenwedstrijd" : "CL finale";
                 return (
                   <>
                     {clGestart && (
@@ -425,7 +424,7 @@ export default function VoorspellingenPagina() {
                           <label className="text-sm font-semibold text-white">Eerste doelpuntenmaker</label>
                           <span className="text-xs text-yellow-500 font-semibold">{EERSTE_DOELPUNTENMAKER_PUNTEN} pt</span>
                         </div>
-                        <p className="text-xs text-zinc-500 mb-2">Wie scoort het eerste doelpunt van de CL finale?</p>
+                        <p className="text-xs text-zinc-500 mb-2">Wie scoort het eerste doelpunt van de {wedstrijdNaam}?</p>
                         <SpelerAutocomplete
                           soort={poule.soort ?? "wk"}
                           value={eersteDoelpuntenmakerInput}
