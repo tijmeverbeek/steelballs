@@ -7,6 +7,7 @@ import {
   API_NAAM_NAAR_CODE,
   getAfgelopenEnLiveWedstrijdenVoorLeague,
   getFixtureEvents,
+  NL_TEAM_ID,
 } from "./football-api";
 import { getWedstrijdenVoorSoort } from "./matches";
 
@@ -83,6 +84,40 @@ export async function syncEersteDoelpuntenmakers(): Promise<number> {
           bijgewerkt += wkPoules.length;
         }
       }
+    }
+  }
+
+  // ── NL Oefenwedstrijd ─────────────────────────────────────────────
+  const nlPoules = await prisma.poule.findMany({
+    where: {
+      soort: "nl_oefen",
+      eersteDoelpuntenmakerActief: true,
+      eersteDoelpuntenmakerResultaat: null,
+    },
+  });
+
+  if (nlPoules.length > 0) {
+    const nlStat = await prisma.tournamentStat.findUnique({ where: { type: "nl_wedstrijd" } });
+    if (nlStat) {
+      try {
+        const info = JSON.parse(nlStat.waarde);
+        if (info.fixtureId) {
+          const events = await getFixtureEvents(info.fixtureId);
+          const eersteGoal = events.find(
+            (e) => e.type === "Goal" && e.detail !== "Own Goal" && e.player.name
+          );
+          if (eersteGoal?.player.name) {
+            await prisma.poule.updateMany({
+              where: { soort: "nl_oefen", eersteDoelpuntenmakerActief: true },
+              data: {
+                eersteDoelpuntenmakerResultaat: eersteGoal.player.name,
+                eersteDoelpuntenminuutResultaat: eersteGoal.time.elapsed,
+              },
+            });
+            bijgewerkt += nlPoules.length;
+          }
+        }
+      } catch { /* ignore parse errors */ }
     }
   }
 

@@ -18,7 +18,7 @@ export async function GET() {
       }),
     ]);
 
-  const poulesSoort: Record<string, number> = { wk: 0, cl_finale: 0, lms: 0 };
+  const poulesSoort: Record<string, number> = { wk: 0, cl_finale: 0, nl_oefen: 0, lms: 0 };
   for (const row of pouleSoortGroep) {
     poulesSoort[row.soort] = row._count.soort;
   }
@@ -29,6 +29,7 @@ export async function GET() {
     poulesSoort: {
       wk: poulesSoort.wk ?? 0,
       cl_finale: poulesSoort.cl_finale ?? 0,
+      nl_oefen: poulesSoort.nl_oefen ?? 0,
       lms: poulesSoort.lms ?? 0,
     },
     actievePoules,

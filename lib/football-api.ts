@@ -157,3 +157,36 @@ export async function getTopGeleKaarten(): Promise<ApiSpelerStat[]> {
     `/players/topyellowcards?league=${WK_LEAGUE_ID}&season=${WK_SEASON}`
   );
 }
+
+export const NL_TEAM_ID = 1118;
+
+export interface NLWedstrijdInfo {
+  fixtureId: number;
+  thuisNaam: string;
+  uitNaam: string;
+  thuisId: number;
+  uitId: number;
+  datum: string;
+  tijd: string;
+}
+
+export async function getNLVolgendeWedstrijd(): Promise<NLWedstrijdInfo | null> {
+  const data = await apiGet<Array<{
+    fixture: { id: number; date: string };
+    teams: { home: { id: number; name: string }; away: { id: number; name: string } };
+  }>>(`/fixtures?team=${NL_TEAM_ID}&next=1`);
+
+  if (!data || data.length === 0) return null;
+  const f = data[0];
+  const dateStr = f.fixture.date; // e.g. "2026-06-03T20:00:00+02:00"
+
+  return {
+    fixtureId: f.fixture.id,
+    thuisNaam: f.teams.home.name,
+    uitNaam: f.teams.away.name,
+    thuisId: f.teams.home.id,
+    uitId: f.teams.away.id,
+    datum: dateStr.slice(0, 10),
+    tijd: dateStr.slice(11, 16),
+  };
+}

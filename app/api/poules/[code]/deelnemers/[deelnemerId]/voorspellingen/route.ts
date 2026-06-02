@@ -64,8 +64,9 @@ export async function PUT(
   }
 
   // Bonus picks (eersteDoelpuntenmaker, minuut) are also locked after kickoff
-  const clWedstrijd = wedstrijdenMap.get("CL1");
-  const clGestart = clWedstrijd ? now >= new Date(`${clWedstrijd.datum}T${clWedstrijd.tijd}:00+02:00`) : false;
+  const lockWedstrijdId = poule.soort === "nl_oefen" ? "NL1" : "CL1";
+  const lockWedstrijd = wedstrijdenMap.get(lockWedstrijdId);
+  const clGestart = lockWedstrijd ? now >= new Date(`${lockWedstrijd.datum}T${lockWedstrijd.tijd}:00+02:00`) : false;
 
   const specialeUpdate: {
     topscorerVoorspelling?: string | null;

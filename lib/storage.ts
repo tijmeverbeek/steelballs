@@ -56,14 +56,14 @@ export function berekenPunten(
     eersteDoelpuntenminuutResultaat?: number | null;
   }
 ): number {
-  const isClFinale = poule?.soort === "cl_finale";
+  const isSingleMatch = poule?.soort === "cl_finale" || poule?.soort === "nl_oefen";
   let punten = 0;
 
   for (const vp of voorspellingen) {
     const resultaat = resultaten[vp.wedstrijdId];
     if (!resultaat || vp.thuis === null || vp.uit === null) continue;
     if (vp.thuis === resultaat.thuis && vp.uit === resultaat.uit) {
-      punten += isClFinale ? CL_SCORE_PUNTEN : 3;
+      punten += isSingleMatch ? CL_SCORE_PUNTEN : 3;
     } else {
       const uitslag = Math.sign(resultaat.thuis - resultaat.uit);
       const vpUitslag = Math.sign((vp.thuis ?? 0) - (vp.uit ?? 0));
@@ -85,9 +85,9 @@ export function berekenPunten(
   }
   if (poule?.eersteDoelpuntenmakerActief && poule.eersteDoelpuntenmakerResultaat && deelnemer?.eersteDoelpuntenmakerVoorspelling
     && matchNaam(poule.eersteDoelpuntenmakerResultaat, deelnemer.eersteDoelpuntenmakerVoorspelling)) {
-    punten += isClFinale ? CL_DOELPUNTENMAKER_PUNTEN : EERSTE_DOELPUNTENMAKER_PUNTEN;
+    punten += isSingleMatch ? CL_DOELPUNTENMAKER_PUNTEN : EERSTE_DOELPUNTENMAKER_PUNTEN;
   }
-  if (isClFinale && poule?.eersteDoelpuntenminuutActief && poule.eersteDoelpuntenminuutResultaat != null
+  if (isSingleMatch && poule?.eersteDoelpuntenminuutActief && poule.eersteDoelpuntenminuutResultaat != null
     && deelnemer?.eersteDoelpuntenminuutVoorspelling != null
     && deelnemer.eersteDoelpuntenminuutVoorspelling === poule.eersteDoelpuntenminuutResultaat) {
     punten += CL_MINUUT_PUNTEN;

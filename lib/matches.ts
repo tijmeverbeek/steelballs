@@ -1,5 +1,15 @@
 import { Team, Wedstrijd } from "./types";
 
+export const NL_OEFENWEDSTRIJD: Wedstrijd = {
+  id: "NL1",
+  thuis: { code: "NED", naam: "Nederland", vlag: "🇳🇱" },
+  uit: { code: "OPP", naam: "Tegenstander", vlag: "🏳️" },
+  datum: "2026-06-03",
+  tijd: "20:00",
+  groep: "NL Oefenwedstrijd",
+  fase: "knockout",
+};
+
 export const CL_FINALE: Wedstrijd = {
   id: "CL1",
   thuis: { code: "PSG", naam: "PSG", vlag: "🇫🇷", logo: "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg" },
@@ -108,11 +118,14 @@ function genereerMatches(): Wedstrijd[] {
 
 const WK_WEDSTRIJDEN: Wedstrijd[] = genereerMatches();
 const CL_FINALE_WEDSTRIJDEN: Wedstrijd[] = [CL_FINALE];
+const NL_OEFENWEDSTRIJD_WEDSTRIJDEN: Wedstrijd[] = [NL_OEFENWEDSTRIJD];
 
-export const wedstrijden: Wedstrijd[] = [CL_FINALE, ...WK_WEDSTRIJDEN];
+export const wedstrijden: Wedstrijd[] = [CL_FINALE, NL_OEFENWEDSTRIJD, ...WK_WEDSTRIJDEN];
 
 export function getWedstrijdenVoorSoort(soort: string): Wedstrijd[] {
-  return soort === "cl_finale" ? CL_FINALE_WEDSTRIJDEN : WK_WEDSTRIJDEN;
+  if (soort === "cl_finale") return CL_FINALE_WEDSTRIJDEN;
+  if (soort === "nl_oefen") return NL_OEFENWEDSTRIJD_WEDSTRIJDEN;
+  return WK_WEDSTRIJDEN;
 }
 
 export function getWedstrijd(id: string): Wedstrijd | undefined {
