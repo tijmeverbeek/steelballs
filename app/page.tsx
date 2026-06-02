@@ -233,7 +233,7 @@ export default function Home() {
             <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.15) 0%, transparent 70%)" }} />
             <div className="relative px-6 pt-5 pb-6">
               <div className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-4">
-                🇳🇱 Nederland Uitzwaai · Doe mee
+                🇳🇱 Nederland Uitzwaai wedstrijd · Doe mee
               </div>
               <div className="flex items-center justify-center gap-8 mb-5">
                 <div className="flex flex-col items-center gap-2">
