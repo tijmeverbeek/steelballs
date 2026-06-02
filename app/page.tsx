@@ -371,7 +371,7 @@ export default function Home() {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <option value="wk">WK 2026</option>
-                  <option value="oefenwedstrijd">🇳🇱 Uitzwaai — NED vs ALG</option>
+                  <option value="oefenwedstrijd">🇳🇱 Uitzwaai wedstrijd — NED vs ALG</option>
                   <option value="cl_finale">CL Finale</option>
                   <option value="lms">Last Man Standing</option>
                 </select>
