@@ -480,7 +480,12 @@ export default function VoorspellingenPagina() {
               className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden"
             >
               <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-                <h2 className="font-bold text-white">{groep}</h2>
+                <div>
+                  <h2 className="font-bold text-white">{groep}</h2>
+                  {poule?.soort === "oefenwedstrijd" && (
+                    <p className="text-xs text-orange-400 mt-0.5">Voorspel het aantal corners per team 🔄</p>
+                  )}
+                </div>
                 {klaar ? (
                   <span className="text-xs text-green-400 font-semibold">✓ Klaar</span>
                 ) : (
@@ -515,6 +520,7 @@ export default function VoorspellingenPagina() {
                         <div className="flex-1 text-right">
                           <div className="text-2xl mb-1">{w.thuis.vlag}</div>
                           <div className="text-sm font-semibold text-white leading-tight">{w.thuis.naam}</div>
+                          {poule?.soort === "oefenwedstrijd" && <div className="text-xs text-zinc-500 mt-0.5">corners</div>}
                         </div>
 
                         <div className="flex items-center gap-3 px-2">
@@ -536,6 +542,7 @@ export default function VoorspellingenPagina() {
                         <div className="flex-1 text-left">
                           <div className="text-2xl mb-1">{w.uit.vlag}</div>
                           <div className="text-sm font-semibold text-white leading-tight">{w.uit.naam}</div>
+                          {poule?.soort === "oefenwedstrijd" && <div className="text-xs text-zinc-500 mt-0.5">corners</div>}
                         </div>
                       </div>
                     </div>

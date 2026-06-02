@@ -821,7 +821,7 @@ function PoulePagina() {
                         {poule.soort === "oefenwedstrijd" && (() => {
                           const vp = d.voorspellingen.find((v) => v.wedstrijdId === "OEF1");
                           return vp?.thuis != null && vp?.uit != null ? (
-                            <span className="text-xs text-zinc-400">⚽ {vp.thuis}–{vp.uit}</span>
+                            <span className="text-xs text-zinc-400">🔄 {vp.thuis}–{vp.uit} corners</span>
                           ) : null;
                         })()}
                         {poule.eersteDoelpuntenmakerActief && d.eersteDoelpuntenmakerVoorspelling && (
