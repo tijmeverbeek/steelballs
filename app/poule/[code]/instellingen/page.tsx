@@ -112,7 +112,7 @@ export default function InstellingenPagina() {
       const res = await fetch(`/api/poules/${code}/resultaat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wedstrijdId: "CL1", thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) }),
+        body: JSON.stringify({ wedstrijdId: poule.soort === "oefenwedstrijd" ? "OEF1" : "CL1", thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -215,6 +215,7 @@ export default function InstellingenPagina() {
   }
 
   const isCL = (poule.soort ?? "wk") === "cl_finale";
+  const isOefenwedstrijd = (poule.soort ?? "wk") === "oefenwedstrijd";
   const isLMS = (poule.soort ?? "wk") === "lms";
 
   return (
@@ -307,7 +308,7 @@ export default function InstellingenPagina() {
               </>
             )}
 
-            {isCL && (
+            {(isCL || isOefenwedstrijd) && (
               <>
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -347,8 +348,18 @@ export default function InstellingenPagina() {
                 <div className="border-t border-zinc-800" />
 
                 <div>
-                  <p className="text-sm font-semibold text-white mb-1">CL Finale uitslag</p>
-                  <p className="text-xs text-zinc-500 mb-3">PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal — vul de eindstand in na de wedstrijd</p>
+                  {isCL && (
+                    <>
+                      <p className="text-sm font-semibold text-white mb-1">CL Finale uitslag</p>
+                      <p className="text-xs text-zinc-500 mb-3">PSG 🇫🇷 vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal — vul de eindstand in na de wedstrijd</p>
+                    </>
+                  )}
+                  {isOefenwedstrijd && (
+                    <>
+                      <p className="text-sm font-semibold text-white mb-1">Uitzwaai corners</p>
+                      <p className="text-xs text-zinc-500 mb-3">🇳🇱 Nederland vs 🇩🇿 Algerije — vul het aantal corners in na de wedstrijd</p>
+                    </>
+                  )}
                   <div className="flex items-center gap-2">
                     <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
                     <span className="text-zinc-600 font-bold">–</span>
