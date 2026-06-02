@@ -105,7 +105,7 @@ export default function WedstrijdPagina() {
     );
   }
 
-  const soort = wedstrijd.id === "CL1" ? "cl_finale" : "wk";
+  const soort = wedstrijd.id === "CL1" ? "cl_finale" : wedstrijd.id === "OEF1" ? "oefenwedstrijd" : "wk";
   const spelers = getSpelers(soort);
   const stadion = getStadion(wedstrijd.groep);
   const gestart = isGestart(wedstrijd);
@@ -200,14 +200,14 @@ export default function WedstrijdPagina() {
                 <TeamLogo team={wedstrijd.thuis} size="sm" />
                 <p className="text-xs font-semibold text-zinc-400">{wedstrijd.thuis.naam}</p>
               </div>
-              <SpelerGroep spelers={spelers} teamCode={wedstrijd.thuis.naam} />
+              <SpelerGroep spelers={spelers} teamCode={wedstrijd.thuis.code ?? wedstrijd.thuis.naam} />
             </div>
             <div className="px-4 py-4">
               <div className="flex items-center gap-2 mb-3">
                 <TeamLogo team={wedstrijd.uit} size="sm" />
                 <p className="text-xs font-semibold text-zinc-400">{wedstrijd.uit.naam}</p>
               </div>
-              <SpelerGroep spelers={spelers} teamCode={wedstrijd.uit.naam} />
+              <SpelerGroep spelers={spelers} teamCode={wedstrijd.uit.code ?? wedstrijd.uit.naam} />
             </div>
           </div>
         </div>
