@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { getWedstrijdenVoorSoort } from "@/lib/matches";
+import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
 import { Voorspelling, Poule } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
