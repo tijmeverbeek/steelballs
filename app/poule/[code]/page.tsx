@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule } from "@/lib/api";
 import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, CL_MINUUT_PUNTEN } from "@/lib/storage";
-import { getWedstrijdenVoorSoort, CL_FINALE } from "@/lib/matches";
+import { getWedstrijdenVoorSoort, CL_FINALE, OEF_NED_ALG } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer, LmsPick } from "@/lib/types";
 import { getWedstrijdenVoorRonde, LMS_RONDES } from "@/lib/lms";
@@ -467,6 +467,12 @@ function PoulePagina() {
   const aantalWedstrijden = pouleWedstrijden.length;
   const jouwIngevuld = huidigDeelnemer?.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length ?? 0;
 
+  function isGestart(w: { datum: string; tijd: string }): boolean {
+    return new Date() >= new Date(`${w.datum}T${w.tijd}:00+02:00`);
+  }
+  const oefGestart = poule.soort === "oefenwedstrijd" && isGestart(OEF_NED_ALG);
+  const toonVoorspellingen = poule.afgerond || oefGestart;
+
   const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief;
 
   const stand: StandItem[] = poule.deelnemers
@@ -804,10 +810,16 @@ function PoulePagina() {
                         <span className="text-xs text-zinc-600">{d.ingevuld}/{aantalWedstrijden}</span>
                       </div>
                     )}
-                    {poule.afgerond && (
+                    {toonVoorspellingen && (
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                         {(poule.soort ?? "wk") === "cl_finale" && (() => {
                           const vp = d.voorspellingen.find((v) => v.wedstrijdId === "CL1");
+                          return vp?.thuis != null && vp?.uit != null ? (
+                            <span className="text-xs text-zinc-400">⚽ {vp.thuis}–{vp.uit}</span>
+                          ) : null;
+                        })()}
+                        {poule.soort === "oefenwedstrijd" && (() => {
+                          const vp = d.voorspellingen.find((v) => v.wedstrijdId === "OEF1");
                           return vp?.thuis != null && vp?.uit != null ? (
                             <span className="text-xs text-zinc-400">⚽ {vp.thuis}–{vp.uit}</span>
                           ) : null;
