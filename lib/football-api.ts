@@ -146,6 +146,27 @@ export async function getFixtureEvents(fixtureId: number): Promise<ApiEvent[]> {
   return apiGet<ApiEvent[]>(`/fixtures/events?fixture=${fixtureId}`);
 }
 
+export interface ApiStatEntry {
+  type: string;
+  value: number | string | null;
+}
+
+export interface ApiTeamStatistics {
+  team: { id: number; name: string };
+  statistics: ApiStatEntry[];
+}
+
+export async function getFixtureStatistics(fixtureId: number): Promise<ApiTeamStatistics[]> {
+  return apiGet<ApiTeamStatistics[]>(`/fixtures/statistics?fixture=${fixtureId}`);
+}
+
+export async function getFixturesByLeagueAndDate(leagueId: number, season: number, date: string): Promise<ApiFixture[]> {
+  return apiGet<ApiFixture[]>(`/fixtures?league=${leagueId}&season=${season}&date=${date}`);
+}
+
+// International friendlies league ID
+export const FRIENDLIES_LEAGUE_ID = 10;
+
 export async function getTopscorers(): Promise<ApiSpelerStat[]> {
   return apiGet<ApiSpelerStat[]>(
     `/players/topscorers?league=${WK_LEAGUE_ID}&season=${WK_SEASON}`

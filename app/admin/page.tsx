@@ -67,6 +67,8 @@ export default function AdminDashboard() {
   const [syncSpelersResult, setSyncSpelersResult] = useState<string | null>(null);
   const [syncingOefSpelers, setSyncingOefSpelers] = useState(false);
   const [syncOefSpelersResult, setSyncOefSpelersResult] = useState<string | null>(null);
+  const [syncingOef, setSyncingOef] = useState(false);
+  const [syncOefResult, setSyncOefResult] = useState<string | null>(null);
   const [syncingAlles, setSyncingAlles] = useState(false);
   const [syncAllesResult, setSyncAllesResult] = useState<string | null>(null);
   const [testingSync, setTestingSync] = useState(false);
@@ -84,6 +86,30 @@ export default function AdminDashboard() {
       setSyncSpelersResult("Verbindingsfout");
     } finally {
       setSyncingSpelers(false);
+    }
+  }
+
+  async function syncOef() {
+    setSyncingOef(true);
+    setSyncOefResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-oef", { method: "POST" });
+      const data = await res.json();
+      if (!data.success && data.error) {
+        setSyncOefResult(`Fout: ${data.error}`);
+      } else if (data.success) {
+        const parts = [];
+        if (data.corners?.opgeslagen) parts.push(`corners: NED ${data.corners.thuis}–${data.corners.uit} ALG`);
+        if (data.eersteGoal) parts.push(`eerste goal: ${data.eersteGoal.speler} (${data.eersteGoal.minuut}')`);
+        if (parts.length === 0) parts.push(`fixture gevonden (${data.status}), nog geen data`);
+        setSyncOefResult(`✓ ${parts.join(" · ")}`);
+      } else {
+        setSyncOefResult("Onbekende fout");
+      }
+    } catch {
+      setSyncOefResult("Verbindingsfout");
+    } finally {
+      setSyncingOef(false);
     }
   }
 
@@ -250,6 +276,23 @@ export default function AdminDashboard() {
                 )}
               </div>
               <p className="text-xs text-zinc-600 mt-1.5">Haalt WK + UCL uitslagen op en schrijft eerste doelpuntenmaker naar actieve poules. Goed om te testen met de CL Finale (al gespeeld op 30 mei).</p>
+            </div>
+            <div className="border-t border-zinc-800 pt-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={syncOef}
+                  disabled={syncingOef}
+                  className="bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors"
+                >
+                  {syncingOef ? "Bezig…" : "🇳🇱 Sync uitzwaai uitslag"}
+                </button>
+                {syncOefResult && (
+                  <span className={`text-sm ${syncOefResult.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+                    {syncOefResult}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-zinc-600 mt-1.5">Haalt corners + eerste doelpuntenmaker op voor NED vs ALG (3 jun). Werkt zodra de wedstrijd gespeeld is.</p>
             </div>
             <div className="border-t border-zinc-800 pt-4">
               <div className="flex items-center gap-3 flex-wrap">

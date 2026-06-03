@@ -9,7 +9,7 @@ import {
   UCL_NAAM_NAAR_CODE,
 } from "@/lib/football-api";
 import { wedstrijden } from "@/lib/matches";
-import { syncEersteDoelpuntenmakers } from "@/lib/sync-events";
+import { syncEersteDoelpuntenmakers, syncOefenwedstrijdCorners } from "@/lib/sync-events";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +68,13 @@ async function sync() {
     await syncEersteDoelpuntenmakers();
   } catch {
     // don't fail the main sync if events sync fails
+  }
+
+  // Oefenwedstrijd corners (NED vs ALG)
+  try {
+    await syncOefenwedstrijdCorners();
+  } catch {
+    // don't fail the main sync if oef sync fails
   }
 
   return bijgewerkt;
