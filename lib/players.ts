@@ -101,30 +101,37 @@ const OEF_NED_ALG_SPELERS: Speler[] = [
   { naam: "Jorrel Hato",             positie: "VER", team: "NED" },
   // ── Nederland – Doelmannen ────────────────────────────────
   { naam: "Bart Verbruggen",         positie: "DOE", team: "NED" },
+  { naam: "Mark Flekken",            positie: "DOE", team: "NED" },
+  { naam: "Robin Roefs",             positie: "DOE", team: "NED" },
 
   // ── Algerije – Aanvallers ─────────────────────────────────
   { naam: "Riyad Mahrez",            positie: "AAN", team: "ALG" },
   { naam: "Amine Gouiri",            positie: "AAN", team: "ALG" },
   { naam: "Mohamed Amine Amoura",    positie: "AAN", team: "ALG" },
-  { naam: "Farès Chaïbi",            positie: "AAN", team: "ALG" },
+  { naam: "Anis Hadj Moussa",        positie: "AAN", team: "ALG" },
   { naam: "Nadhir Ben Bouali",       positie: "AAN", team: "ALG" },
-  { naam: "Anis Haj Moussa",         positie: "AAN", team: "ALG" },
+  { naam: "Adel Boulbina",           positie: "AAN", team: "ALG" },
   // ── Algerije – Middenvelders ──────────────────────────────
+  { naam: "Farès Chaïbi",            positie: "MID", team: "ALG" },
   { naam: "Hicham Boudaoui",         positie: "MID", team: "ALG" },
   { naam: "Houssem Aouar",           positie: "MID", team: "ALG" },
   { naam: "Ramiz Zerrouki",          positie: "MID", team: "ALG" },
   { naam: "Nabil Bentaleb",          positie: "MID", team: "ALG" },
   { naam: "Ismael Bennacer",         positie: "MID", team: "ALG" },
-  { naam: "Yacine Titraoui",         positie: "MID", team: "ALG" },
   { naam: "Ibrahim Maza",            positie: "MID", team: "ALG" },
+  { naam: "Yacine Titraoui",         positie: "MID", team: "ALG" },
   // ── Algerije – Verdedigers ────────────────────────────────
   { naam: "Ramy Bensebaini",         positie: "VER", team: "ALG" },
   { naam: "Aïssa Mandi",             positie: "VER", team: "ALG" },
   { naam: "Rayan Aït-Nouri",         positie: "VER", team: "ALG" },
-  { naam: "Rafiq Belghali",          positie: "VER", team: "ALG" },
-  { naam: "Zinedine Belaid",         positie: "VER", team: "ALG" },
+  { naam: "Jaouen Hadjam",           positie: "VER", team: "ALG" },
+  { naam: "Rafik Belghali",          positie: "VER", team: "ALG" },
+  { naam: "Zineddine Belaid",        positie: "VER", team: "ALG" },
+  { naam: "Samir Chergui",           positie: "VER", team: "ALG" },
   // ── Algerije – Doelmannen ─────────────────────────────────
   { naam: "Luca Zidane",             positie: "DOE", team: "ALG" },
+  { naam: "Melvin Mastil",           positie: "DOE", team: "ALG" },
+  { naam: "Oussama Benbot",          positie: "DOE", team: "ALG" },
 ];
 
 export function getSpelers(soort: string): Speler[] {
