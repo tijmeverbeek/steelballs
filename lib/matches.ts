@@ -12,8 +12,8 @@ export const CL_FINALE: Wedstrijd = {
 
 export const OEF_NED_ALG: Wedstrijd = {
   id: "OEF1",
-  thuis: { code: "NED", naam: "Nederland", vlag: "🇳🇱" },
-  uit: { code: "ALG", naam: "Algerije", vlag: "🇩🇿" },
+  thuis: { code: "NED", naam: "Nederland", vlag: "🇳🇱", logo: "https://flagcdn.com/nl.svg" },
+  uit: { code: "ALG", naam: "Algerije", vlag: "🇩🇿", logo: "https://flagcdn.com/dz.svg" },
   datum: "2026-06-03",
   tijd: "20:45",
   groep: "Oefenwedstrijd",
