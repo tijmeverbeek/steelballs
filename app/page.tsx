@@ -237,12 +237,12 @@ export default function Home() {
               </div>
               <div className="flex items-center justify-center gap-8 mb-5">
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-5xl">🇳🇱</span>
+                  <img src="https://flagcdn.com/nl.svg" alt="Nederland" className="w-16 h-12 object-contain" />
                   <span className="text-sm font-black text-white">Nederland</span>
                 </div>
                 <span className="text-2xl font-black text-zinc-600">VS</span>
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-5xl">🇩🇿</span>
+                  <img src="https://flagcdn.com/dz.svg" alt="Algerije" className="w-16 h-12 object-contain" />
                   <span className="text-sm font-black text-white">Algerije</span>
                 </div>
               </div>
