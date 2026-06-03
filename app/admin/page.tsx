@@ -65,6 +65,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [syncingSpelers, setSyncingSpelers] = useState(false);
   const [syncSpelersResult, setSyncSpelersResult] = useState<string | null>(null);
+  const [syncingOefSpelers, setSyncingOefSpelers] = useState(false);
+  const [syncOefSpelersResult, setSyncOefSpelersResult] = useState<string | null>(null);
   const [syncingAlles, setSyncingAlles] = useState(false);
   const [syncAllesResult, setSyncAllesResult] = useState<string | null>(null);
   const [testingSync, setTestingSync] = useState(false);
@@ -82,6 +84,21 @@ export default function AdminDashboard() {
       setSyncSpelersResult("Verbindingsfout");
     } finally {
       setSyncingSpelers(false);
+    }
+  }
+
+  async function syncOefSpelers() {
+    setSyncingOefSpelers(true);
+    setSyncOefSpelersResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-spelers-oef", { method: "POST" });
+      const data = await res.json();
+      if (data.success) setSyncOefSpelersResult(`✓ ${data.opgeslagen} spelers opgeslagen`);
+      else setSyncOefSpelersResult(`Fout: ${data.error}`);
+    } catch {
+      setSyncOefSpelersResult("Verbindingsfout");
+    } finally {
+      setSyncingOefSpelers(false);
     }
   }
 
@@ -250,6 +267,23 @@ export default function AdminDashboard() {
                 )}
               </div>
               <p className="text-xs text-zinc-600 mt-1.5">Eenmalig uitvoeren zodra de WK-selecties beschikbaar zijn in api-football (begin juni). Daarna werkt de autocomplete met échte namen.</p>
+            </div>
+            <div className="border-t border-zinc-800 pt-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={syncOefSpelers}
+                  disabled={syncingOefSpelers}
+                  className="bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors"
+                >
+                  {syncingOefSpelers ? "Bezig…" : "🇳🇱 Uitzwaai selecties laden"}
+                </button>
+                {syncOefSpelersResult && (
+                  <span className={`text-sm ${syncOefSpelersResult.startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+                    {syncOefSpelersResult}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-zinc-600 mt-1.5">Laadt de NED en ALG selecties in de database zodat de autocomplete werkt bij de uitzwaai poule.</p>
             </div>
           </div>
         </div>
