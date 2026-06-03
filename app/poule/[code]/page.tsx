@@ -598,10 +598,13 @@ function PoulePagina() {
                     </div>
                   </Link>
                   {heeftVp ? (
-                    <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
-                      {poule.soort === "oefenwedstrijd"
-                        ? `${vpThuis!.thuis} corners`
-                        : `${vpThuis!.thuis} – ${vpThuis!.uit}`}
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-xs text-zinc-500">Jouw voorspelling</span>
+                      <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
+                        {poule.soort === "oefenwedstrijd"
+                          ? `${vpThuis!.thuis} corners`
+                          : `${vpThuis!.thuis} – ${vpThuis!.uit}`}
+                      </div>
                     </div>
                   ) : (
                     <Link
