@@ -57,17 +57,24 @@ export function berekenPunten(
   }
 ): number {
   const isClFinale = poule?.soort === "cl_finale";
+  const isOefenwedstrijd = poule?.soort === "oefenwedstrijd";
   let punten = 0;
 
   for (const vp of voorspellingen) {
     const resultaat = resultaten[vp.wedstrijdId];
-    if (!resultaat || vp.thuis === null || vp.uit === null) continue;
-    if (vp.thuis === resultaat.thuis && vp.uit === resultaat.uit) {
-      punten += isClFinale ? CL_SCORE_PUNTEN : 3;
+    if (!resultaat || vp.thuis === null) continue;
+    if (isOefenwedstrijd) {
+      // Totaal corners: exact = 3 pt
+      if (vp.thuis === resultaat.thuis) punten += 3;
     } else {
-      const uitslag = Math.sign(resultaat.thuis - resultaat.uit);
-      const vpUitslag = Math.sign((vp.thuis ?? 0) - (vp.uit ?? 0));
-      if (uitslag === vpUitslag) punten += 1;
+      if (vp.uit === null) continue;
+      if (vp.thuis === resultaat.thuis && vp.uit === resultaat.uit) {
+        punten += isClFinale ? CL_SCORE_PUNTEN : 3;
+      } else {
+        const uitslag = Math.sign(resultaat.thuis - resultaat.uit);
+        const vpUitslag = Math.sign((vp.thuis ?? 0) - (vp.uit ?? 0));
+        if (uitslag === vpUitslag) punten += 1;
+      }
     }
   }
 

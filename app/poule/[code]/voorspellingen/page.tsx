@@ -446,7 +446,7 @@ export default function VoorspellingenPagina() {
                           <input
                             type="number"
                             min={1}
-                            max={120}
+                            max={90}
                             disabled={wedstrijdGestart}
                             value={eersteDoelpuntenminuutInput ?? ""}
                             onChange={(e) => {
@@ -456,7 +456,7 @@ export default function VoorspellingenPagina() {
                             placeholder="bijv. 34"
                             className="w-32 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:opacity-50"
                           />
-                          <span className="text-sm text-zinc-500">minuut (1–120)</span>
+                          <span className="text-sm text-zinc-500">minuut (1–90)</span>
                         </div>
                       </div>
                     )}
@@ -484,7 +484,7 @@ export default function VoorspellingenPagina() {
                 <div>
                   <h2 className="font-bold text-white">{groep}</h2>
                   {poule?.soort === "oefenwedstrijd" && (
-                    <p className="text-xs text-orange-400 mt-0.5">Voorspel het aantal corners per team 🔄</p>
+                    <p className="text-xs text-orange-400 mt-0.5">Voorspel het totaal aantal corners 🔄</p>
                   )}
                 </div>
                 {klaar ? (
@@ -517,35 +517,56 @@ export default function VoorspellingenPagina() {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex-1 text-right">
-                          <div className="text-2xl mb-1">{w.thuis.vlag}</div>
-                          <div className="text-sm font-semibold text-white leading-tight">{w.thuis.naam}</div>
-                          {poule?.soort === "oefenwedstrijd" && <div className="text-xs text-zinc-500 mt-0.5">corners</div>}
+                      {poule?.soort === "oefenwedstrijd" ? (
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="flex items-center gap-4">
+                            <span className="text-2xl">{w.thuis.vlag}</span>
+                            <span className="text-sm text-zinc-400">vs</span>
+                            <span className="text-2xl">{w.uit.vlag}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Stepper
+                              value={vp?.thuis ?? null}
+                              onChange={(v) => {
+                                const updated = { ...scores, [w.id]: { thuis: v, uit: 0 } };
+                                setScores(updated);
+                                scheduleSave(updated);
+                              }}
+                              color="orange"
+                              disabled={gestart}
+                            />
+                            <span className="text-sm text-zinc-400">totaal corners</span>
+                          </div>
                         </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1 text-right">
+                            <div className="text-2xl mb-1">{w.thuis.vlag}</div>
+                            <div className="text-sm font-semibold text-white leading-tight">{w.thuis.naam}</div>
+                          </div>
 
-                        <div className="flex items-center gap-3 px-2">
-                          <Stepper
-                            value={vp?.thuis ?? null}
-                            onChange={(v) => updateScore(w.id, "thuis", v)}
-                            color="green"
-                            disabled={gestart}
-                          />
-                          <span className="text-zinc-700 font-bold text-lg">—</span>
-                          <Stepper
-                            value={vp?.uit ?? null}
-                            onChange={(v) => updateScore(w.id, "uit", v)}
-                            color="orange"
-                            disabled={gestart}
-                          />
-                        </div>
+                          <div className="flex items-center gap-3 px-2">
+                            <Stepper
+                              value={vp?.thuis ?? null}
+                              onChange={(v) => updateScore(w.id, "thuis", v)}
+                              color="green"
+                              disabled={gestart}
+                            />
+                            <span className="text-zinc-700 font-bold text-lg">—</span>
+                            <Stepper
+                              value={vp?.uit ?? null}
+                              onChange={(v) => updateScore(w.id, "uit", v)}
+                              color="orange"
+                              disabled={gestart}
+                            />
+                          </div>
 
-                        <div className="flex-1 text-left">
-                          <div className="text-2xl mb-1">{w.uit.vlag}</div>
-                          <div className="text-sm font-semibold text-white leading-tight">{w.uit.naam}</div>
-                          {poule?.soort === "oefenwedstrijd" && <div className="text-xs text-zinc-500 mt-0.5">corners</div>}
+                          <div className="flex-1 text-left">
+                            <div className="text-2xl mb-1">{w.uit.vlag}</div>
+                            <div className="text-sm font-semibold text-white leading-tight">{w.uit.naam}</div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}

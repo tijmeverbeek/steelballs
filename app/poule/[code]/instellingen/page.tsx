@@ -105,14 +105,16 @@ export default function InstellingenPagina() {
   }
 
   async function slaClFinaleResultaatOp() {
-    if (!poule || clFinaleThuis === "" || clFinaleUit === "") return;
+    const isOef = poule?.soort === "oefenwedstrijd";
+    if (!poule || clFinaleThuis === "") return;
+    if (!isOef && clFinaleUit === "") return;
     setClBezig(true);
     setClFout("");
     try {
       const res = await fetch(`/api/poules/${code}/resultaat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wedstrijdId: poule.soort === "oefenwedstrijd" ? "OEF1" : "CL1", thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) }),
+        body: JSON.stringify({ wedstrijdId: isOef ? "OEF1" : "CL1", thuis: parseInt(clFinaleThuis), uit: isOef ? 0 : parseInt(clFinaleUit) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -338,7 +340,7 @@ export default function InstellingenPagina() {
                   </div>
                   {poule.eersteDoelpuntenminuutActief && (
                     <div className="mt-2 flex gap-2 items-center">
-                      <input type="number" min={1} max={120} value={eersteDoelpuntenminuutResultaatInput ?? ""} onChange={(e) => setEersteDoelpuntenminuutResultaatInput(e.target.value === "" ? null : parseInt(e.target.value))} placeholder="bijv. 34" className="w-28 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                      <input type="number" min={1} max={90} value={eersteDoelpuntenminuutResultaatInput ?? ""} onChange={(e) => setEersteDoelpuntenminuutResultaatInput(e.target.value === "" ? null : parseInt(e.target.value))} placeholder="bijv. 34" className="w-28 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500" />
                       <span className="text-xs text-zinc-500">minuut</span>
                       <button onClick={() => slaMinuutResultaatOp(eersteDoelpuntenminuutResultaatInput)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">Opslaan</button>
                     </div>
@@ -357,17 +359,27 @@ export default function InstellingenPagina() {
                   {isOefenwedstrijd && (
                     <>
                       <p className="text-sm font-semibold text-white mb-1">Uitzwaai corners</p>
-                      <p className="text-xs text-zinc-500 mb-3">🇳🇱 Nederland vs 🇩🇿 Algerije — vul het aantal corners in na de wedstrijd</p>
+                      <p className="text-xs text-zinc-500 mb-3">🇳🇱 Nederland vs 🇩🇿 Algerije — vul het totaal aantal corners in na de wedstrijd</p>
                     </>
                   )}
-                  <div className="flex items-center gap-2">
-                    <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
-                    <span className="text-zinc-600 font-bold">–</span>
-                    <input type="number" min={0} value={clFinaleUit} onChange={(e) => { setClFinaleUit(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
-                    <button onClick={slaClFinaleResultaatOp} disabled={clBezig} className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">
-                      {clBezig ? "Opslaan..." : "Opslaan"}
-                    </button>
-                  </div>
+                  {isOefenwedstrijd ? (
+                    <div className="flex items-center gap-2">
+                      <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(e.target.value); setClFout(""); }} placeholder="bijv. 12" className="w-24 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                      <span className="text-zinc-500 text-sm">totaal corners</span>
+                      <button onClick={slaClFinaleResultaatOp} disabled={clBezig} className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">
+                        {clBezig ? "Opslaan..." : "Opslaan"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                      <span className="text-zinc-600 font-bold">–</span>
+                      <input type="number" min={0} value={clFinaleUit} onChange={(e) => { setClFinaleUit(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                      <button onClick={slaClFinaleResultaatOp} disabled={clBezig} className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">
+                        {clBezig ? "Opslaan..." : "Opslaan"}
+                      </button>
+                    </div>
+                  )}
                   {clFout && <p className="text-red-400 text-xs mt-2">{clFout}</p>}
                 </div>
               </>

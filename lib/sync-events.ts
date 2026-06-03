@@ -155,11 +155,13 @@ export async function syncOefenwedstrijdCorners(): Promise<{ thuis: number | nul
     return { thuis: thuisCorners, uit: uitCorners, opgeslagen: false };
   }
 
+  const totaal = thuisCorners + uitCorners;
+
   await prisma.resultaat.upsert({
     where: { wedstrijdId: "OEF1" },
-    update: { thuis: thuisCorners, uit: uitCorners },
-    create: { wedstrijdId: "OEF1", thuis: thuisCorners, uit: uitCorners },
+    update: { thuis: totaal, uit: 0 },
+    create: { wedstrijdId: "OEF1", thuis: totaal, uit: 0 },
   });
 
-  return { thuis: thuisCorners, uit: uitCorners, opgeslagen: true };
+  return { thuis: totaal, uit: 0, opgeslagen: true };
 }
