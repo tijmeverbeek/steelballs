@@ -599,7 +599,9 @@ function PoulePagina() {
                   </Link>
                   {heeftVp ? (
                     <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
-                      {vpThuis!.thuis} – {vpThuis!.uit}
+                      {poule.soort === "oefenwedstrijd"
+                        ? `${vpThuis!.thuis} corners`
+                        : `${vpThuis!.thuis} – ${vpThuis!.uit}`}
                     </div>
                   ) : (
                     <Link
