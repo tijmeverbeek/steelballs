@@ -14,9 +14,11 @@ const POSITIE_STIJL: Record<string, string> = {
 export function LandSpelerPicker({
   value,
   onChange,
+  disabled = false,
 }: {
   value: string;
   onChange: (naam: string) => void;
+  disabled?: boolean;
 }) {
   const [spelers, setSpelers] = useState<Speler[]>([]);
   const [geselecteerdLand, setGeselecteerdLand] = useState<string | null>(null);
@@ -60,19 +62,21 @@ export function LandSpelerPicker({
             )}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setGeselecteerdLand(geselecteerdeSpeler?.team ?? null)}
-          className="text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-zinc-700"
-        >
-          Wijzigen
-        </button>
+        {!disabled && (
+          <button
+            type="button"
+            onClick={() => setGeselecteerdLand(geselecteerdeSpeler?.team ?? null)}
+            className="text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-zinc-700"
+          >
+            Wijzigen
+          </button>
+        )}
       </div>
     );
   }
 
   // Player list for selected country
-  if (geselecteerdLand) {
+  if (geselecteerdLand && !disabled) {
     const team = wkTeams.find((t) => t.code === geselecteerdLand);
     return (
       <div className="border border-zinc-700 rounded-xl overflow-hidden">
@@ -114,8 +118,8 @@ export function LandSpelerPicker({
 
   // Country grid
   return (
-    <div>
-      {value && (
+    <div className={disabled ? "pointer-events-none" : ""}>
+      {value && !disabled && (
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-zinc-500">Geselecteerd: <span className="text-white">{value}</span></span>
           <button type="button" onClick={deselecteer} className="text-xs text-red-400 hover:text-red-300 transition-colors">
@@ -128,7 +132,7 @@ export function LandSpelerPicker({
           <button
             key={team.code}
             type="button"
-            onClick={() => setGeselecteerdLand(team.code)}
+            onClick={() => !disabled && setGeselecteerdLand(team.code)}
             className="flex flex-col items-center gap-1 p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 transition-colors border border-zinc-700 hover:border-zinc-500"
           >
             <span className="text-2xl">{team.vlag}</span>

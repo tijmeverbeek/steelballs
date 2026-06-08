@@ -17,7 +17,18 @@ export async function GET() {
   return NextResponse.json((row?.antwoorden as Record<string, string>) ?? {});
 }
 
+// 11 juni 2026 21:00 Amsterdam (UTC+2 zomertijd) = 19:00 UTC
+const SLUITINGSTIJD = new Date("2026-06-11T19:00:00Z");
+
+export function specialsGesloten(): boolean {
+  return new Date() >= SLUITINGSTIJD;
+}
+
 export async function POST(req: Request) {
+  if (specialsGesloten()) {
+    return NextResponse.json({ error: "Specials zijn gesloten" }, { status: 403 });
+  }
+
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
 
