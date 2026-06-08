@@ -4,10 +4,41 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { SPECIALS_CATEGORIEEN } from "@/lib/specials";
+import { SPECIALS_CATEGORIEEN, SpecialCategorie } from "@/lib/specials";
 import { LandSpelerPicker } from "@/components/LandSpelerPicker";
 
 type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
+
+function SpelerInput({ cat, value, onChange }: { cat: SpecialCategorie; value: string; onChange: (v: string) => void }) {
+  return <LandSpelerPicker value={value} onChange={onChange} />;
+}
+
+function TekstInput({ cat, value, onChange }: { cat: SpecialCategorie; value: string; onChange: (v: string) => void }) {
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={`Vul een naam in...`}
+      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+    />
+  );
+}
+
+function NummerInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="number"
+        min={0}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="0"
+        className="w-32 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+      />
+    </div>
+  );
+}
 
 export default function SpecialsPagina() {
   const router = useRouter();
@@ -66,7 +97,7 @@ export default function SpecialsPagina() {
   if (!geladen) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-zinc-700 border-t-green-400 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-zinc-700 border-t-purple-400 rounded-full animate-spin" />
       </div>
     );
   }
@@ -103,20 +134,32 @@ export default function SpecialsPagina() {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <div className="text-center pb-2">
           <h1 className="text-2xl font-black text-white mb-1">Specials</h1>
-          <p className="text-sm text-zinc-500">Persoonlijke voorspellingen los van een poule · voor het hele WK 2026</p>
+          <p className="text-sm text-zinc-500">Persoonlijke voorspellingen voor het hele WK 2026</p>
         </div>
 
         <div className="bg-zinc-900 rounded-2xl border border-zinc-700 overflow-hidden divide-y divide-zinc-800">
           {SPECIALS_CATEGORIEEN.map((cat) => (
             <div key={cat.key} className="px-5 py-5">
               <div className="mb-3">
+                {cat.prijsNaam && (
+                  <div className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-1">{cat.prijsNaam}</div>
+                )}
                 <div className="text-sm font-bold text-white mb-0.5">{cat.label}</div>
                 <div className="text-xs text-zinc-500">{cat.beschrijving}</div>
+                {cat.adminKiest && (
+                  <div className="text-xs text-amber-500 mt-1">De beheerder kiest de winnaar</div>
+                )}
               </div>
-              <LandSpelerPicker
-                value={antwoorden[cat.key] ?? ""}
-                onChange={(naam) => updateAntwoord(cat.key, naam)}
-              />
+
+              {cat.type === "speler" && (
+                <SpelerInput cat={cat} value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} />
+              )}
+              {cat.type === "tekst" && (
+                <TekstInput cat={cat} value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} />
+              )}
+              {cat.type === "nummer" && (
+                <NummerInput value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} />
+              )}
             </div>
           ))}
         </div>
