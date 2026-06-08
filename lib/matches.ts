@@ -22,63 +22,87 @@ export const OEF_NED_ALG: Wedstrijd = {
 
 const groepen: Record<string, Team[]> = {
   A: [
-    { code: "NED", naam: "Nederland", vlag: "🇳🇱" },
-    { code: "SEN", naam: "Senegal", vlag: "🇸🇳" },
-    { code: "PER", naam: "Peru", vlag: "🇵🇪" },
-    { code: "NZL", naam: "Nieuw-Zeeland", vlag: "🇳🇿" },
+    { code: "MEX", naam: "Mexico",              vlag: "🇲🇽" },
+    { code: "ZAF", naam: "Zuid-Afrika",          vlag: "🇿🇦" },
+    { code: "KOR", naam: "Zuid-Korea",           vlag: "🇰🇷" },
+    { code: "CZE", naam: "Tsjechië",             vlag: "🇨🇿" },
   ],
   B: [
-    { code: "ARG", naam: "Argentinië", vlag: "🇦🇷" },
-    { code: "USA", naam: "VS", vlag: "🇺🇸" },
-    { code: "MEX", naam: "Mexico", vlag: "🇲🇽" },
-    { code: "MAR", naam: "Marokko", vlag: "🇲🇦" },
+    { code: "CAN", naam: "Canada",               vlag: "🇨🇦" },
+    { code: "BIH", naam: "Bosnië-Herzegovina",   vlag: "🇧🇦" },
+    { code: "QAT", naam: "Qatar",                vlag: "🇶🇦" },
+    { code: "SUI", naam: "Zwitserland",          vlag: "🇨🇭" },
   ],
   C: [
-    { code: "BRA", naam: "Brazilië", vlag: "🇧🇷" },
-    { code: "CRO", naam: "Kroatië", vlag: "🇭🇷" },
-    { code: "SUI", naam: "Zwitserland", vlag: "🇨🇭" },
-    { code: "AUS", naam: "Australië", vlag: "🇦🇺" },
+    { code: "BRA", naam: "Brazilië",             vlag: "🇧🇷" },
+    { code: "MAR", naam: "Marokko",              vlag: "🇲🇦" },
+    { code: "HAI", naam: "Haïti",                vlag: "🇭🇹" },
+    { code: "SCO", naam: "Schotland",            vlag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
   ],
   D: [
-    { code: "GER", naam: "Duitsland", vlag: "🇩🇪" },
-    { code: "POR", naam: "Portugal", vlag: "🇵🇹" },
-    { code: "TUR", naam: "Turkije", vlag: "🇹🇷" },
-    { code: "ESP", naam: "Spanje", vlag: "🇪🇸" },
+    { code: "USA", naam: "VS",                   vlag: "🇺🇸" },
+    { code: "PAR", naam: "Paraguay",             vlag: "🇵🇾" },
+    { code: "AUS", naam: "Australië",            vlag: "🇦🇺" },
+    { code: "TUR", naam: "Turkije",              vlag: "🇹🇷" },
   ],
   E: [
-    { code: "ENG", naam: "Engeland", vlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-    { code: "URU", naam: "Uruguay", vlag: "🇺🇾" },
-    { code: "SRB", naam: "Servië", vlag: "🇷🇸" },
-    { code: "CIV", naam: "Ivoorkust", vlag: "🇨🇮" },
+    { code: "GER", naam: "Duitsland",            vlag: "🇩🇪" },
+    { code: "CUR", naam: "Curaçao",              vlag: "🇨🇼" },
+    { code: "CIV", naam: "Ivoorkust",            vlag: "🇨🇮" },
+    { code: "ECU", naam: "Ecuador",              vlag: "🇪🇨" },
   ],
   F: [
-    { code: "FRA", naam: "Frankrijk", vlag: "🇫🇷" },
-    { code: "NGA", naam: "Nigeria", vlag: "🇳🇬" },
-    { code: "COL", naam: "Colombia", vlag: "🇨🇴" },
-    { code: "ECU", naam: "Ecuador", vlag: "🇪🇨" },
+    { code: "NED", naam: "Nederland",            vlag: "🇳🇱" },
+    { code: "JPN", naam: "Japan",                vlag: "🇯🇵" },
+    { code: "SWE", naam: "Zweden",               vlag: "🇸🇪" },
+    { code: "TUN", naam: "Tunesië",              vlag: "🇹🇳" },
   ],
   G: [
-    { code: "BEL", naam: "België", vlag: "🇧🇪" },
-    { code: "JPN", naam: "Japan", vlag: "🇯🇵" },
-    { code: "KOR", naam: "Zuid-Korea", vlag: "🇰🇷" },
-    { code: "CHI", naam: "Chili", vlag: "🇨🇱" },
+    { code: "BEL", naam: "België",               vlag: "🇧🇪" },
+    { code: "EGY", naam: "Egypte",               vlag: "🇪🇬" },
+    { code: "IRN", naam: "Iran",                 vlag: "🇮🇷" },
+    { code: "NZL", naam: "Nieuw-Zeeland",        vlag: "🇳🇿" },
   ],
   H: [
-    { code: "MEX", naam: "Mexico", vlag: "🇲🇽" },
-    { code: "POL", naam: "Polen", vlag: "🇵🇱" },
-    { code: "CMR", naam: "Kameroen", vlag: "🇨🇲" },
-    { code: "QAT", naam: "Qatar", vlag: "🇶🇦" },
+    { code: "ESP", naam: "Spanje",               vlag: "🇪🇸" },
+    { code: "CPV", naam: "Kaapverdië",           vlag: "🇨🇻" },
+    { code: "KSA", naam: "Saoedi-Arabië",        vlag: "🇸🇦" },
+    { code: "URU", naam: "Uruguay",              vlag: "🇺🇾" },
+  ],
+  I: [
+    { code: "FRA", naam: "Frankrijk",            vlag: "🇫🇷" },
+    { code: "SEN", naam: "Senegal",              vlag: "🇸🇳" },
+    { code: "IRQ", naam: "Irak",                 vlag: "🇮🇶" },
+    { code: "NOR", naam: "Noorwegen",            vlag: "🇳🇴" },
+  ],
+  J: [
+    { code: "ARG", naam: "Argentinië",           vlag: "🇦🇷" },
+    { code: "ALG", naam: "Algerije",             vlag: "🇩🇿" },
+    { code: "AUT", naam: "Oostenrijk",           vlag: "🇦🇹" },
+    { code: "JOR", naam: "Jordanië",             vlag: "🇯🇴" },
+  ],
+  K: [
+    { code: "POR", naam: "Portugal",             vlag: "🇵🇹" },
+    { code: "COD", naam: "Congo DR",             vlag: "🇨🇩" },
+    { code: "UZB", naam: "Oezbekistan",          vlag: "🇺🇿" },
+    { code: "COL", naam: "Colombia",             vlag: "🇨🇴" },
+  ],
+  L: [
+    { code: "ENG", naam: "Engeland",             vlag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+    { code: "CRO", naam: "Kroatië",              vlag: "🇭🇷" },
+    { code: "GHA", naam: "Ghana",                vlag: "🇬🇭" },
+    { code: "PAN", naam: "Panama",               vlag: "🇵🇦" },
   ],
 };
 
-// Per ronde: [dag offset van 11 juni, tijd]
+// Per ronde: [dag offset van 11 juni, tijd] — 12 groepen (A t/m L)
 const schema: [number, string][][] = [
-  // Ronde 1 (juni 11–14)
-  [[0, "18:00"], [0, "21:00"], [1, "18:00"], [1, "21:00"], [2, "18:00"], [2, "21:00"], [3, "18:00"], [3, "21:00"]],
-  // Ronde 2 (juni 17–20)
-  [[6, "18:00"], [6, "21:00"], [7, "18:00"], [7, "21:00"], [8, "18:00"], [8, "21:00"], [9, "18:00"], [9, "21:00"]],
-  // Ronde 3 (juni 23–26, gelijktijdig)
-  [[12, "21:00"], [12, "21:00"], [13, "21:00"], [13, "21:00"], [14, "21:00"], [14, "21:00"], [15, "21:00"], [15, "21:00"]],
+  // Ronde 1 (juni 11–16)
+  [[0,"18:00"],[0,"21:00"],[1,"18:00"],[1,"21:00"],[2,"18:00"],[2,"21:00"],[3,"18:00"],[3,"21:00"],[4,"18:00"],[4,"21:00"],[5,"18:00"],[5,"21:00"]],
+  // Ronde 2 (juni 19–24)
+  [[8,"18:00"],[8,"21:00"],[9,"18:00"],[9,"21:00"],[10,"18:00"],[10,"21:00"],[11,"18:00"],[11,"21:00"],[12,"18:00"],[12,"21:00"],[13,"18:00"],[13,"21:00"]],
+  // Ronde 3 (juni 27–jul 2, gelijktijdig per poule)
+  [[16,"21:00"],[16,"21:00"],[17,"21:00"],[17,"21:00"],[18,"21:00"],[18,"21:00"],[19,"21:00"],[19,"21:00"],[20,"21:00"],[20,"21:00"],[21,"21:00"],[21,"21:00"]],
 ];
 
 function datumVanOffset(offsetDagen: number): string {
@@ -93,12 +117,10 @@ function genereerMatches(): Wedstrijd[] {
 
   groepLetters.forEach((groep, gi) => {
     const teams = groepen[groep];
-    // 6 wedstrijden per groep: ronde-robin
     const paren: [number, number][] = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]];
 
     paren.forEach(([a, b], matchIndex) => {
       const ronde = Math.floor(matchIndex / 2);
-      const slot = ronde === 2 ? matchIndex - 4 : matchIndex % 2;
       const [dagOffset, tijd] = schema[ronde][gi];
 
       matches.push({
