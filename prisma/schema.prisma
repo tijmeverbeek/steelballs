@@ -9,14 +9,15 @@ datasource db {
 }
 
 model User {
-  id             String      @id
-  email          String      @unique
-  gebruikersnaam String?     @unique
-  naam           String?
-  aangemaaktOp   DateTime    @default(now())
-  aantalWinsten  Int         @default(0)
-  isAdmin        Boolean     @default(false)
-  deelnemers     Deelnemer[]
+  id                   String                @id
+  email                String                @unique
+  gebruikersnaam       String?               @unique
+  naam                 String?
+  aangemaaktOp         DateTime              @default(now())
+  aantalWinsten        Int                   @default(0)
+  isAdmin              Boolean               @default(false)
+  deelnemers           Deelnemer[]
+  specialVoorspelling  SpecialVoorspelling?
 }
 
 model Poule {
@@ -94,6 +95,14 @@ model Resultaat {
 model TournamentStat {
   type         String   @id
   waarde       String
+  bijgewerktOp DateTime @updatedAt
+}
+
+model SpecialVoorspelling {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  antwoorden   Json     @default("{}")
   bijgewerktOp DateTime @updatedAt
 }
 
