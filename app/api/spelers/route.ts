@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSpelers } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +14,12 @@ export async function GET(req: Request) {
     select: { naam: true, positie: true, team: true },
   });
 
-  if (rows.length > 0) {
-    rows.sort((a, b) => {
-      const pa = POSITIE_VOLGORDE[a.positie] ?? 99;
-      const pb = POSITIE_VOLGORDE[b.positie] ?? 99;
-      if (pa !== pb) return pa - pb;
-      return a.naam.localeCompare(b.naam);
-    });
-    return NextResponse.json(rows);
-  }
+  rows.sort((a, b) => {
+    const pa = POSITIE_VOLGORDE[a.positie] ?? 99;
+    const pb = POSITIE_VOLGORDE[b.positie] ?? 99;
+    if (pa !== pb) return pa - pb;
+    return a.naam.localeCompare(b.naam);
+  });
 
-  // Fall back to static list (covers cl_finale and pre-sync WK)
-  return NextResponse.json(getSpelers(soort));
+  return NextResponse.json(rows);
 }
