@@ -39,7 +39,7 @@ export const SPECIALS_CATEGORIEEN: SpecialCategorie[] = [
   {
     key: "totaal_penalties",
     label: "Totaal aantal penalties",
-    prijsNaam: "CR7-prijs",
+    prijsNaam: "Stervende Zwaan prijs",
     beschrijving: "Hoeveel penalties worden er totaal genomen op het WK (inclusief penalty series)?",
     type: "nummer",
   },

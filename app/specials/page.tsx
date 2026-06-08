@@ -7,25 +7,29 @@ import { createClient } from "@/lib/supabase/client";
 import { SPECIALS_CATEGORIEEN, SpecialCategorie } from "@/lib/specials";
 import { LandSpelerPicker } from "@/components/LandSpelerPicker";
 
+// 11 juni 2026 21:00 Amsterdam (UTC+2) = 19:00 UTC
+const SLUITINGSTIJD = new Date("2026-06-11T19:00:00Z");
+
 type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
 
-function SpelerInput({ cat, value, onChange }: { cat: SpecialCategorie; value: string; onChange: (v: string) => void }) {
-  return <LandSpelerPicker value={value} onChange={onChange} />;
+function SpelerInput({ cat, value, onChange, gesloten }: { cat: SpecialCategorie; value: string; onChange: (v: string) => void; gesloten: boolean }) {
+  return <LandSpelerPicker value={value} onChange={onChange} disabled={gesloten} />;
 }
 
-function TekstInput({ cat, value, onChange }: { cat: SpecialCategorie; value: string; onChange: (v: string) => void }) {
+function TekstInput({ cat, value, onChange, gesloten }: { cat: SpecialCategorie; value: string; onChange: (v: string) => void; gesloten: boolean }) {
   return (
     <input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      disabled={gesloten}
       placeholder={`Vul een naam in...`}
-      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-40 disabled:cursor-not-allowed"
     />
   );
 }
 
-function NummerInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function NummerInput({ value, onChange, gesloten }: { value: string; onChange: (v: string) => void; gesloten: boolean }) {
   return (
     <div className="flex items-center gap-3">
       <input
@@ -33,8 +37,9 @@ function NummerInput({ value, onChange }: { value: string; onChange: (v: string)
         min={0}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        disabled={gesloten}
         placeholder="0"
-        className="w-32 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        className="w-32 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-40 disabled:cursor-not-allowed"
       />
     </div>
   );
@@ -47,6 +52,8 @@ export default function SpecialsPagina() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [geladen, setGeladen] = useState(false);
+
+  const gesloten = new Date() >= SLUITINGSTIJD;
 
   useEffect(() => {
     async function load() {
@@ -66,6 +73,7 @@ export default function SpecialsPagina() {
   }, [router]);
 
   const doSave = useCallback(async (latest: Record<string, string>) => {
+    if (gesloten) return;
     setSaveStatus("saving");
     try {
       const res = await fetch("/api/specials", {
@@ -77,15 +85,17 @@ export default function SpecialsPagina() {
     } catch {
       setSaveStatus("error");
     }
-  }, []);
+  }, [gesloten]);
 
   function scheduleSave(latest: Record<string, string>) {
+    if (gesloten) return;
     setSaveStatus("pending");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => doSave(latest), 700);
   }
 
   function updateAntwoord(key: string, waarde: string) {
+    if (gesloten) return;
     const updated = { ...antwoordenRef.current, [key]: waarde };
     antwoordenRef.current = updated;
     setAntwoorden(updated);
@@ -117,10 +127,10 @@ export default function SpecialsPagina() {
             <div className="text-xs text-zinc-500">ingevuld</div>
           </div>
           <div className="text-xs text-right w-24">
-            {saveStatus === "pending" && <span className="text-amber-400">● Niet opgeslagen</span>}
-            {saveStatus === "saving" && <span className="text-zinc-400">Opslaan...</span>}
-            {saveStatus === "saved" && <span className="text-green-400 font-medium">✓ Opgeslagen</span>}
-            {saveStatus === "error" && <span className="text-red-400 font-medium">Fout</span>}
+            {!gesloten && saveStatus === "pending" && <span className="text-amber-400">● Niet opgeslagen</span>}
+            {!gesloten && saveStatus === "saving" && <span className="text-zinc-400">Opslaan...</span>}
+            {!gesloten && saveStatus === "saved" && <span className="text-green-400 font-medium">✓ Opgeslagen</span>}
+            {!gesloten && saveStatus === "error" && <span className="text-red-400 font-medium">Fout</span>}
           </div>
         </div>
         <div className="h-0.5 bg-zinc-800">
@@ -137,7 +147,13 @@ export default function SpecialsPagina() {
           <p className="text-sm text-zinc-500">Persoonlijke voorspellingen voor het hele WK 2026</p>
         </div>
 
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-700 overflow-hidden divide-y divide-zinc-800">
+        {gesloten && (
+          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 text-center">
+            <div className="text-sm font-semibold text-zinc-300">Specials zijn gesloten sinds 11 juni 21:00 uur</div>
+          </div>
+        )}
+
+        <div className={`bg-zinc-900 rounded-2xl border border-zinc-700 overflow-hidden divide-y divide-zinc-800 ${gesloten ? "opacity-60" : ""}`}>
           {SPECIALS_CATEGORIEEN.map((cat) => (
             <div key={cat.key} className="px-5 py-5">
               <div className="mb-3">
@@ -152,21 +168,23 @@ export default function SpecialsPagina() {
               </div>
 
               {cat.type === "speler" && (
-                <SpelerInput cat={cat} value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} />
+                <SpelerInput cat={cat} value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} gesloten={gesloten} />
               )}
               {cat.type === "tekst" && (
-                <TekstInput cat={cat} value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} />
+                <TekstInput cat={cat} value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} gesloten={gesloten} />
               )}
               {cat.type === "nummer" && (
-                <NummerInput value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} />
+                <NummerInput value={antwoorden[cat.key] ?? ""} onChange={(v) => updateAntwoord(cat.key, v)} gesloten={gesloten} />
               )}
             </div>
           ))}
         </div>
 
-        <div className="pb-8 text-center text-xs text-zinc-700">
-          Voorspellingen worden automatisch opgeslagen
-        </div>
+        {!gesloten && (
+          <div className="pb-8 text-center text-xs text-zinc-700">
+            Voorspellingen worden automatisch opgeslagen
+          </div>
+        )}
       </main>
     </div>
   );
