@@ -227,34 +227,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── Uitzwaai wedstrijd kaart ── */}
-        {featuredPoule && (
-          <Link href={`/poule/${featuredPoule.code}`} className="block relative overflow-hidden rounded-2xl border border-blue-500/40 bg-gradient-to-br from-blue-950/80 via-zinc-900 to-zinc-950 hover:border-blue-400/60 transition-colors">
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.15) 0%, transparent 70%)" }} />
-            <div className="relative px-6 pt-5 pb-6">
-              <div className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-4">
-                🇳🇱 Nederland Uitzwaai wedstrijd · Doe mee
-              </div>
-              <div className="flex items-center justify-center gap-8 mb-5">
-                <div className="flex flex-col items-center gap-2">
-                  <img src="https://flagcdn.com/nl.svg" alt="Nederland" className="w-16 h-12 object-contain" />
-                  <span className="text-sm font-black text-white">Nederland</span>
-                </div>
-                <span className="text-2xl font-black text-zinc-600">VS</span>
-                <div className="flex flex-col items-center gap-2">
-                  <img src="https://flagcdn.com/dz.svg" alt="Algerije" className="w-16 h-12 object-contain" />
-                  <span className="text-sm font-black text-white">Algerije</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <p className="text-zinc-400 text-sm">Voorspel de uitslag en bewijs wie de staalste ballen heeft.</p>
-                <span className="shrink-0 ml-4 bg-blue-500 hover:bg-blue-400 text-white font-bold px-4 py-2 rounded-xl text-sm">
-                  Meedoen →
-                </span>
-              </div>
-            </div>
-          </Link>
-        )}
 
         {/* ── Specials ── */}
         <Link
