@@ -401,19 +401,6 @@ export default function Home() {
           </div>}
         </div>
 
-        {/* ── Specials ── */}
-        <Link
-          href="/specials"
-          className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-purple-500/30 px-5 py-4 hover:border-purple-400/50 transition-colors"
-        >
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-0.5">Nieuw</div>
-            <div className="font-bold text-white">Specials — heel het toernooi</div>
-            <div className="text-xs text-zinc-500 mt-0.5">Topscorer · Meeste gele kaarten · Mooiste doelpunt</div>
-          </div>
-          <span className="text-zinc-400 ml-4">→</span>
-        </Link>
-
         {/* Hoe werkt het */}
         <div>
           <p className="text-center text-xs font-semibold uppercase tracking-widest text-zinc-700 mb-6">
