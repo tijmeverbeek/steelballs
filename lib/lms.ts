@@ -4,22 +4,25 @@ import { getWedstrijdenVoorSoort } from "./matches";
 export interface LmsRonde {
   nr: number;
   naam: string;
-  // Inclusive date range — picks must be in before the earliest match of the round
   vanDatum: string;
   totDatum: string;
+  deadline: string; // UTC ISO string — Dutch time is CEST = UTC+2 in summer
 }
 
-// WK 2026 group phase: 3 rounds based on the schedule in matches.ts
-// Round 1: June 11–14  |  Round 2: June 17–20  |  Round 3: June 23–26
-// Knockout rounds are defined here but match data (teams) is TBD
+// 8 rounds for WK 2026 Last Man Standing
+// All deadlines are in Dutch time (CEST = UTC+2):
+//   R1: 11 jun 21:00 | R2: 18 jun 18:00 | R3: 25 jun 03:00
+//   R4: 28 jun 21:00 | R5: 4 jul 19:00  | R6: 9 jul 22:00
+//   R7: 14 jul 21:00 | R8: 19 jul 21:00
 export const LMS_RONDES: LmsRonde[] = [
-  { nr: 1, naam: "Groepsfase – Ronde 1", vanDatum: "2026-06-11", totDatum: "2026-06-14" },
-  { nr: 2, naam: "Groepsfase – Ronde 2", vanDatum: "2026-06-17", totDatum: "2026-06-20" },
-  { nr: 3, naam: "Groepsfase – Ronde 3", vanDatum: "2026-06-23", totDatum: "2026-06-26" },
-  { nr: 4, naam: "Achtste finales",       vanDatum: "2026-07-01", totDatum: "2026-07-04" },
-  { nr: 5, naam: "Kwartfinales",          vanDatum: "2026-07-05", totDatum: "2026-07-06" },
-  { nr: 6, naam: "Halve finales",         vanDatum: "2026-07-14", totDatum: "2026-07-15" },
-  { nr: 7, naam: "Finale",               vanDatum: "2026-07-19", totDatum: "2026-07-19" },
+  { nr: 1, naam: "Groepsfase – Ronde 1", vanDatum: "2026-06-11", totDatum: "2026-06-14", deadline: "2026-06-11T19:00:00Z" },
+  { nr: 2, naam: "Groepsfase – Ronde 2", vanDatum: "2026-06-17", totDatum: "2026-06-20", deadline: "2026-06-18T16:00:00Z" },
+  { nr: 3, naam: "Groepsfase – Ronde 3", vanDatum: "2026-06-23", totDatum: "2026-06-26", deadline: "2026-06-25T01:00:00Z" },
+  { nr: 4, naam: "Ronde van 32",         vanDatum: "2026-06-28", totDatum: "2026-07-02", deadline: "2026-06-28T19:00:00Z" },
+  { nr: 5, naam: "Achtste finales",      vanDatum: "2026-07-03", totDatum: "2026-07-06", deadline: "2026-07-04T17:00:00Z" },
+  { nr: 6, naam: "Kwartfinales",         vanDatum: "2026-07-07", totDatum: "2026-07-10", deadline: "2026-07-09T20:00:00Z" },
+  { nr: 7, naam: "Halve finales",        vanDatum: "2026-07-11", totDatum: "2026-07-15", deadline: "2026-07-14T19:00:00Z" },
+  { nr: 8, naam: "Finale",              vanDatum: "2026-07-19", totDatum: "2026-07-19", deadline: "2026-07-19T19:00:00Z" },
 ];
 
 export function getRondeVoorWedstrijd(datum: string): LmsRonde | undefined {
@@ -33,15 +36,10 @@ export function getWedstrijdenVoorRonde(rondeNr: number): Wedstrijd[] {
   return alle.filter((w) => w.datum >= ronde.vanDatum && w.datum <= ronde.totDatum);
 }
 
-// Earliest kickoff in a round = deadline for submitting picks
 export function getDeadlineVoorRonde(rondeNr: number): Date | null {
-  const wedstrijden = getWedstrijdenVoorRonde(rondeNr);
-  if (wedstrijden.length === 0) return null;
-  const sorted = [...wedstrijden].sort((a, b) =>
-    `${a.datum}T${a.tijd}`.localeCompare(`${b.datum}T${b.tijd}`)
-  );
-  const w = sorted[0];
-  return new Date(`${w.datum}T${w.tijd}:00`);
+  const ronde = LMS_RONDES.find((r) => r.nr === rondeNr);
+  if (!ronde) return null;
+  return new Date(ronde.deadline);
 }
 
 export function isRondeGesloten(rondeNr: number): boolean {
@@ -51,8 +49,7 @@ export function isRondeGesloten(rondeNr: number): boolean {
 }
 
 export function getHuidigeRonde(): LmsRonde | null {
-  const nu = new Date().toISOString().split("T")[0];
-  // Find the earliest upcoming round, or the last past round
-  const upcoming = LMS_RONDES.find((r) => r.totDatum >= nu);
+  const nu = new Date();
+  const upcoming = LMS_RONDES.find((r) => new Date(r.deadline) >= nu);
   return upcoming ?? LMS_RONDES[LMS_RONDES.length - 1];
 }

@@ -8,7 +8,7 @@ import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker,
 import { getWedstrijdenVoorSoort, CL_FINALE, OEF_NED_ALG } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer, LmsPick } from "@/lib/types";
-import { getWedstrijdenVoorRonde, LMS_RONDES } from "@/lib/lms";
+import { getWedstrijdenVoorRonde, LMS_RONDES, isRondeGesloten } from "@/lib/lms";
 import { TeamLogo } from "@/components/TeamLogo";
 
 class ErrorBoundary extends Component<
@@ -268,6 +268,7 @@ function LmsStand({
     return (
       <div className="flex flex-wrap gap-1 mt-1">
         {picks
+          .filter((p) => isRondeGesloten(p.rondeNr))
           .sort((a, b) => a.rondeNr - b.rondeNr)
           .map((p) => {
             const wedstrijden = getWedstrijdenVoorRonde(p.rondeNr);

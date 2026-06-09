@@ -56,8 +56,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   if (!deelnemer) return NextResponse.json({ error: "Niet deelnemer van deze poule" }, { status: 403 });
   if (!deelnemer.lmsActief) return NextResponse.json({ error: "Je bent uitgeschakeld" }, { status: 403 });
 
-  // Check: team not already used in a previous round
-  const gebruiktTeams = deelnemer.lmsPicks.map((p) => p.teamCode);
+  // Check: round progression — need to have won the previous round
+  if (rondeNr > 1) {
+    const vorigePick = deelnemer.lmsPicks.find((p) => p.rondeNr === rondeNr - 1);
+    if (!vorigePick || vorigePick.uitkomst !== "win") {
+      return NextResponse.json({ error: `Je moet ronde ${rondeNr - 1} overleven om door te gaan naar ronde ${rondeNr}` }, { status: 403 });
+    }
+  }
+
+  // Check: team not already used in a different round
+  const gebruiktTeams = deelnemer.lmsPicks
+    .filter((p) => p.rondeNr !== rondeNr)
+    .map((p) => p.teamCode);
   if (gebruiktTeams.includes(teamCode)) {
     return NextResponse.json({ error: "Je hebt dit team al eerder gekozen" }, { status: 400 });
   }

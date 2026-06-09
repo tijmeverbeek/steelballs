@@ -42,6 +42,9 @@ export default function InstellingenPagina() {
   const [lmsVerwerkBezig, setLmsVerwerkBezig] = useState(false);
   const [lmsVerwerkResultaat, setLmsVerwerkResultaat] = useState<{ verwerkt: number; ontbreekt: number } | null>(null);
   const [betaaldBezig, setBetaaldBezig] = useState<string | null>(null);
+  const [lmsResultaatRonde, setLmsResultaatRonde] = useState<number | null>(null);
+  const [lmsScores, setLmsScores] = useState<Record<string, { thuis: string; uit: string }>>({});
+  const [lmsScoreBezig, setLmsScoreBezig] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -62,6 +65,11 @@ export default function InstellingenPagina() {
       const clResult = p.resultaten["CL1"];
       setClFinaleThuis(clResult ? String(clResult.thuis) : "");
       setClFinaleUit(clResult ? String(clResult.uit) : "");
+      const scores: Record<string, { thuis: string; uit: string }> = {};
+      Object.entries(p.resultaten).forEach(([wId, res]) => {
+        scores[wId] = { thuis: String(res.thuis), uit: String(res.uit) };
+      });
+      setLmsScores(scores);
     });
   }, [code, router]);
 
@@ -159,6 +167,23 @@ export default function InstellingenPagina() {
       alert("Netwerkfout — probeer opnieuw");
     } finally {
       setLmsVerwerkBezig(false);
+    }
+  }
+
+  async function slaLmsScoreOp(wedstrijdId: string) {
+    const score = lmsScores[wedstrijdId];
+    if (!score || score.thuis === "" || score.uit === "") return;
+    setLmsScoreBezig(wedstrijdId);
+    try {
+      await slaMatchResultaatOp(code, wedstrijdId, parseInt(score.thuis), parseInt(score.uit));
+      setPoule((prev) =>
+        prev ? { ...prev, resultaten: { ...prev.resultaten, [wedstrijdId]: { thuis: parseInt(score.thuis), uit: parseInt(score.uit) } } } : prev
+      );
+      toonOpgeslagen();
+    } catch {
+      alert("Opslaan mislukt. Probeer opnieuw.");
+    } finally {
+      setLmsScoreBezig(null);
     }
   }
 
@@ -469,6 +494,79 @@ export default function InstellingenPagina() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Uitslagen invoeren — voor LMS (en gedeeld met WK poules via dezelfde Resultaat tabel) */}
+        {isLMS && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="font-bold text-white">Uitslagen invoeren</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Scores gelden voor alle poules — LMS en WK gebruiken dezelfde resultaten</p>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="flex gap-2 flex-wrap">
+                {LMS_RONDES.map((r) => (
+                  <button
+                    key={r.nr}
+                    onClick={() => setLmsResultaatRonde(lmsResultaatRonde === r.nr ? null : r.nr)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                      lmsResultaatRonde === r.nr
+                        ? "bg-white text-zinc-900 border-white"
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white"
+                    }`}
+                  >
+                    R{r.nr}
+                  </button>
+                ))}
+              </div>
+
+              {lmsResultaatRonde !== null && (() => {
+                const wedstrijdenRonde = getWedstrijdenVoorRonde(lmsResultaatRonde);
+                if (wedstrijdenRonde.length === 0) {
+                  return <p className="text-sm text-zinc-600 italic">Wedstrijden voor deze ronde zijn nog niet bekend.</p>;
+                }
+                return (
+                  <div className="space-y-2">
+                    {wedstrijdenRonde.map((w) => {
+                      const sc = lmsScores[w.id] ?? { thuis: "", uit: "" };
+                      const heeftScore = poule.resultaten[w.id] != null;
+                      return (
+                        <div key={w.id} className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0 text-xs text-zinc-400 truncate">
+                            {w.thuis.vlag} <span className="font-medium text-zinc-300">{w.thuis.naam}</span>
+                            <span className="text-zinc-600 mx-1">vs</span>
+                            <span className="font-medium text-zinc-300">{w.uit.naam}</span> {w.uit.vlag}
+                          </div>
+                          <input
+                            type="number" min={0} max={99}
+                            value={sc.thuis}
+                            onChange={(e) => setLmsScores((prev) => ({ ...prev, [w.id]: { ...prev[w.id] ?? { thuis: "", uit: "" }, thuis: e.target.value } }))}
+                            className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:ring-1 focus:ring-green-500"
+                            placeholder="0"
+                          />
+                          <span className="text-zinc-600 font-bold text-xs">–</span>
+                          <input
+                            type="number" min={0} max={99}
+                            value={sc.uit}
+                            onChange={(e) => setLmsScores((prev) => ({ ...prev, [w.id]: { ...prev[w.id] ?? { thuis: "", uit: "" }, uit: e.target.value } }))}
+                            className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:ring-1 focus:ring-green-500"
+                            placeholder="0"
+                          />
+                          <button
+                            onClick={() => slaLmsScoreOp(w.id)}
+                            disabled={lmsScoreBezig === w.id || sc.thuis === "" || sc.uit === ""}
+                            className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors bg-zinc-700 hover:bg-zinc-600 text-white disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+                          >
+                            {lmsScoreBezig === w.id ? "..." : heeftScore ? "Bijwerken" : "Opslaan"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
