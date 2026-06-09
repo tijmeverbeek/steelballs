@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, updatePouleInstellingen, slaMatchResultaatOp, rondeAfPoule } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { Poule } from "@/lib/types";
+import { Poule, Wedstrijd } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
 import { LMS_RONDES, getWedstrijdenVoorRonde } from "@/lib/lms";
@@ -521,8 +521,19 @@ export default function InstellingenPagina() {
                     {poule.deelnemers.map((d) => {
                       const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
                       const pick = d.lmsPicks?.find((p) => p.rondeNr === lmsVerwerkRonde);
-                      const wedstrijden = getWedstrijdenVoorRonde(lmsVerwerkRonde);
-                      const w = pick ? wedstrijden.find((x) => x.id === pick.wedstrijdId) : null;
+                      const alleWedstrijdenRonde: Wedstrijd[] = [
+                        ...getWedstrijdenVoorRonde(lmsVerwerkRonde),
+                        ...knockoutWedstrijden
+                          .filter((kw) => kw.rondeNr === lmsVerwerkRonde)
+                          .map((kw): Wedstrijd => ({
+                            id: kw.id,
+                            thuis: { code: kw.thuisCode, naam: kw.thuisNaam, vlag: kw.thuisVlag },
+                            uit: { code: kw.uitCode, naam: kw.uitNaam, vlag: kw.uitVlag },
+                            datum: kw.datum ?? "", tijd: kw.tijd ?? "",
+                            groep: `Ronde ${kw.rondeNr}`, fase: "knockout",
+                          })),
+                      ];
+                      const w = pick ? alleWedstrijdenRonde.find((x) => x.id === pick.wedstrijdId) : null;
                       const team = w && pick ? (w.thuis.code === pick.teamCode ? w.thuis : w.uit) : null;
                       return (
                         <div key={d.id} className="flex items-center gap-3 text-sm">

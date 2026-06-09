@@ -36,6 +36,8 @@ interface LmsKnockoutWedstrijd {
 
 function isRondeToegankelijk(rondeNr: number, d: DeelnemerMet): boolean {
   if (rondeNr === 1) return true;
+  // Previous round must be closed before this one can be entered
+  if (!isRondeGesloten(rondeNr - 1)) return false;
   const vorigePick = d.lmsPicks.find((p) => p.rondeNr === rondeNr - 1);
   return vorigePick?.uitkomst === "win";
 }
