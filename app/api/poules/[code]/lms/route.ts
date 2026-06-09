@@ -38,9 +38,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     return NextResponse.json({ error: "De deadline voor deze ronde is verstreken" }, { status: 403 });
   }
 
-  // Verify the wedstrijd belongs to this round
-  const rondeWedstrijden = getWedstrijdenVoorRonde(rondeNr);
-  if (!rondeWedstrijden.find((w) => w.id === wedstrijdId)) {
+  // Verify the wedstrijd belongs to this round (hardcoded OR DB knockout)
+  const hardcodedWedstrijden = getWedstrijdenVoorRonde(rondeNr);
+  const lmsWedstrijden = hardcodedWedstrijden.length === 0
+    ? await prisma.lmsWedstrijd.findMany({ where: { rondeNr } })
+    : [];
+  const geldig =
+    hardcodedWedstrijden.find((w) => w.id === wedstrijdId) ||
+    lmsWedstrijden.find((w) => w.id === wedstrijdId);
+  if (!geldig) {
     return NextResponse.json({ error: "Wedstrijd hoort niet bij deze ronde" }, { status: 400 });
   }
 

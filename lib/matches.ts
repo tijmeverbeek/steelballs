@@ -135,3 +135,15 @@ export function getWedstrijd(id: string): Wedstrijd | undefined {
 export function getGroepen(): string[] {
   return [...new Set(WK_WEDSTRIJDEN.map((w) => w.groep))].sort();
 }
+
+export function getAllWkTeams(): Team[] {
+  const seen = new Set<string>();
+  return Object.values(groepen)
+    .flat()
+    .filter((t) => { if (seen.has(t.code)) return false; seen.add(t.code); return true; })
+    .sort((a, b) => a.naam.localeCompare(b.naam));
+}
+
+export function getTeamByCode(code: string): Team | undefined {
+  return Object.values(groepen).flat().find((t) => t.code === code);
+}

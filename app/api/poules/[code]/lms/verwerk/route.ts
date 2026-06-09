@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthUser } from "@/lib/supabase/server";
 import { getWedstrijdenVoorRonde } from "@/lib/lms";
-import { getWedstrijd } from "@/lib/matches";
+
+export const dynamic = "force-dynamic";
 
 // POST: verwerk een LMS ronde — bepaal uitkomsten o.b.v. wedstrijdresultaten
 // en schakelt spelers uit die hebben verloren of gelijk gespeeld
@@ -29,11 +30,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
   }
 
-  // Haal alle wedstrijdresultaten op voor deze ronde
-  const rondeWedstrijden = getWedstrijdenVoorRonde(rondeNr);
-  const wedstrijdIds = rondeWedstrijden.map((w) => w.id);
+  // Hardcoded groepsfase wedstrijden + DB knockout wedstrijden voor deze ronde
+  const hardcodedWedstrijden = getWedstrijdenVoorRonde(rondeNr);
+  const lmsWedstrijden = await prisma.lmsWedstrijd.findMany({ where: { rondeNr } });
+
+  // Unified wedstrijdId → { thuisCode, uitCode } map
+  const wedstrijdMap: Record<string, { thuisCode: string; uitCode: string }> = {};
+  hardcodedWedstrijden.forEach((w) => { wedstrijdMap[w.id] = { thuisCode: w.thuis.code, uitCode: w.uit.code }; });
+  lmsWedstrijden.forEach((w) => { wedstrijdMap[w.id] = { thuisCode: w.thuisCode, uitCode: w.uitCode }; });
+
+  const alleWedstrijdIds = Object.keys(wedstrijdMap);
   const resultaten = await prisma.resultaat.findMany({
-    where: { wedstrijdId: { in: wedstrijdIds } },
+    where: { wedstrijdId: { in: alleWedstrijdIds } },
   });
   const resultatenMap = Object.fromEntries(
     resultaten.map((r) => [r.wedstrijdId, { thuis: r.thuis, uit: r.uit }])
@@ -50,11 +58,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     const resultaat = resultatenMap[pick.wedstrijdId];
     if (!resultaat) { ontbreekt++; continue; }
 
-    const wedstrijd = getWedstrijd(pick.wedstrijdId);
-    if (!wedstrijd) continue;
+    const wedstrijdInfo = wedstrijdMap[pick.wedstrijdId];
+    if (!wedstrijdInfo) continue;
 
-    // Bepaal of het gekozen team thuis of uit speelde
-    const isThuis = wedstrijd.thuis.code === pick.teamCode;
+    const isThuis = wedstrijdInfo.thuisCode === pick.teamCode;
     const teamDoelpunten = isThuis ? resultaat.thuis : resultaat.uit;
     const tegenstander = isThuis ? resultaat.uit : resultaat.thuis;
 
@@ -63,15 +70,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     else if (teamDoelpunten < tegenstander) uitkomst = "verlies";
     else uitkomst = "gelijk";
 
-    // Update pick uitkomst
     updates.push(
-      prisma.lmsPick.update({
-        where: { id: pick.id },
-        data: { uitkomst },
-      })
+      prisma.lmsPick.update({ where: { id: pick.id }, data: { uitkomst } })
     );
 
-    // Uitgeschakeld bij verlies of gelijkspel (standaard LMS-regel)
     if (uitkomst !== "win" && deelnemer.lmsActief) {
       updates.push(
         prisma.deelnemer.update({
