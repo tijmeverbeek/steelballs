@@ -21,6 +21,39 @@ interface DeelnemerMet extends Deelnemer {
   lmsPicks: LmsPick[];
 }
 
+interface LmsKnockoutWedstrijd {
+  id: string;
+  rondeNr: number;
+  thuisCode: string;
+  thuisNaam: string;
+  thuisVlag: string;
+  uitCode: string;
+  uitNaam: string;
+  uitVlag: string;
+  datum: string | null;
+  tijd: string | null;
+}
+
+function isRondeToegankelijk(rondeNr: number, d: DeelnemerMet): boolean {
+  if (rondeNr === 1) return true;
+  // Previous round must be closed before this one can be entered
+  if (!isRondeGesloten(rondeNr - 1)) return false;
+  const vorigePick = d.lmsPicks.find((p) => p.rondeNr === rondeNr - 1);
+  return vorigePick?.uitkomst === "win";
+}
+
+function lmsWedstrijdNaarWedstrijd(w: LmsKnockoutWedstrijd): Wedstrijd {
+  return {
+    id: w.id,
+    thuis: { code: w.thuisCode, naam: w.thuisNaam, vlag: w.thuisVlag },
+    uit: { code: w.uitCode, naam: w.uitNaam, vlag: w.uitVlag },
+    datum: w.datum ?? "",
+    tijd: w.tijd ?? "",
+    groep: `Ronde ${w.rondeNr}`,
+    fase: "knockout",
+  };
+}
+
 export default function LmsPickPagina() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
@@ -29,10 +62,17 @@ export default function LmsPickPagina() {
   const [alleDeelnemers, setAlleDeelnemers] = useState<DeelnemerMet[]>([]);
   const [actieveRonde, setActieveRonde] = useState<LmsRonde | null>(null);
   const [wedstrijden, setWedstrijden] = useState<Wedstrijd[]>([]);
+  const [lmsKnockout, setLmsKnockout] = useState<LmsKnockoutWedstrijd[]>([]);
   const [gekozen, setGekozen] = useState<string | null>(null);
   const [opslaan, setOpslaan] = useState(false);
   const [fout, setFout] = useState("");
   const [success, setSuccess] = useState(false);
+
+  function wedstrijdenVoorRonde(r: LmsRonde): Wedstrijd[] {
+    const hardcoded = getWedstrijdenVoorRonde(r.nr);
+    if (hardcoded.length > 0) return hardcoded;
+    return lmsKnockout.filter((w) => w.rondeNr === r.nr).map(lmsWedstrijdNaarWedstrijd);
+  }
 
   useEffect(() => {
     async function load() {
@@ -40,9 +80,18 @@ export default function LmsPickPagina() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/"); return; }
 
-      const poule = await getPoule(code);
+      const [poule, wRes] = await Promise.all([
+        getPoule(code),
+        fetch("/api/lms/wedstrijden"),
+      ]);
+
       if (!poule || poule.soort !== "lms") { router.push(`/poule/${code}`); return; }
       setPoulenaam(poule.naam);
+
+      if (wRes.ok) {
+        const wData = await wRes.json();
+        setLmsKnockout(wData.wedstrijden ?? []);
+      }
 
       const deelnemersList = poule.deelnemers as DeelnemerMet[];
       setAlleDeelnemers(deelnemersList);
@@ -51,7 +100,17 @@ export default function LmsPickPagina() {
       if (!dl) { router.push(`/poule/${code}`); return; }
       setDeelnemer(dl);
 
-      const ronde = getHuidigeRonde() ?? LMS_RONDES[0];
+      // Auto-select eerste open, toegankelijke ronde zonder pick
+      const ronde = (() => {
+        for (const r of LMS_RONDES) {
+          if (isRondeGesloten(r.nr)) continue;
+          if (dl.lmsPicks.find((p) => p.rondeNr === r.nr)) continue;
+          if (!isRondeToegankelijk(r.nr, dl)) continue;
+          return r;
+        }
+        return getHuidigeRonde() ?? LMS_RONDES[0];
+      })();
+
       setActieveRonde(ronde);
       setWedstrijden(getWedstrijdenVoorRonde(ronde.nr));
       const bestaand = dl.lmsPicks.find((p) => p.rondeNr === ronde.nr);
@@ -60,9 +119,17 @@ export default function LmsPickPagina() {
     load();
   }, [code, router]);
 
+  // Update wedstrijden wanneer lmsKnockout geladen is (voor knockout rondes)
+  useEffect(() => {
+    if (!actieveRonde || !deelnemer) return;
+    const w = wedstrijdenVoorRonde(actieveRonde);
+    setWedstrijden(w);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lmsKnockout]);
+
   function wisselRonde(r: LmsRonde) {
     setActieveRonde(r);
-    setWedstrijden(getWedstrijdenVoorRonde(r.nr));
+    setWedstrijden(wedstrijdenVoorRonde(r));
     setGekozen(deelnemer?.lmsPicks.find((p) => p.rondeNr === r.nr)?.teamCode ?? null);
     setSuccess(false);
     setFout("");
@@ -117,14 +184,17 @@ export default function LmsPickPagina() {
     );
   }
 
+  // Uitgeschakeld scherm
   if (!deelnemer.lmsActief) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
-          <div className="text-5xl mb-4">💀</div>
-          <h1 className="text-xl font-bold text-white mb-2">Uitgeschakeld</h1>
-          <p className="text-zinc-500 mb-1">Je werd uitgeschakeld in ronde {deelnemer.lmsUitgeschakeldRonde}.</p>
-          <p className="text-zinc-600 text-sm mb-6">Beter geluk volgende keer.</p>
+          <div className="text-6xl mb-4">💀</div>
+          <h1 className="text-2xl font-black text-white mb-2">Jammer!</h1>
+          <p className="text-zinc-300 font-semibold mb-1">Jij bent niet de last staal man standing.</p>
+          <p className="text-zinc-500 text-sm mb-6">
+            Uitgeschakeld in ronde {deelnemer.lmsUitgeschakeldRonde}.
+          </p>
           <Link href={`/poule/${code}`} className="text-green-400 hover:text-green-300 text-sm font-medium">
             ← Terug naar de poule
           </Link>
@@ -138,10 +208,10 @@ export default function LmsPickPagina() {
     .map((p) => p.teamCode);
 
   const gesloten = isRondeGesloten(actieveRonde.nr);
+  const toegankelijk = isRondeToegankelijk(actieveRonde.nr, deelnemer);
   const deadline = getDeadlineVoorRonde(actieveRonde.nr);
   const mijnPickDezeRonde = deelnemer.lmsPicks.find((p) => p.rondeNr === actieveRonde.nr);
 
-  // Gekozen team info
   const gekozenWedstrijd = wedstrijden.find((w) => w.thuis.code === gekozen || w.uit.code === gekozen);
   const gekozenTeam = gekozenWedstrijd
     ? (gekozenWedstrijd.thuis.code === gekozen ? gekozenWedstrijd.thuis : gekozenWedstrijd.uit)
@@ -166,6 +236,8 @@ export default function LmsPickPagina() {
           {LMS_RONDES.map((r) => {
             const mijnPick = deelnemer.lmsPicks.find((p) => p.rondeNr === r.nr);
             const isActief = r.nr === actieveRonde.nr;
+            const tabToegankelijk = isRondeToegankelijk(r.nr, deelnemer);
+            const tabGesloten = isRondeGesloten(r.nr);
             return (
               <button
                 key={r.nr}
@@ -179,6 +251,8 @@ export default function LmsPickPagina() {
                     ? "bg-red-500/20 text-red-400 border-red-500/30"
                     : mijnPick
                     ? "bg-zinc-800 text-zinc-300 border-zinc-700"
+                    : !tabToegankelijk && !tabGesloten
+                    ? "text-zinc-700 border-zinc-800"
                     : "text-zinc-500 border-zinc-700 hover:text-white hover:border-zinc-500"
                 }`}
               >
@@ -188,6 +262,7 @@ export default function LmsPickPagina() {
                     {mijnPick.uitkomst === "win" ? "✓" : mijnPick.uitkomst ? "✗" : "●"}
                   </span>
                 )}
+                {!mijnPick && !tabToegankelijk && !tabGesloten && <span className="ml-1 opacity-40">🔒</span>}
               </button>
             );
           })}
@@ -217,6 +292,8 @@ export default function LmsPickPagina() {
           <p className="text-xs text-zinc-500 mt-2">
             {gesloten
               ? "De deadline is verstreken. Hieronder zie je wat iedereen heeft gekozen."
+              : !toegankelijk
+              ? "Je moet eerst de huidige ronde overleven."
               : "Kies precies één team om op te winnen. Je mag elk team maar één keer in het hele toernooi gebruiken."}
           </p>
         </div>
@@ -236,7 +313,7 @@ export default function LmsPickPagina() {
               <div className="flex-1">
                 <p className="font-bold text-white text-base">{gekozenTeam?.naam ?? mijnPickDezeRonde.teamCode}</p>
                 {mijnPickDezeRonde.uitkomst === "win" && <p className="text-xs text-green-400 font-semibold mt-0.5">✓ Gewonnen — je bent nog actief!</p>}
-                {(mijnPickDezeRonde.uitkomst === "verlies") && <p className="text-xs text-red-400 font-semibold mt-0.5">✗ Verlies — uitgeschakeld</p>}
+                {mijnPickDezeRonde.uitkomst === "verlies" && <p className="text-xs text-red-400 font-semibold mt-0.5">✗ Verlies — uitgeschakeld</p>}
                 {mijnPickDezeRonde.uitkomst === "gelijk" && <p className="text-xs text-red-400 font-semibold mt-0.5">= Gelijkspel — uitgeschakeld</p>}
                 {!mijnPickDezeRonde.uitkomst && !gesloten && <p className="text-xs text-zinc-500 mt-0.5">Gekozen · je kunt nog wijzigen tot de deadline</p>}
                 {!mijnPickDezeRonde.uitkomst && gesloten && <p className="text-xs text-zinc-500 mt-0.5">Wacht op uitslag</p>}
@@ -245,12 +322,24 @@ export default function LmsPickPagina() {
           </div>
         )}
 
-        {/* ── Team kiezen (alleen als ronde open is) ── */}
-        {!gesloten && (
+        {/* ── Niet toegankelijk: moet huidige ronde eerst overleven ── */}
+        {!gesloten && !toegankelijk && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
+            <p className="text-3xl mb-3">🔒</p>
+            <p className="text-white text-sm font-bold">Je moet eerst de huidige ronde overleven</p>
+            <p className="text-zinc-600 text-xs mt-1">
+              Zodra ronde {actieveRonde.nr - 1} verwerkt is en jij gewonnen hebt, kun je hier kiezen.
+            </p>
+          </div>
+        )}
+
+        {/* ── Team kiezen (alleen als ronde open én toegankelijk is) ── */}
+        {!gesloten && toegankelijk && (
           <>
             {wedstrijden.length === 0 ? (
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
                 <p className="text-zinc-500 text-sm">Wedstrijden voor deze ronde zijn nog niet bekend.</p>
+                <p className="text-zinc-700 text-xs mt-1">De beheerder vult de koppels in zodra de bracket bekend is.</p>
               </div>
             ) : (
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
@@ -262,22 +351,25 @@ export default function LmsPickPagina() {
                   {wedstrijden.map((w) => {
                     const thuisGebruikt = gebruiktTeams.includes(w.thuis.code);
                     const uitGebruikt = gebruiktTeams.includes(w.uit.code);
-                    const matchGestart = new Date() >= new Date(`${w.datum}T${w.tijd}:00`);
+                    const matchGestart = w.datum && w.tijd
+                      ? new Date() >= new Date(`${w.datum}T${w.tijd}:00`)
+                      : false;
                     const thuisDisabled = thuisGebruikt || matchGestart;
                     const uitDisabled = uitGebruikt || matchGestart;
 
-                    // Fade not-chosen matches once a pick is made
                     const ietsGekozen = gekozen !== null;
                     const eenVanDeze = gekozen === w.thuis.code || gekozen === w.uit.code;
                     const fadedOut = ietsGekozen && !eenVanDeze;
 
                     return (
                       <div key={w.id} className={`px-4 py-3 transition-opacity ${fadedOut ? "opacity-30" : ""}`}>
-                        <p className="text-xs text-zinc-600 text-center mb-2">
-                          {new Date(w.datum).toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" })}
-                          {" · "}{w.tijd}
-                          {matchGestart && <span className="ml-1.5 text-zinc-700">🔒</span>}
-                        </p>
+                        {w.datum && w.tijd && (
+                          <p className="text-xs text-zinc-600 text-center mb-2">
+                            {new Date(w.datum).toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" })}
+                            {" · "}{w.tijd}
+                            {matchGestart && <span className="ml-1.5 text-zinc-700">🔒</span>}
+                          </p>
+                        )}
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -291,7 +383,7 @@ export default function LmsPickPagina() {
                                 : "border-zinc-700 hover:border-zinc-400 hover:bg-zinc-800 text-white"
                             }`}
                           >
-                            <span className="text-2xl">{w.thuis.vlag}</span>
+                            <span className="text-2xl">{w.thuis.vlag || "🏳"}</span>
                             <span className="text-xs font-semibold leading-tight text-center">{w.thuis.naam}</span>
                             {thuisGebruikt && <span className="text-xs text-zinc-600">al gebruikt</span>}
                           </button>
@@ -310,7 +402,7 @@ export default function LmsPickPagina() {
                                 : "border-zinc-700 hover:border-zinc-400 hover:bg-zinc-800 text-white"
                             }`}
                           >
-                            <span className="text-2xl">{w.uit.vlag}</span>
+                            <span className="text-2xl">{w.uit.vlag || "🏳"}</span>
                             <span className="text-xs font-semibold leading-tight text-center">{w.uit.naam}</span>
                             {uitGebruikt && <span className="text-xs text-zinc-600">al gebruikt</span>}
                           </button>
@@ -322,7 +414,6 @@ export default function LmsPickPagina() {
               </div>
             )}
 
-            {/* Bevestig knop */}
             {wedstrijden.length > 0 && (
               <div className="space-y-2">
                 {fout && <p className="text-red-400 text-xs text-center">{fout}</p>}
@@ -343,20 +434,15 @@ export default function LmsPickPagina() {
           </>
         )}
 
-        {/* ── Picks van iedereen (zichtbaar als ronde gesloten of jij hebt gekozen) ── */}
-        {(gesloten || mijnPickDezeRonde) && (
+        {/* ── Picks van iedereen (alleen na deadline) ── */}
+        {gesloten && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             <div className="px-5 py-3 border-b border-zinc-800">
               <p className="text-sm font-semibold text-white">Picks ronde {actieveRonde.nr}</p>
-              {!gesloten && <p className="text-xs text-zinc-600 mt-0.5">Zichtbaar nadat jij gekozen hebt</p>}
             </div>
             <div className="divide-y divide-zinc-800">
               {alleDeelnemers
-                .sort((a, b) => {
-                  // Actieve spelers eerst, dan uitgeschakeld
-                  if ((a.lmsActief ?? true) !== (b.lmsActief ?? true)) return (a.lmsActief ?? true) ? -1 : 1;
-                  return 0;
-                })
+                .sort((a, b) => ((a.lmsActief ?? true) === (b.lmsActief ?? true) ? 0 : (a.lmsActief ?? true) ? -1 : 1))
                 .map((d) => {
                   const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
                   const pick = d.lmsPicks.find((p) => p.rondeNr === actieveRonde.nr);
@@ -390,9 +476,7 @@ export default function LmsPickPagina() {
                           {(pick.uitkomst === "verlies" || pick.uitkomst === "gelijk") && <span>✗</span>}
                         </span>
                       ) : (
-                        <span className="text-xs text-zinc-700 italic flex-shrink-0">
-                          {gesloten ? "Niet gekozen" : "Nog niet gekozen"}
-                        </span>
+                        <span className="text-xs text-zinc-700 italic flex-shrink-0">Niet gekozen</span>
                       )}
                     </div>
                   );
@@ -411,8 +495,7 @@ export default function LmsPickPagina() {
               {LMS_RONDES.map((r) => {
                 const pick = deelnemer.lmsPicks.find((p) => p.rondeNr === r.nr);
                 if (!pick) {
-                  const rondePast = isRondeGesloten(r.nr);
-                  if (!rondePast) return null;
+                  if (!isRondeGesloten(r.nr)) return null;
                   return (
                     <div key={r.nr} className="px-5 py-3 flex items-center gap-3 opacity-40">
                       <span className="text-xs font-bold text-zinc-600 w-6 text-center">R{r.nr}</span>
@@ -421,7 +504,8 @@ export default function LmsPickPagina() {
                     </div>
                   );
                 }
-                const w = getWedstrijdenVoorRonde(r.nr).find((x) => x.id === pick.wedstrijdId);
+                const rondeW = wedstrijdenVoorRonde(r);
+                const w = rondeW.find((x) => x.id === pick.wedstrijdId);
                 const team = w ? (w.thuis.code === pick.teamCode ? w.thuis : w.uit) : null;
                 return (
                   <div key={r.nr} className="px-5 py-3 flex items-center gap-3">

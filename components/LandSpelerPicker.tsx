@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getWkTeams } from "@/lib/matches";
+import { getAllWkTeams } from "@/lib/matches";
 import { Speler } from "@/lib/players";
 
 const POSITIE_STIJL: Record<string, string> = {
@@ -23,7 +23,7 @@ export function LandSpelerPicker({
   const [spelers, setSpelers] = useState<Speler[]>([]);
   const [geselecteerdLand, setGeselecteerdLand] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const wkTeams = getWkTeams();
+  const wkTeams = getAllWkTeams();
 
   useEffect(() => {
     fetch("/api/spelers?soort=wk")

@@ -75,6 +75,19 @@ model LmsPick {
   @@unique([deelnemerId, rondeNr])
 }
 
+model LmsWedstrijd {
+  id        String  @id @default(cuid())
+  rondeNr   Int
+  thuisCode String
+  thuisNaam String
+  thuisVlag String
+  uitCode   String
+  uitNaam   String
+  uitVlag   String
+  datum     String?
+  tijd      String?
+}
+
 model Voorspelling {
   id          String    @id @default(cuid())
   wedstrijdId String

@@ -5,10 +5,24 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule, updatePouleInstellingen, slaMatchResultaatOp, rondeAfPoule } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { Poule } from "@/lib/types";
+import { Poule, Wedstrijd } from "@/lib/types";
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
 import { LMS_RONDES, getWedstrijdenVoorRonde } from "@/lib/lms";
+import { getAllWkTeams } from "@/lib/matches";
+
+interface LmsKnockoutWedstrijd {
+  id: string;
+  rondeNr: number;
+  thuisCode: string;
+  thuisNaam: string;
+  thuisVlag: string;
+  uitCode: string;
+  uitNaam: string;
+  uitVlag: string;
+  datum: string | null;
+  tijd: string | null;
+}
 
 function Toggle({ aan, onChange }: { aan: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -42,14 +56,27 @@ export default function InstellingenPagina() {
   const [lmsVerwerkBezig, setLmsVerwerkBezig] = useState(false);
   const [lmsVerwerkResultaat, setLmsVerwerkResultaat] = useState<{ verwerkt: number; ontbreekt: number } | null>(null);
   const [betaaldBezig, setBetaaldBezig] = useState<string | null>(null);
+  const [lmsResultaatRonde, setLmsResultaatRonde] = useState<number | null>(null);
+  const [lmsScores, setLmsScores] = useState<Record<string, { thuis: string; uit: string }>>({});
+  const [lmsScoreBezig, setLmsScoreBezig] = useState<string | null>(null);
+  const [knockoutWedstrijden, setKnockoutWedstrijden] = useState<LmsKnockoutWedstrijd[]>([]);
+  const [knockoutRonde, setKnockoutRonde] = useState<number>(4);
+  const [nieuwThuis, setNieuwThuis] = useState("");
+  const [nieuwUit, setNieuwUit] = useState("");
+  const [nieuwDatum, setNieuwDatum] = useState("");
+  const [nieuwTijd, setNieuwTijd] = useState("");
+  const [knockoutBezig, setKnockoutBezig] = useState(false);
+  const [knockoutVerwijderBezig, setKnockoutVerwijderBezig] = useState<string | null>(null);
+  const wkTeams = getAllWkTeams();
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push("/"); return; }
-      const [p, userRes] = await Promise.all([
+      const [p, userRes, knockoutRes] = await Promise.all([
         getPoule(code),
         fetch("/api/user").then((r) => r.json()).catch(() => ({})),
+        fetch("/api/lms/wedstrijden").then((r) => r.json()).catch(() => ({ wedstrijden: [] })),
       ]);
       const isAdmin = userRes?.isAdmin === true;
       if (!p || (p.organisatorId !== user.id && !isAdmin)) { router.push(`/poule/${code}`); return; }
@@ -62,6 +89,12 @@ export default function InstellingenPagina() {
       const clResult = p.resultaten["CL1"];
       setClFinaleThuis(clResult ? String(clResult.thuis) : "");
       setClFinaleUit(clResult ? String(clResult.uit) : "");
+      const scores: Record<string, { thuis: string; uit: string }> = {};
+      Object.entries(p.resultaten).forEach(([wId, res]) => {
+        scores[wId] = { thuis: String(res.thuis), uit: String(res.uit) };
+      });
+      setLmsScores(scores);
+      setKnockoutWedstrijden(knockoutRes.wedstrijden ?? []);
     });
   }, [code, router]);
 
@@ -159,6 +192,70 @@ export default function InstellingenPagina() {
       alert("Netwerkfout — probeer opnieuw");
     } finally {
       setLmsVerwerkBezig(false);
+    }
+  }
+
+  async function slaLmsScoreOp(wedstrijdId: string) {
+    const score = lmsScores[wedstrijdId];
+    if (!score || score.thuis === "" || score.uit === "") return;
+    setLmsScoreBezig(wedstrijdId);
+    try {
+      await slaMatchResultaatOp(code, wedstrijdId, parseInt(score.thuis), parseInt(score.uit));
+      setPoule((prev) =>
+        prev ? { ...prev, resultaten: { ...prev.resultaten, [wedstrijdId]: { thuis: parseInt(score.thuis), uit: parseInt(score.uit) } } } : prev
+      );
+      toonOpgeslagen();
+    } catch {
+      alert("Opslaan mislukt. Probeer opnieuw.");
+    } finally {
+      setLmsScoreBezig(null);
+    }
+  }
+
+  async function voegKnockoutWedstrijdToe() {
+    if (!nieuwThuis || !nieuwUit || nieuwThuis === nieuwUit) return;
+    setKnockoutBezig(true);
+    try {
+      const thuisTeam = wkTeams.find((t) => t.code === nieuwThuis);
+      const uitTeam = wkTeams.find((t) => t.code === nieuwUit);
+      if (!thuisTeam || !uitTeam) return;
+      const res = await fetch("/api/lms/wedstrijden", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rondeNr: knockoutRonde,
+          thuisCode: thuisTeam.code,
+          thuisNaam: thuisTeam.naam,
+          thuisVlag: thuisTeam.vlag ?? "",
+          uitCode: uitTeam.code,
+          uitNaam: uitTeam.naam,
+          uitVlag: uitTeam.vlag ?? "",
+          datum: nieuwDatum || null,
+          tijd: nieuwTijd || null,
+        }),
+      });
+      if (!res.ok) { const d = await res.json(); alert(d.error ?? "Toevoegen mislukt"); return; }
+      const { wedstrijd } = await res.json();
+      setKnockoutWedstrijden((prev) => [...prev, wedstrijd]);
+      setNieuwThuis(""); setNieuwUit(""); setNieuwDatum(""); setNieuwTijd("");
+      toonOpgeslagen();
+    } catch {
+      alert("Netwerkfout — probeer opnieuw");
+    } finally {
+      setKnockoutBezig(false);
+    }
+  }
+
+  async function verwijderKnockoutWedstrijd(id: string) {
+    setKnockoutVerwijderBezig(id);
+    try {
+      const res = await fetch(`/api/lms/wedstrijden/${id}`, { method: "DELETE" });
+      if (!res.ok) { alert("Verwijderen mislukt"); return; }
+      setKnockoutWedstrijden((prev) => prev.filter((w) => w.id !== id));
+    } catch {
+      alert("Netwerkfout — probeer opnieuw");
+    } finally {
+      setKnockoutVerwijderBezig(null);
     }
   }
 
@@ -424,8 +521,19 @@ export default function InstellingenPagina() {
                     {poule.deelnemers.map((d) => {
                       const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
                       const pick = d.lmsPicks?.find((p) => p.rondeNr === lmsVerwerkRonde);
-                      const wedstrijden = getWedstrijdenVoorRonde(lmsVerwerkRonde);
-                      const w = pick ? wedstrijden.find((x) => x.id === pick.wedstrijdId) : null;
+                      const alleWedstrijdenRonde: Wedstrijd[] = [
+                        ...getWedstrijdenVoorRonde(lmsVerwerkRonde),
+                        ...knockoutWedstrijden
+                          .filter((kw) => kw.rondeNr === lmsVerwerkRonde)
+                          .map((kw): Wedstrijd => ({
+                            id: kw.id,
+                            thuis: { code: kw.thuisCode, naam: kw.thuisNaam, vlag: kw.thuisVlag },
+                            uit: { code: kw.uitCode, naam: kw.uitNaam, vlag: kw.uitVlag },
+                            datum: kw.datum ?? "", tijd: kw.tijd ?? "",
+                            groep: `Ronde ${kw.rondeNr}`, fase: "knockout",
+                          })),
+                      ];
+                      const w = pick ? alleWedstrijdenRonde.find((x) => x.id === pick.wedstrijdId) : null;
                       const team = w && pick ? (w.thuis.code === pick.teamCode ? w.thuis : w.uit) : null;
                       return (
                         <div key={d.id} className="flex items-center gap-3 text-sm">
@@ -469,6 +577,189 @@ export default function InstellingenPagina() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Uitslagen invoeren — voor LMS (en gedeeld met WK poules via dezelfde Resultaat tabel) */}
+        {isLMS && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="font-bold text-white">Uitslagen invoeren</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Scores gelden voor alle poules — LMS en WK gebruiken dezelfde resultaten</p>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="flex gap-2 flex-wrap">
+                {LMS_RONDES.map((r) => (
+                  <button
+                    key={r.nr}
+                    onClick={() => setLmsResultaatRonde(lmsResultaatRonde === r.nr ? null : r.nr)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                      lmsResultaatRonde === r.nr
+                        ? "bg-white text-zinc-900 border-white"
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white"
+                    }`}
+                  >
+                    R{r.nr}
+                  </button>
+                ))}
+              </div>
+
+              {lmsResultaatRonde !== null && (() => {
+                const hardcodedWedstrijden = getWedstrijdenVoorRonde(lmsResultaatRonde);
+                const dbWedstrijden = knockoutWedstrijden.filter((w) => w.rondeNr === lmsResultaatRonde);
+                const alleWedstrijden: { id: string; thuisVlag: string; thuisNaam: string; uitNaam: string; uitVlag: string }[] = [
+                  ...hardcodedWedstrijden.map((w) => ({ id: w.id, thuisVlag: w.thuis.vlag ?? "", thuisNaam: w.thuis.naam, uitNaam: w.uit.naam, uitVlag: w.uit.vlag ?? "" })),
+                  ...dbWedstrijden.map((w) => ({ id: w.id, thuisVlag: w.thuisVlag, thuisNaam: w.thuisNaam, uitNaam: w.uitNaam, uitVlag: w.uitVlag })),
+                ];
+                if (alleWedstrijden.length === 0) {
+                  return <p className="text-sm text-zinc-600 italic">Wedstrijden voor deze ronde zijn nog niet ingevoerd. Voeg ze toe via &quot;Knockout wedstrijden&quot; hieronder.</p>;
+                }
+                return (
+                  <div className="space-y-2">
+                    {alleWedstrijden.map((w) => {
+                      const sc = lmsScores[w.id] ?? { thuis: "", uit: "" };
+                      const heeftScore = poule.resultaten[w.id] != null;
+                      return (
+                        <div key={w.id} className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0 text-xs text-zinc-400 truncate">
+                            {w.thuisVlag} <span className="font-medium text-zinc-300">{w.thuisNaam}</span>
+                            <span className="text-zinc-600 mx-1">vs</span>
+                            <span className="font-medium text-zinc-300">{w.uitNaam}</span> {w.uitVlag}
+                          </div>
+                          <input
+                            type="number" min={0} max={99}
+                            value={sc.thuis}
+                            onChange={(e) => setLmsScores((prev) => ({ ...prev, [w.id]: { ...prev[w.id] ?? { thuis: "", uit: "" }, thuis: e.target.value } }))}
+                            className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:ring-1 focus:ring-green-500"
+                            placeholder="0"
+                          />
+                          <span className="text-zinc-600 font-bold text-xs">–</span>
+                          <input
+                            type="number" min={0} max={99}
+                            value={sc.uit}
+                            onChange={(e) => setLmsScores((prev) => ({ ...prev, [w.id]: { ...prev[w.id] ?? { thuis: "", uit: "" }, uit: e.target.value } }))}
+                            className="w-12 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:ring-1 focus:ring-green-500"
+                            placeholder="0"
+                          />
+                          <button
+                            onClick={() => slaLmsScoreOp(w.id)}
+                            disabled={lmsScoreBezig === w.id || sc.thuis === "" || sc.uit === ""}
+                            className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors bg-zinc-700 hover:bg-zinc-600 text-white disabled:opacity-40 whitespace-nowrap flex-shrink-0"
+                          >
+                            {lmsScoreBezig === w.id ? "..." : heeftScore ? "Bijwerken" : "Opslaan"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Knockout wedstrijden beheren — alleen LMS, rondes 4-8 */}
+        {isLMS && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="font-bold text-white">Knockout wedstrijden</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Voeg handmatig de teams in voor de knockout rondes zodra het speelschema bekend is</p>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* Ronde selector — alleen knockout rondes (4-8) */}
+              <div className="flex gap-2 flex-wrap">
+                {LMS_RONDES.filter((r) => r.nr >= 4).map((r) => (
+                  <button
+                    key={r.nr}
+                    onClick={() => setKnockoutRonde(r.nr)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                      knockoutRonde === r.nr
+                        ? "bg-white text-zinc-900 border-white"
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white"
+                    }`}
+                  >
+                    R{r.nr} – {LMS_RONDES.find((r2) => r2.nr === r.nr)?.naam}
+                  </button>
+                ))}
+              </div>
+
+              {/* Bestaande wedstrijden voor geselecteerde ronde */}
+              {knockoutWedstrijden.filter((w) => w.rondeNr === knockoutRonde).length > 0 && (
+                <div className="space-y-1.5">
+                  {knockoutWedstrijden.filter((w) => w.rondeNr === knockoutRonde).map((w) => (
+                    <div key={w.id} className="flex items-center gap-2 text-sm">
+                      <span className="flex-1 text-zinc-300 truncate">
+                        {w.thuisVlag} <span className="font-medium">{w.thuisNaam}</span>
+                        <span className="text-zinc-600 mx-1">vs</span>
+                        <span className="font-medium">{w.uitNaam}</span> {w.uitVlag}
+                        {w.datum && <span className="text-zinc-600 ml-1 text-xs">{w.datum}{w.tijd ? ` ${w.tijd}` : ""}</span>}
+                      </span>
+                      <button
+                        onClick={() => verwijderKnockoutWedstrijd(w.id)}
+                        disabled={knockoutVerwijderBezig === w.id}
+                        className="text-xs text-red-400 hover:text-red-300 font-medium transition-colors flex-shrink-0 disabled:opacity-50"
+                      >
+                        {knockoutVerwijderBezig === w.id ? "..." : "Verwijderen"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {knockoutWedstrijden.filter((w) => w.rondeNr === knockoutRonde).length === 0 && (
+                <p className="text-xs text-zinc-600 italic">Nog geen wedstrijden voor deze ronde.</p>
+              )}
+
+              {/* Toevoeg-formulier */}
+              <div className="border-t border-zinc-800 pt-4 space-y-3">
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Wedstrijd toevoegen</p>
+                <div className="flex gap-2">
+                  <select
+                    value={nieuwThuis}
+                    onChange={(e) => setNieuwThuis(e.target.value)}
+                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                  >
+                    <option value="">Thuisploeg...</option>
+                    {wkTeams.filter((t) => t.code !== nieuwUit).map((t) => (
+                      <option key={t.code} value={t.code}>{t.vlag} {t.naam}</option>
+                    ))}
+                  </select>
+                  <span className="text-zinc-600 font-bold self-center">vs</span>
+                  <select
+                    value={nieuwUit}
+                    onChange={(e) => setNieuwUit(e.target.value)}
+                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                  >
+                    <option value="">Uitploeg...</option>
+                    {wkTeams.filter((t) => t.code !== nieuwThuis).map((t) => (
+                      <option key={t.code} value={t.code}>{t.vlag} {t.naam}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={nieuwDatum}
+                    onChange={(e) => setNieuwDatum(e.target.value)}
+                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                    placeholder="Datum (optioneel)"
+                  />
+                  <input
+                    type="time"
+                    value={nieuwTijd}
+                    onChange={(e) => setNieuwTijd(e.target.value)}
+                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                    placeholder="Tijd (optioneel)"
+                  />
+                  <button
+                    onClick={voegKnockoutWedstrijdToe}
+                    disabled={knockoutBezig || !nieuwThuis || !nieuwUit || nieuwThuis === nieuwUit}
+                    className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black font-bold text-xs px-4 py-2 rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
+                  >
+                    {knockoutBezig ? "..." : "Toevoegen"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
