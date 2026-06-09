@@ -17,6 +17,12 @@ export const SPECIALS_CATEGORIEEN: SpecialCategorie[] = [
     type: "speler",
   },
   {
+    key: "topscorer_doelpunten",
+    label: "Aantal doelpunten topscorer",
+    beschrijving: "Hoeveel doelpunten scoort de topscorer van het WK 2026?",
+    type: "nummer",
+  },
+  {
     key: "meeste_gele_kaarten",
     label: "Meeste gele kaarten",
     prijsNaam: "Tommy Beugelsdijk prijs",
@@ -24,11 +30,11 @@ export const SPECIALS_CATEGORIEEN: SpecialCategorie[] = [
     type: "speler",
   },
   {
-    key: "leukste_naam",
-    label: "De leukste naam",
-    beschrijving: "Welke speler heeft de leukste naam op het WK? De beheerder kiest de winnaar.",
-    type: "tekst",
-    adminKiest: true,
+    key: "gele_kaarten_aantal",
+    label: "Aantal gele kaarten",
+    prijsNaam: "Tommy Beugelsdijk prijs",
+    beschrijving: "Hoeveel gele kaarten krijgt die speler in totaal?",
+    type: "nummer",
   },
   {
     key: "doelpunt_toernooi",
