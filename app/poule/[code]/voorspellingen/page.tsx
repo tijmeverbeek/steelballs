@@ -6,7 +6,15 @@ import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { getWedstrijdenVoorSoort, CL_FINALE, OEF_NED_ALG } from "@/lib/matches";
-import { Voorspelling, Poule } from "@/lib/types";
+import { LMS_RONDES } from "@/lib/lms";
+import { Voorspelling, Poule, Wedstrijd } from "@/lib/types";
+
+interface LmsKnockoutWedstrijd {
+  id: string; rondeNr: number;
+  thuisCode: string; thuisNaam: string; thuisVlag: string;
+  uitCode: string; uitNaam: string; uitVlag: string;
+  datum: string | null; tijd: string | null;
+}
 import { TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN } from "@/lib/storage";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
 
@@ -82,6 +90,7 @@ export default function VoorspellingenPagina() {
   const [eersteDoelpuntenminuutInput, setEersteDoelpuntenminuutInput] = useState<number | null>(null);
   const [actieveGroep, setActieveGroep] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [knockoutWedstrijden, setKnockoutWedstrijden] = useState<LmsKnockoutWedstrijd[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deelnemerRef = useRef<string | null>(null);
   const topscorerRef = useRef("");
@@ -90,8 +99,31 @@ export default function VoorspellingenPagina() {
   const eersteDoelpuntenmakerRef = useRef("");
   const eersteDoelpuntenminuutRef = useRef<number | null>(null);
   const refs = useRef<Record<string, HTMLDivElement | null>>({});
-  const wedstrijden = useMemo(() => getWedstrijdenVoorSoort(poule?.soort ?? "wk"), [poule?.soort]);
-  const groepen = useMemo(() => [...new Set(wedstrijden.map((w) => w.groep))].sort(), [wedstrijden]);
+
+  const wedstrijden = useMemo((): Wedstrijd[] => {
+    const base = getWedstrijdenVoorSoort(poule?.soort ?? "wk");
+    if ((poule?.soort ?? "wk") !== "wk" || knockoutWedstrijden.length === 0) return base;
+    const knockout: Wedstrijd[] = knockoutWedstrijden.map((kw) => ({
+      id: kw.id,
+      thuis: { code: kw.thuisCode, naam: kw.thuisNaam, vlag: kw.thuisVlag },
+      uit: { code: kw.uitCode, naam: kw.uitNaam, vlag: kw.uitVlag },
+      datum: kw.datum ?? "", tijd: kw.tijd ?? "",
+      groep: LMS_RONDES.find((r) => r.nr === kw.rondeNr)?.naam ?? `Ronde ${kw.rondeNr}`,
+      fase: "knockout" as const,
+    }));
+    return [...base, ...knockout];
+  }, [poule?.soort, knockoutWedstrijden]);
+
+  const groepen = useMemo(() => {
+    const all = [...new Set(wedstrijden.map((w) => w.groep))];
+    const groepsfase = all.filter((g) => g.startsWith("Groep ")).sort();
+    const knockout = all.filter((g) => !g.startsWith("Groep ")).sort((a, b) => {
+      const nrA = LMS_RONDES.find((r) => r.naam === a)?.nr ?? 99;
+      const nrB = LMS_RONDES.find((r) => r.naam === b)?.nr ?? 99;
+      return nrA - nrB;
+    });
+    return [...groepsfase, ...knockout];
+  }, [wedstrijden]);
 
   // Keep a ref in sync so doAutoSave never captures a stale closure
   const wedstrijdenRef = useRef(wedstrijden);
@@ -112,6 +144,13 @@ export default function VoorspellingenPagina() {
       }
 
       setPoule(geladen);
+
+      if ((geladen.soort ?? "wk") === "wk") {
+        fetch("/api/lms/wedstrijden")
+          .then((r) => r.json())
+          .then((d) => setKnockoutWedstrijden(d.wedstrijden ?? []))
+          .catch(() => {});
+      }
       setPoulenaam(geladen.naam);
 
       const deelnemer = geladen.deelnemers.find((d) => d.userId === user.id);
@@ -328,7 +367,11 @@ export default function VoorspellingenPagina() {
 
         <div className="max-w-2xl mx-auto px-4 flex gap-1 overflow-x-auto py-2">
           {groepen.map((g) => {
-            const letter = g.replace("Groep ", "");
+            const kortLabel: Record<string, string> = {
+              "Ronde van 32": "v/32", "Achtste finales": "1/8",
+              "Kwartfinales": "QF", "Halve finales": "HF", "Finale": "FIN",
+            };
+            const letter = g.startsWith("Groep ") ? g.replace("Groep ", "") : (kortLabel[g] ?? g.slice(0, 4));
             const gWedstrijden = wedstrijden.filter((w) => w.groep === g);
             const ingevuld = gWedstrijden.filter(
               (w) => scores[w.id]?.thuis !== null && scores[w.id]?.uit !== null
