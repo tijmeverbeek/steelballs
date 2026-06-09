@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { getWedstrijdenVoorSoort } from "@/lib/matches";
+import { getWedstrijdenVoorSoort, getTeamByCode } from "@/lib/matches";
 
 interface UserPoule {
   id: string;
@@ -17,6 +17,9 @@ interface UserPoule {
   afgerond: boolean;
   winnaarId?: string | null;
   featured?: boolean;
+  lmsActief?: boolean;
+  lmsHuidigeRonde?: number | null;
+  lmsHuidigeRondePick?: { teamCode: string; uitkomst: string | null } | null;
 }
 
 export default function Home() {
@@ -185,7 +188,23 @@ export default function Home() {
                   </div>
                   {p.afgerond ? (
                     <p className="text-xs text-yellow-400/80">Afgerond · tik voor eindstand</p>
-                  ) : (
+                  ) : p.soort === "lms" ? (() => {
+                    if (p.lmsActief === false) {
+                      return <p className="text-xs text-red-400/80">💀 Uitgeschakeld</p>;
+                    }
+                    const pick = p.lmsHuidigeRondePick;
+                    if (pick) {
+                      const team = getTeamByCode(pick.teamCode);
+                      return (
+                        <p className="text-xs text-zinc-400">
+                          Ronde {p.lmsHuidigeRonde} · {team?.vlag ?? ""} {team?.naam ?? pick.teamCode}
+                          {pick.uitkomst === "win" && <span className="text-green-400 ml-1">✓</span>}
+                          {(pick.uitkomst === "verlies" || pick.uitkomst === "gelijk") && <span className="text-red-400 ml-1">✗</span>}
+                        </p>
+                      );
+                    }
+                    return <p className="text-xs text-zinc-600">Ronde {p.lmsHuidigeRonde ?? 1} · nog geen pick</p>;
+                  })() : (
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-1.5 bg-zinc-800 rounded-full">
                         <div
