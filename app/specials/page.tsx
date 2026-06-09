@@ -148,8 +148,11 @@ export default function SpecialsPagina() {
         </div>
 
         {gesloten && (
-          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 text-center">
+          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 text-center space-y-2">
             <div className="text-sm font-semibold text-zinc-300">Specials zijn gesloten sinds 11 juni 21:00 uur</div>
+            <Link href="/specials/overzicht" className="inline-block text-xs text-purple-400 hover:text-purple-300 transition-colors">
+              Bekijk alle voorspellingen →
+            </Link>
           </div>
         )}
 
