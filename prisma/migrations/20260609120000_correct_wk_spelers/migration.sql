@@ -985,7 +985,7 @@ INSERT INTO "Speler" (id, naam, positie, team, soort) VALUES
 (gen_random_uuid(), 'Ahmed El-Shenawy', 'DOE', 'EGY', 'wk'),
 (gen_random_uuid(), 'Ahmed Hegazi', 'VER', 'EGY', 'wk'),
 (gen_random_uuid(), 'Omar Gaber', 'VER', 'EGY', 'wk'),
-(gen_random_uuid(), 'Ahmed Hegazi', 'VER', 'EGY', 'wk'),
+(gen_random_uuid(), 'Mohamed Elneny', 'VER', 'EGY', 'wk'),
 (gen_random_uuid(), 'Ayman Ashraf', 'VER', 'EGY', 'wk'),
 (gen_random_uuid(), 'Ahmed Fatouh', 'VER', 'EGY', 'wk'),
 (gen_random_uuid(), 'Mohamed Abdel-Shafy', 'VER', 'EGY', 'wk'),
