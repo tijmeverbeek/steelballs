@@ -22,6 +22,7 @@ export function LandSpelerPicker({
 }) {
   const [spelers, setSpelers] = useState<Speler[]>([]);
   const [geselecteerdLand, setGeselecteerdLand] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const wkTeams = getWkTeams();
 
   useEffect(() => {
@@ -37,11 +38,13 @@ export function LandSpelerPicker({
   function selectSpeler(s: Speler) {
     onChange(s.naam);
     setGeselecteerdLand(null);
+    setEditMode(false);
   }
 
   function deselecteer() {
     onChange("");
     setGeselecteerdLand(null);
+    setEditMode(false);
   }
 
   const spelersVanLand = geselecteerdLand
@@ -49,7 +52,7 @@ export function LandSpelerPicker({
     : [];
 
   // If a player is selected, show summary
-  if (value && !geselecteerdLand) {
+  if (value && !geselecteerdLand && !editMode) {
     const team = wkTeams.find((t) => t.code === geselecteerdeSpeler?.team);
     return (
       <div className="flex items-center justify-between bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3">
@@ -65,7 +68,7 @@ export function LandSpelerPicker({
         {!disabled && (
           <button
             type="button"
-            onClick={() => setGeselecteerdLand(geselecteerdeSpeler?.team ?? null)}
+            onClick={() => { setEditMode(true); setGeselecteerdLand(null); }}
             className="text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-zinc-700"
           >
             Wijzigen
