@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getWedstrijdenVoorSoort, getTeamByCode } from "@/lib/matches";
+import { SPECIALS_CATEGORIEEN } from "@/lib/specials";
 
 interface UserPoule {
   id: string;
@@ -30,6 +31,7 @@ export default function Home() {
   const [aantalWinsten, setAantalWinsten] = useState<number>(0);
   const [mijnPoules, setMijnPoules] = useState<UserPoule[] | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [specialsCompleet, setSpecialsCompleet] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -39,10 +41,11 @@ export default function Home() {
       setIngelogd(true);
       setMijnUserId(user.id);
 
-      const [userRes, poulesRes, adminRes] = await Promise.all([
+      const [userRes, poulesRes, adminRes, specialsRes] = await Promise.all([
         fetch("/api/user"),
         fetch("/api/user/poules"),
         fetch("/api/admin/stats"),
+        fetch("/api/specials"),
       ]);
       if (userRes.ok) {
         const u = await userRes.json();
@@ -51,6 +54,11 @@ export default function Home() {
       }
       if (poulesRes.ok) setMijnPoules(await poulesRes.json());
       if (adminRes.ok) setIsAdmin(true);
+      if (specialsRes.ok) {
+        const antwoorden = await specialsRes.json();
+        const compleet = SPECIALS_CATEGORIEEN.every((c) => antwoorden[c.key]?.trim());
+        setSpecialsCompleet(compleet);
+      }
     }
     load();
   }, []);
@@ -158,14 +166,16 @@ export default function Home() {
         {/* Specials */}
         <Link
           href="/specials"
-          className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-purple-500/30 px-5 py-4 hover:border-purple-400/50 transition-colors"
+          className={`flex items-center justify-between bg-zinc-900 rounded-2xl border px-5 py-4 hover:border-purple-400/50 transition-colors ${specialsCompleet ? "border-green-500/40" : "border-purple-500/30"}`}
         >
           <div>
             <div className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-0.5">Bonusvragen</div>
             <div className="font-bold text-white">Specials — heel het toernooi</div>
             <div className="text-xs text-zinc-500 mt-0.5">Topscorer · Meeste gele kaarten · Mooiste doelpunt</div>
           </div>
-          <span className="text-zinc-400 ml-4">→</span>
+          {specialsCompleet
+            ? <span className="text-green-400 ml-4 text-lg">✓</span>
+            : <span className="text-zinc-400 ml-4">→</span>}
         </Link>
 
         {/* Jouw poules */}
