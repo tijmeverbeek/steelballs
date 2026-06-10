@@ -52,6 +52,7 @@ export default function SpecialsPagina() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [geladen, setGeladen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const gesloten = new Date() >= SLUITINGSTIJD;
 
@@ -61,12 +62,16 @@ export default function SpecialsPagina() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
-      const res = await fetch("/api/specials");
-      if (res.ok) {
-        const data: Record<string, string> = await res.json();
+      const [specialsRes, adminRes] = await Promise.all([
+        fetch("/api/specials"),
+        fetch("/api/admin/stats"),
+      ]);
+      if (specialsRes.ok) {
+        const data: Record<string, string> = await specialsRes.json();
         setAntwoorden(data);
         antwoordenRef.current = data;
       }
+      if (adminRes.ok) setIsAdmin(true);
       setGeladen(true);
     }
     load();
@@ -127,6 +132,11 @@ export default function SpecialsPagina() {
             <div className="text-xs text-zinc-500">ingevuld</div>
           </div>
           <div className="text-xs text-right w-24">
+            {isAdmin && (
+              <Link href="/specials/overzicht" className="block text-purple-400 hover:text-purple-300 transition-colors font-medium mb-1">
+                Overzicht →
+              </Link>
+            )}
             {!gesloten && saveStatus === "pending" && <span className="text-amber-400">● Niet opgeslagen</span>}
             {!gesloten && saveStatus === "saving" && <span className="text-zinc-400">Opslaan...</span>}
             {!gesloten && saveStatus === "saved" && <span className="text-green-400 font-medium">✓ Opgeslagen</span>}
