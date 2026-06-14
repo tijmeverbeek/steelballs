@@ -10,6 +10,9 @@ export const CL_SCORE_PUNTEN = 10;
 export const CL_DOELPUNTENMAKER_PUNTEN = 5;
 export const CL_MINUUT_PUNTEN = 2;
 
+// Enkelvoudig poule
+export const ENKELVOUDIG_CORNERS_PUNTEN = 3;
+
 function normaliseer(s: string): string {
   return s
     .toLowerCase()
@@ -41,6 +44,7 @@ export function berekenPunten(
     toernooiwinaarVoorspelling?: string | null;
     eersteDoelpuntenmakerVoorspelling?: string | null;
     eersteDoelpuntenminuutVoorspelling?: number | null;
+    cornersVoorspelling?: number | null;
   },
   poule?: {
     soort?: string;
@@ -49,15 +53,18 @@ export function berekenPunten(
     toernooiwinaarActief?: boolean;
     eersteDoelpuntenmakerActief?: boolean;
     eersteDoelpuntenminuutActief?: boolean;
+    cornersActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
     toernooiwinaarResultaat?: string | null;
     eersteDoelpuntenmakerResultaat?: string | null;
     eersteDoelpuntenminuutResultaat?: number | null;
+    cornersResultaat?: number | null;
   }
 ): number {
   const isClFinale = poule?.soort === "cl_finale";
   const isOefenwedstrijd = poule?.soort === "oefenwedstrijd";
+  const isEnkelvoudig = poule?.soort === "enkelvoudig";
   let punten = 0;
 
   for (const vp of voorspellingen) {
@@ -98,6 +105,11 @@ export function berekenPunten(
     && deelnemer?.eersteDoelpuntenminuutVoorspelling != null
     && deelnemer.eersteDoelpuntenminuutVoorspelling === poule.eersteDoelpuntenminuutResultaat) {
     punten += CL_MINUUT_PUNTEN;
+  }
+  if (isEnkelvoudig && poule?.cornersActief && poule.cornersResultaat != null
+    && deelnemer?.cornersVoorspelling != null
+    && deelnemer.cornersVoorspelling === poule.cornersResultaat) {
+    punten += ENKELVOUDIG_CORNERS_PUNTEN;
   }
 
   return punten;

@@ -4,7 +4,7 @@ import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule } from "@/lib/api";
-import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, CL_MINUUT_PUNTEN } from "@/lib/storage";
+import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, CL_MINUUT_PUNTEN, ENKELVOUDIG_CORNERS_PUNTEN } from "@/lib/storage";
 import { getWedstrijdenVoorSoort, CL_FINALE, OEF_NED_ALG } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer, LmsPick } from "@/lib/types";
@@ -480,7 +480,7 @@ function PoulePagina() {
   const oefGestart = poule.soort === "oefenwedstrijd" && isGestart(OEF_NED_ALG);
   const toonVoorspellingen = poule.afgerond || oefGestart;
 
-  const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief;
+  const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief || poule.cornersActief;
 
   const stand: StandItem[] = poule.deelnemers
     .map((d) => ({
@@ -749,7 +749,7 @@ function PoulePagina() {
                       {" · "}{EERSTE_DOELPUNTENMAKER_PUNTEN} pt
                     </p>
                   </div>
-                  <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+                  <Link href={isEnkelvoudig ? `/poule/${code}/enkelvoudig` : `/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
                     {huidigDeelnemer.eersteDoelpuntenmakerVoorspelling ? "Wijzig →" : "Invullen →"}
                   </Link>
                 </div>
@@ -765,8 +765,24 @@ function PoulePagina() {
                       {" · "}tiebreaker
                     </p>
                   </div>
-                  <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+                  <Link href={isEnkelvoudig ? `/poule/${code}/enkelvoudig` : `/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
                     {huidigDeelnemer.eersteDoelpuntenminuutVoorspelling != null ? "Wijzig →" : "Invullen →"}
+                  </Link>
+                </div>
+              )}
+              {poule.cornersActief && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Totaal aantal corners</p>
+                    <p className="text-xs text-zinc-500">
+                      {huidigDeelnemer.cornersVoorspelling != null
+                        ? <span className="text-zinc-300">{huidigDeelnemer.cornersVoorspelling} corners</span>
+                        : "Nog niet ingevuld"}
+                      {" · "}{ENKELVOUDIG_CORNERS_PUNTEN} pt
+                    </p>
+                  </div>
+                  <Link href={`/poule/${code}/enkelvoudig`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+                    {huidigDeelnemer.cornersVoorspelling != null ? "Wijzig →" : "Invullen →"}
                   </Link>
                 </div>
               )}
