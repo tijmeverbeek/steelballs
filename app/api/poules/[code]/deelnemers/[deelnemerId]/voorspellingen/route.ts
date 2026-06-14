@@ -19,6 +19,7 @@ export async function PUT(
     toernooiwinaarVoorspelling,
     eersteDoelpuntenmakerVoorspelling,
     eersteDoelpuntenminuutVoorspelling,
+    cornersVoorspelling,
   }: {
     voorspellingen: Voorspelling[];
     topscorerVoorspelling?: string | null;
@@ -26,6 +27,7 @@ export async function PUT(
     toernooiwinaarVoorspelling?: string | null;
     eersteDoelpuntenmakerVoorspelling?: string | null;
     eersteDoelpuntenminuutVoorspelling?: number | null;
+    cornersVoorspelling?: number | null;
   } = await req.json();
 
   const deelnemer = await prisma.deelnemer.findUnique({
@@ -40,30 +42,44 @@ export async function PUT(
   if (!poule || poule.id !== deelnemer.pouleId) return NextResponse.json({ error: "Niet gevonden" }, { status: 404 });
 
   const now = new Date();
-  const wedstrijdenMap = new Map(
+  const isEnkelvoudig = poule.soort === "enkelvoudig";
+
+  let wedstrijdenMap = new Map(
     getWedstrijdenVoorSoort(poule.soort ?? "wk").map((w) => [w.id, w])
   );
 
-  // Only save predictions for matches that haven't started yet
-  const geldige = voorspellingen.filter((v) => {
-    const w = wedstrijdenMap.get(v.wedstrijdId);
-    if (!w) return false;
-    return now < new Date(`${w.datum}T${w.tijd}:00+02:00`);
-  });
-
-  if (geldige.length > 0) {
-    await prisma.$transaction(
-      geldige.map((v) =>
-        prisma.voorspelling.upsert({
-          where: { deelnemerId_wedstrijdId: { deelnemerId, wedstrijdId: v.wedstrijdId } },
-          update: { thuis: v.thuis, uit: v.uit },
-          create: { deelnemerId, wedstrijdId: v.wedstrijdId, thuis: v.thuis, uit: v.uit },
-        })
-      )
-    );
+  // For enkelvoudig, only the single selected match matters — skip locked-match filtering
+  // and directly upsert the score prediction
+  if (isEnkelvoudig && poule.wkWedstrijdId) {
+    const vp = voorspellingen.find((v) => v.wedstrijdId === poule.wkWedstrijdId);
+    if (vp) {
+      await prisma.voorspelling.upsert({
+        where: { deelnemerId_wedstrijdId: { deelnemerId, wedstrijdId: poule.wkWedstrijdId } },
+        update: { thuis: vp.thuis, uit: vp.uit },
+        create: { deelnemerId, wedstrijdId: poule.wkWedstrijdId, thuis: vp.thuis, uit: vp.uit },
+      });
+    }
+  } else {
+    // Only save predictions for matches that haven't started yet
+    const geldige = voorspellingen.filter((v) => {
+      const w = wedstrijdenMap.get(v.wedstrijdId);
+      if (!w) return false;
+      return now < new Date(`${w.datum}T${w.tijd}:00+02:00`);
+    });
+    if (geldige.length > 0) {
+      await prisma.$transaction(
+        geldige.map((v) =>
+          prisma.voorspelling.upsert({
+            where: { deelnemerId_wedstrijdId: { deelnemerId, wedstrijdId: v.wedstrijdId } },
+            update: { thuis: v.thuis, uit: v.uit },
+            create: { deelnemerId, wedstrijdId: v.wedstrijdId, thuis: v.thuis, uit: v.uit },
+          })
+        )
+      );
+    }
   }
 
-  // Bonus picks (eersteDoelpuntenmaker, minuut) are also locked after kickoff
+  // Bonus picks — for enkelvoudig all are locked after kickoff of the selected match
   const clWedstrijd = wedstrijdenMap.get("CL1");
   const clGestart = clWedstrijd ? now >= new Date(`${clWedstrijd.datum}T${clWedstrijd.tijd}:00+02:00`) : false;
 
@@ -73,6 +89,7 @@ export async function PUT(
     toernooiwinaarVoorspelling?: string | null;
     eersteDoelpuntenmakerVoorspelling?: string | null;
     eersteDoelpuntenminuutVoorspelling?: number | null;
+    cornersVoorspelling?: number | null;
   } = {};
   if (topscorerVoorspelling !== undefined) specialeUpdate.topscorerVoorspelling = topscorerVoorspelling || null;
   if (geleKaartenVoorspelling !== undefined) specialeUpdate.geleKaartenVoorspelling = geleKaartenVoorspelling || null;
@@ -81,6 +98,8 @@ export async function PUT(
     if (eersteDoelpuntenmakerVoorspelling !== undefined) specialeUpdate.eersteDoelpuntenmakerVoorspelling = eersteDoelpuntenmakerVoorspelling || null;
     if (eersteDoelpuntenminuutVoorspelling !== undefined) specialeUpdate.eersteDoelpuntenminuutVoorspelling = eersteDoelpuntenminuutVoorspelling ?? null;
   }
+  if (cornersVoorspelling !== undefined) specialeUpdate.cornersVoorspelling = cornersVoorspelling ?? null;
+
   if (Object.keys(specialeUpdate).length > 0) {
     await prisma.deelnemer.update({ where: { id: deelnemerId }, data: specialeUpdate });
   }

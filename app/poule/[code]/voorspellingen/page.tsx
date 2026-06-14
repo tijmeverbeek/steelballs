@@ -142,6 +142,10 @@ export default function VoorspellingenPagina() {
         router.push(`/poule/${code}/picks`);
         return;
       }
+      if (geladen.soort === "enkelvoudig") {
+        router.push(`/poule/${code}/enkelvoudig`);
+        return;
+      }
 
       setPoule(geladen);
 

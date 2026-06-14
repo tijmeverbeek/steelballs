@@ -17,6 +17,7 @@ const TEAM_VLAG: Record<string, string> = {
 
 export function SpelerAutocomplete({
   soort,
+  teamCodes,
   value,
   onChange,
   placeholder,
@@ -24,6 +25,7 @@ export function SpelerAutocomplete({
   className,
 }: {
   soort: string;
+  teamCodes?: string[];
   value: string;
   onChange: (naam: string) => void;
   placeholder?: string;
@@ -43,14 +45,17 @@ export function SpelerAutocomplete({
   // Load squad from DB via API, fall back to static list on error
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/spelers?soort=${encodeURIComponent(soort)}`)
+    const url = teamCodes && teamCodes.length > 0
+      ? `/api/spelers?soort=${encodeURIComponent(soort)}&teams=${teamCodes.join(",")}`
+      : `/api/spelers?soort=${encodeURIComponent(soort)}`;
+    fetch(url)
       .then((r) => (r.ok ? r.json() : null))
       .then((data: Speler[] | null) => {
         if (!cancelled && Array.isArray(data) && data.length > 0) setSpelers(data);
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [soort]);
+  }, [soort, teamCodes?.join(",")]);
 
   // Close on outside click
   useEffect(() => {

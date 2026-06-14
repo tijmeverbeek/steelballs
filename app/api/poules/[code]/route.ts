@@ -62,11 +62,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
       ...(body.toernooiwinaarActief !== undefined && { toernooiwinaarActief: body.toernooiwinaarActief }),
       ...(body.eersteDoelpuntenmakerActief !== undefined && { eersteDoelpuntenmakerActief: body.eersteDoelpuntenmakerActief }),
       ...(body.eersteDoelpuntenminuutActief !== undefined && { eersteDoelpuntenminuutActief: body.eersteDoelpuntenminuutActief }),
+      ...(body.cornersActief !== undefined && { cornersActief: body.cornersActief }),
       ...(body.topscorerResultaat !== undefined && { topscorerResultaat: body.topscorerResultaat || null }),
       ...(body.geleKaartenResultaat !== undefined && { geleKaartenResultaat: body.geleKaartenResultaat || null }),
       ...(body.toernooiwinaarResultaat !== undefined && { toernooiwinaarResultaat: body.toernooiwinaarResultaat || null }),
       ...(body.eersteDoelpuntenmakerResultaat !== undefined && { eersteDoelpuntenmakerResultaat: body.eersteDoelpuntenmakerResultaat || null }),
       ...(body.eersteDoelpuntenminuutResultaat !== undefined && { eersteDoelpuntenminuutResultaat: body.eersteDoelpuntenminuutResultaat ?? null }),
+      ...(body.cornersResultaat !== undefined && { cornersResultaat: body.cornersResultaat ?? null }),
     },
   });
 

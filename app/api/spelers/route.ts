@@ -8,9 +8,11 @@ const POSITIE_VOLGORDE: Record<string, number> = { AAN: 0, MID: 1, VER: 2, DOE: 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const soort = searchParams.get("soort") ?? "wk";
+  const teamsParam = searchParams.get("teams");
+  const teamCodes = teamsParam ? teamsParam.split(",").filter(Boolean) : null;
 
   const rows = await prisma.speler.findMany({
-    where: { soort },
+    where: { soort, ...(teamCodes ? { team: { in: teamCodes } } : {}) },
     select: { naam: true, positie: true, team: true },
   });
 

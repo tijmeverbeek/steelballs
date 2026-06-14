@@ -1,10 +1,10 @@
 import { Poule, Voorspelling } from "./types";
 
-export async function createPoule(naam: string, soort: string = "wk"): Promise<{ code: string; deelnemerId: string }> {
+export async function createPoule(naam: string, soort: string = "wk", wkWedstrijdId?: string): Promise<{ code: string; deelnemerId: string }> {
   const res = await fetch("/api/poules", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ naam, soort }),
+    body: JSON.stringify({ naam, soort, wkWedstrijdId }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -44,6 +44,7 @@ export async function saveVoorspellingen(
     toernooiwinaarVoorspelling?: string | null;
     eersteDoelpuntenmakerVoorspelling?: string | null;
     eersteDoelpuntenminuutVoorspelling?: number | null;
+    cornersVoorspelling?: number | null;
   }
 ): Promise<void> {
   const res = await fetch(`/api/poules/${code}/deelnemers/${deelnemerId}/voorspellingen`, {
@@ -76,11 +77,13 @@ export async function updatePouleInstellingen(
     toernooiwinaarActief?: boolean;
     eersteDoelpuntenmakerActief?: boolean;
     eersteDoelpuntenminuutActief?: boolean;
+    cornersActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
     toernooiwinaarResultaat?: string | null;
     eersteDoelpuntenmakerResultaat?: string | null;
     eersteDoelpuntenminuutResultaat?: number | null;
+    cornersResultaat?: number | null;
   }
 ): Promise<void> {
   const res = await fetch(`/api/poules/${code}`, {

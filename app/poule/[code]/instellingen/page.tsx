@@ -103,7 +103,7 @@ export default function InstellingenPagina() {
     setTimeout(() => setOpgeslagen(false), 2000);
   }
 
-  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief" | "toernooiwinaarActief" | "eersteDoelpuntenmakerActief" | "eersteDoelpuntenminuutActief", waarde: boolean) {
+  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief" | "toernooiwinaarActief" | "eersteDoelpuntenmakerActief" | "eersteDoelpuntenminuutActief" | "cornersActief", waarde: boolean) {
     if (!poule) return;
     setPoule({ ...poule, [key]: waarde });
     try {
@@ -139,22 +139,24 @@ export default function InstellingenPagina() {
 
   async function slaClFinaleResultaatOp() {
     const isOef = poule?.soort === "oefenwedstrijd";
+    const isEnk = poule?.soort === "enkelvoudig";
     if (!poule || clFinaleThuis === "") return;
     if (!isOef && clFinaleUit === "") return;
     setClBezig(true);
     setClFout("");
     try {
+      const wedstrijdId = isOef ? "OEF1" : isEnk ? (poule.wkWedstrijdId ?? "CL1") : "CL1";
       const res = await fetch(`/api/poules/${code}/resultaat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wedstrijdId: isOef ? "OEF1" : "CL1", thuis: parseInt(clFinaleThuis), uit: isOef ? 0 : parseInt(clFinaleUit) }),
+        body: JSON.stringify({ wedstrijdId, thuis: parseInt(clFinaleThuis), uit: isOef ? 0 : parseInt(clFinaleUit) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setClFout(data.error ?? `Fout ${res.status} — controleer of je de beheerder bent van deze poule`);
         return;
       }
-      setPoule({ ...poule, resultaten: { ...poule.resultaten, CL1: { thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) } } });
+      setPoule({ ...poule, resultaten: { ...poule.resultaten, [wedstrijdId]: { thuis: parseInt(clFinaleThuis), uit: parseInt(clFinaleUit) } } });
       toonOpgeslagen();
     } catch (e) {
       setClFout("Verbindingsfout — probeer het opnieuw");
@@ -316,6 +318,7 @@ export default function InstellingenPagina() {
   const isCL = (poule.soort ?? "wk") === "cl_finale";
   const isOefenwedstrijd = (poule.soort ?? "wk") === "oefenwedstrijd";
   const isLMS = (poule.soort ?? "wk") === "lms";
+  const isEnkelvoudig = poule.soort === "enkelvoudig";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -333,8 +336,128 @@ export default function InstellingenPagina() {
 
       <main className="max-w-2xl mx-auto px-5 py-6 space-y-5">
 
+        {/* Enkelvoudig bonus categorieën */}
+        {isEnkelvoudig && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-zinc-800">
+            <h2 className="font-bold text-white">Voorspellingstypen</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Schakel in welke voorspellingen deelnemers kunnen doen</p>
+          </div>
+          <div className="p-5 space-y-5">
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-white">Uitslag</p>
+                  <p className="text-xs text-zinc-500">Altijd actief — deelnemers voorspellen de eindstand</p>
+                </div>
+                <span className="text-xs text-zinc-600 font-mono">altijd aan</span>
+              </div>
+              {Object.entries(poule.resultaten ?? {}).map(([id, r]) => id === poule.wkWedstrijdId && (
+                <p key={id} className="text-xs text-green-400 mt-1">Eindstand ingevoerd: {r.thuis}–{r.uit}</p>
+              ))}
+            </div>
+
+            <div className="border-t border-zinc-800" />
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-white">Eerste doelpuntenmaker</p>
+                  <p className="text-xs text-zinc-500">Deelnemers kiezen een speler uit beide elftallen</p>
+                </div>
+                <Toggle aan={poule.eersteDoelpuntenmakerActief} onChange={(v) => toggleInstelling("eersteDoelpuntenmakerActief", v)} />
+              </div>
+              {poule.eersteDoelpuntenmakerActief && (
+                <div className="mt-2 flex gap-2">
+                  <input type="text" value={eersteDoelpuntenmakerResultaatInput} onChange={(e) => setEersteDoelpuntenmakerResultaatInput(e.target.value)} placeholder="Naam eerste doelpuntenmaker..." className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  <button onClick={() => slaResultaatOp("eersteDoelpuntenmakerResultaat", eersteDoelpuntenmakerResultaatInput)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">Opslaan</button>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-zinc-800" />
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-white">Minuut eerste doelpunt</p>
+                  <p className="text-xs text-zinc-500">Tiebreaker — dichtstbijzijnde minuut wint bij gelijke punten</p>
+                </div>
+                <Toggle aan={poule.eersteDoelpuntenminuutActief} onChange={(v) => toggleInstelling("eersteDoelpuntenminuutActief", v)} />
+              </div>
+              {poule.eersteDoelpuntenminuutActief && (
+                <div className="mt-2 flex gap-2 items-center">
+                  <input type="number" min={1} max={120} value={eersteDoelpuntenminuutResultaatInput ?? ""} onChange={(e) => setEersteDoelpuntenminuutResultaatInput(e.target.value === "" ? null : parseInt(e.target.value))} placeholder="bijv. 34" className="w-28 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                  <span className="text-xs text-zinc-500">minuut</span>
+                  <button onClick={() => slaMinuutResultaatOp(eersteDoelpuntenminuutResultaatInput)} className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">Opslaan</button>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-zinc-800" />
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-white">Totaal aantal corners</p>
+                  <p className="text-xs text-zinc-500">Deelnemers raden het totale aantal corners in de wedstrijd</p>
+                </div>
+                <Toggle aan={poule.cornersActief} onChange={(v) => toggleInstelling("cornersActief", v)} />
+              </div>
+              {poule.cornersActief && (
+                <div className="mt-2 flex gap-2 items-center">
+                  <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(e.target.value); setClFout(""); }} placeholder="bijv. 10" className="w-24 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                  <span className="text-xs text-zinc-500">corners</span>
+                  <button
+                    onClick={async () => {
+                      const val = parseInt(clFinaleThuis);
+                      if (isNaN(val)) { setClFout("Voer een geldig getal in"); return; }
+                      setClBezig(true);
+                      try {
+                        await updatePouleInstellingen(code, { cornersResultaat: val });
+                        setPoule((p) => p ? { ...p, cornersResultaat: val } : p);
+                        setClFinaleThuis("");
+                        setOpgeslagen(true);
+                        setTimeout(() => setOpgeslagen(false), 2000);
+                      } catch { setClFout("Opslaan mislukt"); }
+                      setClBezig(false);
+                    }}
+                    disabled={clBezig}
+                    className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    {clBezig ? "Opslaan..." : "Opslaan"}
+                  </button>
+                  {clFout && <p className="text-red-400 text-xs">{clFout}</p>}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>}
+
+        {/* Uitslag invoeren — enkelvoudig */}
+        {isEnkelvoudig && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-800">
+              <h2 className="font-bold text-white">Uitslag invoeren</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Vul de eindstand in na de wedstrijd</p>
+            </div>
+            <div className="p-5">
+              <div className="flex items-center gap-2">
+                <input type="number" min={0} value={clFinaleThuis} onChange={(e) => { setClFinaleThuis(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                <span className="text-zinc-600 font-bold">–</span>
+                <input type="number" min={0} value={clFinaleUit} onChange={(e) => { setClFinaleUit(e.target.value); setClFout(""); }} placeholder="0" className="w-20 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center" />
+                <button onClick={slaClFinaleResultaatOp} disabled={clBezig} className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black text-xs font-semibold px-3 py-2 rounded-lg transition-colors whitespace-nowrap">
+                  {clBezig ? "Opslaan..." : "Opslaan"}
+                </button>
+              </div>
+              {clFout && <p className="text-red-400 text-xs mt-2">{clFout}</p>}
+            </div>
+          </div>
+        )}
+
         {/* Bonus categorieën — alleen voor wk/cl_finale */}
-        {!isLMS && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        {!isLMS && !isEnkelvoudig && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800">
             <h2 className="font-bold text-white">Bonus categorieën</h2>
             <p className="text-xs text-zinc-500 mt-0.5">Schakel bonussen in of uit en vul resultaten in</p>

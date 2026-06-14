@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const authUser = await getAuthUser();
   if (!authUser) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
 
-  const { naam, soort } = await req.json();
+  const { naam, soort, wkWedstrijdId } = await req.json();
   if (!naam) return NextResponse.json({ error: "Naam is verplicht" }, { status: 400 });
 
   let code = generateCode();
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     code = generateCode();
   }
 
-  const geldigeSoort = ["cl_finale", "lms", "oefenwedstrijd"].includes(soort) ? soort : "wk";
+  const geldigeSoort = ["cl_finale", "lms", "oefenwedstrijd", "enkelvoudig"].includes(soort) ? soort : "wk";
   const isOefenwedstrijd = geldigeSoort === "oefenwedstrijd";
 
   if (isOefenwedstrijd) {
@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       soort: geldigeSoort,
       featured: isOefenwedstrijd,
       organisatorId: authUser.id,
+      ...(geldigeSoort === "enkelvoudig" && wkWedstrijdId ? { wkWedstrijdId } : {}),
       deelnemers: {
         create: { userId: authUser.id },
       },

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createPoule } from "@/lib/api";
 import { SPECIALS_CATEGORIEEN } from "@/lib/specials";
+import { getWedstrijdenVoorSoort } from "@/lib/matches";
 
 interface AdminStats {
   gebruikers: number;
@@ -55,10 +56,14 @@ export default function AdminDashboard() {
 
   // Poule aanmaken
   const [poulenaam, setPoulenaam] = useState("");
-  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "lms" | "oefenwedstrijd">("wk");
+  const [pouleSoort, setPouleSoort] = useState<"wk" | "cl_finale" | "lms" | "oefenwedstrijd" | "enkelvoudig">("wk");
+  const [wkWedstrijdId, setWkWedstrijdId] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState("");
   const [createSuccess, setCreateSuccess] = useState("");
+
+  const alleWkWedstrijden = getWedstrijdenVoorSoort("wk");
+  const wkGroepen = [...new Set(alleWkWedstrijden.map((w) => w.groep))].sort();
 
   // Specials resultaten
   const [specialsResultaten, setSpecialsResultaten] = useState<Record<string, string>>({});
@@ -92,7 +97,7 @@ export default function AdminDashboard() {
     setCreateError("");
     setCreateSuccess("");
     try {
-      const { code } = await createPoule(poulenaam.trim(), pouleSoort);
+      const { code } = await createPoule(poulenaam.trim(), pouleSoort, pouleSoort === "enkelvoudig" ? wkWedstrijdId : undefined);
       setCreateSuccess(`Poule aangemaakt! Code: ${code} · Uitnodigingslink: /join/${code}`);
       setPoulenaam("");
     } catch (err) {
@@ -229,15 +234,41 @@ export default function AdminDashboard() {
               <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">Type</label>
               <select
                 value={pouleSoort}
-                onChange={(e) => setPouleSoort(e.target.value as typeof pouleSoort)}
+                onChange={(e) => { setPouleSoort(e.target.value as typeof pouleSoort); setWkWedstrijdId(""); }}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
               >
-                <option value="wk">WK 2026</option>
+                <option value="wk">WK 2026 — alle wedstrijden</option>
+                <option value="enkelvoudig">Enkelvoudig — één WK-wedstrijd</option>
+                <option value="lms">Last Man Standing</option>
                 <option value="cl_finale">CL Finale</option>
                 <option value="oefenwedstrijd">Oefenwedstrijd (NED vs ALG)</option>
-                <option value="lms">Last Man Standing</option>
               </select>
             </div>
+
+            {pouleSoort === "enkelvoudig" && (
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">Wedstrijd</label>
+                <select
+                  value={wkWedstrijdId}
+                  onChange={(e) => setWkWedstrijdId(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                >
+                  <option value="">— Kies een wedstrijd —</option>
+                  {wkGroepen.map((groep) => (
+                    <optgroup key={groep} label={groep}>
+                      {alleWkWedstrijden
+                        .filter((w) => w.groep === groep)
+                        .map((w) => (
+                          <option key={w.id} value={w.id}>
+                            {w.thuis.vlag} {w.thuis.naam} vs {w.uit.naam} {w.uit.vlag} · {w.datum}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+            )}
             {createError && <p className="text-red-400 text-xs">{createError}</p>}
             {createSuccess && (
               <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 text-sm text-green-400 font-mono">
