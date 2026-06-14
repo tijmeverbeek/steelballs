@@ -73,6 +73,7 @@ type StandItem = {
   minuutAfstand: number;
   eersteDoelpuntenmakerVoorspelling?: string | null;
   eersteDoelpuntenminuutVoorspelling?: number | null;
+  cornersVoorspelling?: number | null;
   topscorerVoorspelling?: string | null;
   geleKaartenVoorspelling?: string | null;
   toernooiwinaarVoorspelling?: string | null;
@@ -478,7 +479,8 @@ function PoulePagina() {
     return new Date() >= new Date(`${w.datum}T${w.tijd}:00+02:00`);
   }
   const oefGestart = poule.soort === "oefenwedstrijd" && isGestart(OEF_NED_ALG);
-  const toonVoorspellingen = poule.afgerond || oefGestart;
+  const enkelvoudigGestart = isEnkelvoudig && enkelvoudigWedstrijd ? isGestart(enkelvoudigWedstrijd) : false;
+  const toonVoorspellingen = poule.afgerond || oefGestart || enkelvoudigGestart;
 
   const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief || poule.cornersActief;
 
@@ -495,6 +497,7 @@ function PoulePagina() {
       minuutAfstand: berekenMinuutAfstand(d.eersteDoelpuntenminuutVoorspelling, poule.eersteDoelpuntenminuutResultaat),
       eersteDoelpuntenmakerVoorspelling: d.eersteDoelpuntenmakerVoorspelling,
       eersteDoelpuntenminuutVoorspelling: d.eersteDoelpuntenminuutVoorspelling,
+      cornersVoorspelling: d.cornersVoorspelling,
       topscorerVoorspelling: d.topscorerVoorspelling,
       geleKaartenVoorspelling: d.geleKaartenVoorspelling,
       toernooiwinaarVoorspelling: d.toernooiwinaarVoorspelling,
@@ -851,6 +854,15 @@ function PoulePagina() {
                             <span className="text-xs text-zinc-400">🔄 {vp.thuis}–{vp.uit} corners</span>
                           ) : null;
                         })()}
+                        {isEnkelvoudig && poule.wkWedstrijdId && (() => {
+                          const vp = d.voorspellingen.find((v) => v.wedstrijdId === poule.wkWedstrijdId);
+                          return vp?.thuis != null && vp?.uit != null ? (
+                            <span className="text-xs text-zinc-400">⚽ {vp.thuis}–{vp.uit}</span>
+                          ) : null;
+                        })()}
+                        {isEnkelvoudig && poule.cornersActief && d.cornersVoorspelling != null && (
+                          <span className="text-xs text-zinc-400">🔄 {d.cornersVoorspelling} corners</span>
+                        )}
                         {poule.eersteDoelpuntenmakerActief && d.eersteDoelpuntenmakerVoorspelling && (
                           <span className="text-xs text-zinc-400">🥅 {d.eersteDoelpuntenmakerVoorspelling}{d.eersteDoelpuntenminuutVoorspelling != null ? ` (${d.eersteDoelpuntenminuutVoorspelling}')` : ""}</span>
                         )}
