@@ -198,6 +198,12 @@ export default function Home() {
                   </div>
                   {p.afgerond ? (
                     <p className="text-xs text-yellow-400/80">Afgerond · tik voor eindstand</p>
+                  ) : p.soort === "enkelvoudig" ? (
+                    <p className="text-xs text-zinc-500">
+                      {p.ingevuld > 0
+                        ? <span className="text-green-400">✓ Uitslag ingevuld</span>
+                        : "Nog niet ingevuld"}
+                    </p>
                   ) : p.soort === "lms" ? (() => {
                     if (p.lmsActief === false) {
                       return <p className="text-xs text-red-400/80">💀 Uitgeschakeld</p>;

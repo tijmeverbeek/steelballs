@@ -170,8 +170,9 @@ export default function EnkelvoudigPagina() {
       <main className="max-w-lg mx-auto px-4 py-8 space-y-6">
 
         {isGesloten && (
-          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 text-center text-sm text-zinc-400">
-            De wedstrijd is begonnen — voorspellingen zijn gesloten
+          <div className="bg-red-500/10 border border-red-500/40 rounded-2xl px-5 py-4 text-center">
+            <p className="text-sm font-bold text-red-400">🔒 Voorspellingen gesloten</p>
+            <p className="text-xs text-zinc-500 mt-1">De wedstrijd is begonnen</p>
           </div>
         )}
 
@@ -248,8 +249,9 @@ export default function EnkelvoudigPagina() {
                 max={120}
                 value={minuut ?? ""}
                 onChange={(e) => setMinuutVal(e.target.value === "" ? null : parseInt(e.target.value))}
+                disabled={isGesloten}
                 placeholder="bijv. 34"
-                className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-40 disabled:cursor-not-allowed"
               />
               <span className="text-sm text-zinc-500">minuut</span>
             </div>
@@ -269,8 +271,9 @@ export default function EnkelvoudigPagina() {
                 min={0}
                 value={corners ?? ""}
                 onChange={(e) => setCornersVal(e.target.value === "" ? null : parseInt(e.target.value))}
+                disabled={isGesloten}
                 placeholder="bijv. 10"
-                className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-40 disabled:cursor-not-allowed"
               />
               <span className="text-sm text-zinc-500">corners</span>
             </div>
