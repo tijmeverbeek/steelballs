@@ -113,6 +113,7 @@ export default function EnkelvoudigPagina() {
   }, [code, poule?.wkWedstrijdId]);
 
   function scheduleSave() {
+    if (isGesloten) return;
     setSaveStatus("pending");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => doAutoSave(), 700);
@@ -148,7 +149,7 @@ export default function EnkelvoudigPagina() {
   }
 
   const resultaat = poule.resultaten?.[wedstrijd.id];
-  const isGesloten = false; // TODO: lock after kickoff
+  const isGesloten = new Date() >= new Date(`${wedstrijd.datum}T${wedstrijd.tijd}:00+02:00`);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -167,6 +168,12 @@ export default function EnkelvoudigPagina() {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-8 space-y-6">
+
+        {isGesloten && (
+          <div className="bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-3 text-center text-sm text-zinc-400">
+            De wedstrijd is begonnen — voorspellingen zijn gesloten
+          </div>
+        )}
 
         {/* Wedstrijd header */}
         <div className="text-center">
