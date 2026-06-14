@@ -464,7 +464,13 @@ function PoulePagina() {
   const organisatorDeelnemer = poule.deelnemers.find((d) => d.userId === poule.organisatorId);
   const organisatorIsBeheerder = organisatorDeelnemer?.user.isAdmin === true;
   const organisatorNaam = organisatorDeelnemer ? deelnemerNaam(organisatorDeelnemer) : null;
-  const pouleWedstrijden = getWedstrijdenVoorSoort(poule.soort ?? "wk");
+  const isEnkelvoudig = poule.soort === "enkelvoudig";
+  const enkelvoudigWedstrijd = isEnkelvoudig && poule.wkWedstrijdId
+    ? getWedstrijdenVoorSoort("wk").find((w) => w.id === poule.wkWedstrijdId) ?? null
+    : null;
+  const pouleWedstrijden = isEnkelvoudig
+    ? (enkelvoudigWedstrijd ? [enkelvoudigWedstrijd] : [])
+    : getWedstrijdenVoorSoort(poule.soort ?? "wk");
   const aantalWedstrijden = pouleWedstrijden.length;
   const jouwIngevuld = huidigDeelnemer?.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length ?? 0;
 
@@ -575,15 +581,16 @@ function PoulePagina() {
         {/* ── Wedstrijden — verborgen voor LMS ── */}
         {(poule.soort ?? "wk") !== "lms" && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
-            <h2 className="font-bold text-white">{(poule.soort ?? "wk") === "cl_finale" ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
-            <Link href={`/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
-              {(poule.soort ?? "wk") === "cl_finale" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
+            <h2 className="font-bold text-white">{(isEnkelvoudig || (poule.soort ?? "wk") === "cl_finale") ? "Wedstrijd" : "Eerste wedstrijden"}</h2>
+            <Link href={isEnkelvoudig ? `/poule/${code}/enkelvoudig` : `/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+              {isEnkelvoudig || (poule.soort ?? "wk") === "cl_finale" ? "Voorspelling →" : `Alle ${aantalWedstrijden} →`}
             </Link>
           </div>
           <div className="divide-y divide-zinc-800">
             {eersteWedstrijden.map((w) => {
               const vpThuis = huidigDeelnemer?.voorspellingen.find((v) => v.wedstrijdId === w.id);
               const heeftVp = vpThuis?.thuis != null && vpThuis?.uit != null;
+              const voorspelLink = isEnkelvoudig ? `/poule/${code}/enkelvoudig` : `/poule/${code}/voorspellingen`;
               return (
                 <div key={w.id} className="px-5 py-3.5 flex items-center gap-3">
                   <Link href={`/wedstrijd/${w.id}`} className="flex-1 group">
@@ -602,16 +609,11 @@ function PoulePagina() {
                     <div className="flex flex-col items-end gap-0.5">
                       <span className="text-xs text-zinc-500">Jouw voorspelling</span>
                       <div className="bg-zinc-800 px-3 py-1.5 rounded-lg text-sm font-bold text-white whitespace-nowrap">
-                        {poule.soort === "oefenwedstrijd"
-                          ? `${vpThuis!.thuis} corners`
-                          : `${vpThuis!.thuis} – ${vpThuis!.uit}`}
+                        {vpThuis!.thuis} – {vpThuis!.uit}
                       </div>
                     </div>
                   ) : (
-                    <Link
-                      href={`/poule/${code}/voorspellingen`}
-                      className="text-xs text-zinc-600 hover:text-zinc-400 whitespace-nowrap"
-                    >
+                    <Link href={voorspelLink} className="text-xs text-zinc-600 hover:text-zinc-400 whitespace-nowrap">
                       Voorspel →
                     </Link>
                   )}
@@ -651,23 +653,26 @@ function PoulePagina() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-0.5">Jouw voorspellingen</p>
                 <p className="text-white font-bold">
-                  {jouwIngevuld}
-                  <span className="text-zinc-500 font-normal"> van {aantalWedstrijden} ingevuld</span>
+                  {isEnkelvoudig
+                    ? (jouwIngevuld > 0 ? "Uitslag ingevuld" : "Nog niet ingevuld")
+                    : <>{jouwIngevuld}<span className="text-zinc-500 font-normal"> van {aantalWedstrijden} ingevuld</span></>}
                 </p>
               </div>
               <Link
-                href={`/poule/${code}/voorspellingen`}
+                href={isEnkelvoudig ? `/poule/${code}/enkelvoudig` : `/poule/${code}/voorspellingen`}
                 className="bg-green-500 hover:bg-green-400 text-black font-bold text-sm px-5 py-2.5 rounded-xl transition-colors whitespace-nowrap"
               >
-                {jouwIngevuld === 0 ? "Beginnen →" : jouwIngevuld === aantalWedstrijden ? "Bekijken →" : "Verder →"}
+                {jouwIngevuld === 0 ? "Beginnen →" : "Verder →"}
               </Link>
             </div>
-            <div className="h-1.5 bg-zinc-800 rounded-full">
-              <div
-                className="h-1.5 bg-green-500 rounded-full transition-all duration-500"
-                style={{ width: `${(jouwIngevuld / aantalWedstrijden) * 100}%` }}
-              />
-            </div>
+            {!isEnkelvoudig && (
+              <div className="h-1.5 bg-zinc-800 rounded-full">
+                <div
+                  className="h-1.5 bg-green-500 rounded-full transition-all duration-500"
+                  style={{ width: `${(jouwIngevuld / aantalWedstrijden) * 100}%` }}
+                />
+              </div>
+            )}
           </div>
         )}
 
