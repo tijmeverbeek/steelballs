@@ -5,12 +5,13 @@ export const GELE_KAARTEN_PUNTEN = 5;
 export const TOERNOOIWINNAAR_PUNTEN = 20;
 export const EERSTE_DOELPUNTENMAKER_PUNTEN = 10;
 
-// CL Finale heeft eigen puntentelling (maar 1 wedstrijd)
-export const CL_SCORE_PUNTEN = 10;
-export const CL_DOELPUNTENMAKER_PUNTEN = 5;
-export const CL_MINUUT_PUNTEN = 2;
+// CL Finale + Enkelvoudig: zelfde puntentelling
+export const CL_SCORE_PUNTEN = 10;        // exact uitslag
+export const CL_WINNAAR_PUNTEN = 5;       // correct winnaar (niet exact)
+export const CL_DOELPUNTENMAKER_PUNTEN = 3; // eerste doelpuntenmaker
+// minuut = tiebreaker (geen punten)
 
-// Enkelvoudig poule
+// Enkelvoudig poule extra
 export const ENKELVOUDIG_CORNERS_PUNTEN = 3;
 
 function normaliseer(s: string): string {
@@ -76,11 +77,11 @@ export function berekenPunten(
     } else {
       if (vp.uit === null) continue;
       if (vp.thuis === resultaat.thuis && vp.uit === resultaat.uit) {
-        punten += isClFinale ? CL_SCORE_PUNTEN : 3;
+        punten += (isClFinale || isEnkelvoudig) ? CL_SCORE_PUNTEN : 3;
       } else {
         const uitslag = Math.sign(resultaat.thuis - resultaat.uit);
         const vpUitslag = Math.sign((vp.thuis ?? 0) - (vp.uit ?? 0));
-        if (uitslag === vpUitslag) punten += 1;
+        if (uitslag === vpUitslag) punten += (isClFinale || isEnkelvoudig) ? CL_WINNAAR_PUNTEN : 1;
       }
     }
   }
@@ -99,12 +100,7 @@ export function berekenPunten(
   }
   if (poule?.eersteDoelpuntenmakerActief && poule.eersteDoelpuntenmakerResultaat && deelnemer?.eersteDoelpuntenmakerVoorspelling
     && matchNaam(poule.eersteDoelpuntenmakerResultaat, deelnemer.eersteDoelpuntenmakerVoorspelling)) {
-    punten += isClFinale ? CL_DOELPUNTENMAKER_PUNTEN : EERSTE_DOELPUNTENMAKER_PUNTEN;
-  }
-  if (isClFinale && poule?.eersteDoelpuntenminuutActief && poule.eersteDoelpuntenminuutResultaat != null
-    && deelnemer?.eersteDoelpuntenminuutVoorspelling != null
-    && deelnemer.eersteDoelpuntenminuutVoorspelling === poule.eersteDoelpuntenminuutResultaat) {
-    punten += CL_MINUUT_PUNTEN;
+    punten += (isClFinale || isEnkelvoudig) ? CL_DOELPUNTENMAKER_PUNTEN : EERSTE_DOELPUNTENMAKER_PUNTEN;
   }
   if (isEnkelvoudig && poule?.cornersActief && poule.cornersResultaat != null
     && deelnemer?.cornersVoorspelling != null

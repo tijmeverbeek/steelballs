@@ -4,7 +4,7 @@ import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule } from "@/lib/api";
-import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, CL_MINUUT_PUNTEN, ENKELVOUDIG_CORNERS_PUNTEN } from "@/lib/storage";
+import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, ENKELVOUDIG_CORNERS_PUNTEN } from "@/lib/storage";
 import { getWedstrijdenVoorSoort, CL_FINALE, OEF_NED_ALG } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer, LmsPick } from "@/lib/types";
@@ -746,7 +746,7 @@ function PoulePagina() {
                       {huidigDeelnemer.eersteDoelpuntenmakerVoorspelling
                         ? <span className="text-zinc-300">{huidigDeelnemer.eersteDoelpuntenmakerVoorspelling}</span>
                         : "Nog niet ingevuld"}
-                      {" · "}{EERSTE_DOELPUNTENMAKER_PUNTEN} pt
+                      {" · "}{isEnkelvoudig ? CL_DOELPUNTENMAKER_PUNTEN : EERSTE_DOELPUNTENMAKER_PUNTEN} pt
                     </p>
                   </div>
                   <Link href={isEnkelvoudig ? `/poule/${code}/enkelvoudig` : `/poule/${code}/voorspellingen`} className="text-xs text-green-400 hover:text-green-300 font-medium">
