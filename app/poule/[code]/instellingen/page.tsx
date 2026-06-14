@@ -950,10 +950,26 @@ export default function InstellingenPagina() {
         {/* Toernooi afronden */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
           <p className="text-sm font-semibold text-white mb-1">Toernooi afronden</p>
-          <p className="text-xs text-zinc-500 mb-3">Sluit het toernooi af, bepaal de winnaar en ken de trofee toe. Dit kan niet ongedaan worden gemaakt.</p>
+          <p className="text-xs text-zinc-500 mb-3">Sluit het toernooi af, bepaal de winnaar en ken de trofee toe.</p>
           {poule.afgerond ? (
-            <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
-              <span>✓</span><span>Toernooi is afgerond</span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-green-400 font-semibold">
+                <span>✓</span><span>Toernooi is afgerond</span>
+              </div>
+              <button
+                onClick={async () => {
+                  const res = await fetch(`/api/poules/${code}/afronden`, { method: "DELETE" });
+                  if (res.ok) {
+                    setPoule({ ...poule, afgerond: false, winnaarId: null });
+                    toonOpgeslagen();
+                  } else {
+                    alert("Heropenen mislukt");
+                  }
+                }}
+                className="bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
+              >
+                Heropenen
+              </button>
             </div>
           ) : (
             <>

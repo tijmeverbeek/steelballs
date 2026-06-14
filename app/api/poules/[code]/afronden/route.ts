@@ -56,3 +56,21 @@ export async function POST(_req: Request, { params }: { params: Promise<{ code: 
 
   return NextResponse.json({ success: true, winnaarId: winnaar.userId });
 }
+
+export async function DELETE(_req: Request, { params }: { params: Promise<{ code: string }> }) {
+  const authUser = await getAuthUser();
+  if (!authUser) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+
+  const { code } = await params;
+  const poule = await prisma.poule.findUnique({ where: { code } });
+  if (!poule) return NextResponse.json({ error: "Niet gevonden" }, { status: 404 });
+  if (!await isOrganisatorOrAdmin(authUser.id, poule)) return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
+  if (!poule.afgerond) return NextResponse.json({ error: "Poule is niet afgerond" }, { status: 400 });
+
+  await prisma.poule.update({ where: { code }, data: { afgerond: false, winnaarId: null } });
+  if (poule.winnaarId) {
+    await prisma.user.update({ where: { id: poule.winnaarId }, data: { aantalWinsten: { decrement: 1 } } });
+  }
+
+  return NextResponse.json({ success: true });
+}
