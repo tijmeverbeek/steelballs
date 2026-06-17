@@ -36,10 +36,14 @@ interface LmsKnockoutWedstrijd {
 
 function isRondeToegankelijk(rondeNr: number, d: DeelnemerMet): boolean {
   if (rondeNr === 1) return true;
-  // Previous round must be closed before this one can be entered
+  // Vorige ronde moet gesloten zijn (deadline verstreken) — uitkomst hoeft nog niet verwerkt.
+  // Wie afvalt in de vorige ronde krijgt de uitgeschakeld-pagina en pick telt niet mee.
   if (!isRondeGesloten(rondeNr - 1)) return false;
   const vorigePick = d.lmsPicks.find((p) => p.rondeNr === rondeNr - 1);
-  return vorigePick?.uitkomst === "win";
+  // Als uitkomst al bekend is: alleen door bij winst
+  if (vorigePick?.uitkomst != null) return vorigePick.uitkomst === "win";
+  // Uitkomst nog niet verwerkt maar deadline voorbij: wel alvast mogen kiezen
+  return vorigePick != null;
 }
 
 function lmsWedstrijdNaarWedstrijd(w: LmsKnockoutWedstrijd): Wedstrijd {
@@ -293,7 +297,7 @@ export default function LmsPickPagina() {
             {gesloten
               ? "De deadline is verstreken. Hieronder zie je wat iedereen heeft gekozen."
               : !toegankelijk
-              ? "Je moet eerst de huidige ronde overleven."
+              ? `Ronde ${actieveRonde.nr - 1} is nog niet afgesloten.`
               : "Kies precies één team om op te winnen. Je mag elk team maar één keer in het hele toernooi gebruiken."}
           </p>
         </div>
@@ -326,9 +330,9 @@ export default function LmsPickPagina() {
         {!gesloten && !toegankelijk && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
             <p className="text-3xl mb-3">🔒</p>
-            <p className="text-white text-sm font-bold">Je moet eerst de huidige ronde overleven</p>
+            <p className="text-white text-sm font-bold">Ronde {actieveRonde.nr - 1} is nog niet afgesloten</p>
             <p className="text-zinc-600 text-xs mt-1">
-              Zodra ronde {actieveRonde.nr - 1} verwerkt is en jij gewonnen hebt, kun je hier kiezen.
+              Zodra de deadline van ronde {actieveRonde.nr - 1} verstreken is en je een pick hebt gedaan, kun je hier al kiezen.
             </p>
           </div>
         )}
