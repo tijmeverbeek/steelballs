@@ -187,11 +187,16 @@ export default function Home() {
                 <Link
                   key={p.id}
                   href={`/poule/${p.code}`}
-                  className={`block bg-zinc-900 rounded-2xl px-5 py-4 hover:border-zinc-600 transition-colors border ${p.afgerond ? "border-yellow-500/30" : "border-zinc-800"}`}
+                  className={`block bg-zinc-900 rounded-2xl px-5 py-4 transition-colors border ${
+                    p.afgerond ? "border-yellow-500/30 hover:border-yellow-500/50" :
+                    p.soort === "lms" && p.lmsActief === false ? "border-red-900/50 hover:border-red-800/60" :
+                    "border-zinc-800 hover:border-zinc-600"
+                  }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       {p.afgerond && <span className="text-base">🏆</span>}
+                      {p.soort === "lms" && p.lmsActief === false && <span className="text-base">💀</span>}
                       <p className="font-bold text-white">{p.naam}</p>
                     </div>
                     <span className="text-xs font-mono text-zinc-500">{p.code}</span>
@@ -206,7 +211,7 @@ export default function Home() {
                     </p>
                   ) : p.soort === "lms" ? (() => {
                     if (p.lmsActief === false) {
-                      return <p className="text-xs text-red-400/80">💀 Uitgeschakeld</p>;
+                      return <p className="text-xs text-red-400 font-semibold">Uitgeschakeld</p>;
                     }
                     const pick = p.lmsHuidigeRondePick;
                     if (pick) {
@@ -219,7 +224,7 @@ export default function Home() {
                         </p>
                       );
                     }
-                    return <p className="text-xs text-zinc-600">Ronde {p.lmsHuidigeRonde ?? 1} · nog geen pick</p>;
+                    return <p className="text-xs text-zinc-500">Ronde {p.lmsHuidigeRonde ?? 1} · nog geen pick</p>;
                   })() : (
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-1.5 bg-zinc-800 rounded-full">

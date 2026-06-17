@@ -627,27 +627,46 @@ function PoulePagina() {
         </div>}
 
         {/* ── LMS: mijn pick CTA ── */}
-        {(poule.soort ?? "wk") === "lms" && huidigDeelnemer && (
-          <Link
-            href={`/poule/${code}/picks`}
-            className="bg-zinc-900 border border-green-500/40 hover:border-green-500 rounded-2xl p-5 flex items-center justify-between transition-colors group"
-          >
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-0.5">Last Man Standing</p>
-              <p className="font-bold text-white">
-                {(() => {
-                  const picks = huidigDeelnemer.lmsPicks ?? [];
-                  const wins = picks.filter((p) => p.uitkomst === "win").length;
-                  const actief = huidigDeelnemer.lmsActief !== false;
-                  if (!actief) return "Uitgeschakeld";
-                  if (wins === 0) return "Kies je eerste team →";
-                  return `${wins} win${wins !== 1 ? "s" : ""} — nog actief`;
-                })()}
-              </p>
-            </div>
-            <span className="text-green-400 text-lg group-hover:translate-x-1 transition-transform">→</span>
-          </Link>
-        )}
+        {(poule.soort ?? "wk") === "lms" && huidigDeelnemer && (() => {
+          const picks = huidigDeelnemer.lmsPicks ?? [];
+          const actief = huidigDeelnemer.lmsActief !== false;
+          const wins = picks.filter((p) => p.uitkomst === "win").length;
+
+          const volgendeRonde = actief
+            ? LMS_RONDES.find((r) => !isRondeGesloten(r.nr) && !picks.find((p) => p.rondeNr === r.nr))
+            : null;
+          const huidigePick = actief
+            ? picks.find((p) => !isRondeGesloten(p.rondeNr))
+            : null;
+
+          const label = !actief
+            ? "Uitgeschakeld 💀"
+            : volgendeRonde
+            ? `Voorspel ronde ${volgendeRonde.nr} →`
+            : huidigePick
+            ? `Ronde ${huidigePick.rondeNr} · pick opgeslagen ✓`
+            : wins > 0
+            ? `${wins} win${wins !== 1 ? "s" : ""} — wacht op volgende ronde`
+            : "Voorspel ronde 1 →";
+
+          return (
+            <Link
+              href={`/poule/${code}/picks`}
+              className={`bg-zinc-900 rounded-2xl p-5 flex items-center justify-between transition-colors group border ${
+                !actief ? "border-red-900/40 hover:border-red-800/60" : "border-green-500/40 hover:border-green-500"
+              }`}
+            >
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-0.5">Last Man Standing</p>
+                <p className={`font-bold ${!actief ? "text-red-400" : "text-white"}`}>{label}</p>
+                {actief && wins > 0 && (
+                  <p className="text-xs text-zinc-600 mt-0.5">{wins} ronde{wins !== 1 ? "s" : ""} overleefd</p>
+                )}
+              </div>
+              <span className={`text-lg group-hover:translate-x-1 transition-transform ${!actief ? "text-red-700" : "text-green-400"}`}>→</span>
+            </Link>
+          );
+        })()}
 
         {/* ── Jouw voorspellingen CTA ── */}
         {huidigDeelnemer && (poule.soort ?? "wk") !== "lms" && (
