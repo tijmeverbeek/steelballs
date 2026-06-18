@@ -47,7 +47,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     resultaten.map((r) => [r.wedstrijdId, { thuis: r.thuis, uit: r.uit }])
   );
 
-  const updates: Promise<unknown>[] = [];
+  const updates: (() => Promise<unknown>)[] = [];
   let verwerkt = 0;
   let ontbreekt = 0;
 
@@ -57,7 +57,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     const pick = deelnemer.lmsPicks.find((p) => p.rondeNr === rondeNr);
     if (!pick) {
       // Geen pick gedaan → uitschakelen
-      updates.push(
+      updates.push(() =>
         prisma.deelnemer.update({
           where: { id: deelnemer.id },
           data: { lmsActief: false, lmsUitgeschakeldRonde: rondeNr },
@@ -82,12 +82,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     else if (teamDoelpunten < tegenstander) uitkomst = "verlies";
     else uitkomst = "gelijk";
 
-    updates.push(
+    updates.push(() =>
       prisma.lmsPick.update({ where: { id: pick.id }, data: { uitkomst } })
     );
 
-    if (uitkomst !== "win" && deelnemer.lmsActief) {
-      updates.push(
+    if (uitkomst !== "win") {
+      updates.push(() =>
         prisma.deelnemer.update({
           where: { id: deelnemer.id },
           data: { lmsActief: false, lmsUitgeschakeldRonde: rondeNr },
@@ -98,7 +98,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
     verwerkt++;
   }
 
-  await Promise.all(updates);
+  try {
+    for (const fn of updates) await fn();
+  } catch (err) {
+    console.error("[lms/verwerk]", err);
+    return NextResponse.json({ error: "Databasefout bij verwerken — controleer de resultaten en probeer opnieuw" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true, verwerkt, ontbreekt });
 }
