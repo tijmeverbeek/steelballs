@@ -52,8 +52,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   let ontbreekt = 0;
 
   for (const deelnemer of poule.deelnemers) {
+    if (!(deelnemer.lmsActief ?? true)) continue; // al uitgeschakeld
+
     const pick = deelnemer.lmsPicks.find((p) => p.rondeNr === rondeNr);
-    if (!pick) continue;
+    if (!pick) {
+      // Geen pick gedaan → uitschakelen
+      updates.push(
+        prisma.deelnemer.update({
+          where: { id: deelnemer.id },
+          data: { lmsActief: false, lmsUitgeschakeldRonde: rondeNr },
+        })
+      );
+      verwerkt++;
+      continue;
+    }
 
     const resultaat = resultatenMap[pick.wedstrijdId];
     if (!resultaat) { ontbreekt++; continue; }
