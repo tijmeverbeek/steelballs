@@ -55,6 +55,10 @@ export default function InstellingenPagina() {
   const [lmsVerwerkRonde, setLmsVerwerkRonde] = useState<number | null>(null);
   const [lmsVerwerkBezig, setLmsVerwerkBezig] = useState(false);
   const [lmsVerwerkResultaat, setLmsVerwerkResultaat] = useState<{ verwerkt: number; ontbreekt: number } | null>(null);
+  const [lmsPickOverrideDeelnemerId, setLmsPickOverrideDeelnemerId] = useState<string | null>(null);
+  const [lmsPickOverrideWedstrijdId, setLmsPickOverrideWedstrijdId] = useState("");
+  const [lmsPickOverrideTeamCode, setLmsPickOverrideTeamCode] = useState("");
+  const [lmsPickOverrideBezig, setLmsPickOverrideBezig] = useState(false);
   const [betaaldBezig, setBetaaldBezig] = useState<string | null>(null);
   const [lmsResultaatRonde, setLmsResultaatRonde] = useState<number | null>(null);
   const [lmsScores, setLmsScores] = useState<Record<string, { thuis: string; uit: string }>>({});
@@ -194,6 +198,48 @@ export default function InstellingenPagina() {
       alert("Netwerkfout — probeer opnieuw");
     } finally {
       setLmsVerwerkBezig(false);
+    }
+  }
+
+  async function slaLmsPickOverrideOp(deelnemerId: string, rondeNr: number) {
+    if (!lmsPickOverrideWedstrijdId || !lmsPickOverrideTeamCode) return;
+    setLmsPickOverrideBezig(true);
+    try {
+      const res = await fetch(`/api/poules/${code}/lms`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deelnemerId, rondeNr, teamCode: lmsPickOverrideTeamCode, wedstrijdId: lmsPickOverrideWedstrijdId }),
+      });
+      const body = await res.json();
+      if (res.ok) {
+        setPoule((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            deelnemers: prev.deelnemers.map((d) => {
+              if (d.id !== deelnemerId) return d;
+              const filteredPicks = (d.lmsPicks ?? []).filter((p) => p.rondeNr !== rondeNr);
+              return {
+                ...d,
+                lmsPicks: [
+                  ...filteredPicks,
+                  { id: body.pick.id, deelnemerId, rondeNr, teamCode: lmsPickOverrideTeamCode, wedstrijdId: lmsPickOverrideWedstrijdId, uitkomst: null },
+                ],
+              };
+            }),
+          };
+        });
+        setLmsPickOverrideDeelnemerId(null);
+        setLmsPickOverrideWedstrijdId("");
+        setLmsPickOverrideTeamCode("");
+        toonOpgeslagen();
+      } else {
+        alert(body.error ?? "Opslaan mislukt");
+      }
+    } catch {
+      alert("Netwerkfout — probeer opnieuw");
+    } finally {
+      setLmsPickOverrideBezig(false);
     }
   }
 
@@ -647,49 +693,108 @@ export default function InstellingenPagina() {
                   </p>
 
                   {/* Overzicht picks voor deze ronde */}
-                  <div className="space-y-1.5">
-                    {poule.deelnemers.map((d) => {
-                      const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
-                      const pick = d.lmsPicks?.find((p) => p.rondeNr === lmsVerwerkRonde);
-                      const alleWedstrijdenRonde: Wedstrijd[] = [
-                        ...getWedstrijdenVoorRonde(lmsVerwerkRonde),
-                        ...knockoutWedstrijden
-                          .filter((kw) => kw.rondeNr === lmsVerwerkRonde)
-                          .map((kw): Wedstrijd => ({
-                            id: kw.id,
-                            thuis: { code: kw.thuisCode, naam: kw.thuisNaam, vlag: kw.thuisVlag },
-                            uit: { code: kw.uitCode, naam: kw.uitNaam, vlag: kw.uitVlag },
-                            datum: kw.datum ?? "", tijd: kw.tijd ?? "",
-                            groep: `Ronde ${kw.rondeNr}`, fase: "knockout",
-                          })),
-                      ];
-                      const w = pick ? alleWedstrijdenRonde.find((x) => x.id === pick.wedstrijdId) : null;
-                      const team = w && pick ? (w.thuis.code === pick.teamCode ? w.thuis : w.uit) : null;
-                      return (
-                        <div key={d.id} className="flex items-center gap-3 text-sm">
-                          <span className="text-zinc-600 w-4 text-center flex-shrink-0">
-                            {(d.lmsActief ?? true) ? "🟢" : "💀"}
-                          </span>
-                          <span className="text-zinc-400 flex-1 truncate">{naam}</span>
-                          {pick && team ? (
-                            <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded border ${
-                              pick.uitkomst === "win"
-                                ? "bg-green-500/10 border-green-500/30 text-green-400"
-                                : pick.uitkomst === "verlies" || pick.uitkomst === "gelijk"
-                                ? "bg-red-500/10 border-red-500/30 text-red-400"
-                                : "bg-zinc-800 border-zinc-700 text-zinc-300"
-                            }`}>
-                              {team.vlag} {team.naam}
-                              {pick.uitkomst === "win" && " ✓"}
-                              {(pick.uitkomst === "verlies" || pick.uitkomst === "gelijk") && " ✗"}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-zinc-700 italic">geen pick</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  {(() => {
+                    const alleWedstrijdenRonde: Wedstrijd[] = [
+                      ...getWedstrijdenVoorRonde(lmsVerwerkRonde),
+                      ...knockoutWedstrijden
+                        .filter((kw) => kw.rondeNr === lmsVerwerkRonde)
+                        .map((kw): Wedstrijd => ({
+                          id: kw.id,
+                          thuis: { code: kw.thuisCode, naam: kw.thuisNaam, vlag: kw.thuisVlag },
+                          uit: { code: kw.uitCode, naam: kw.uitNaam, vlag: kw.uitVlag },
+                          datum: kw.datum ?? "", tijd: kw.tijd ?? "",
+                          groep: `Ronde ${kw.rondeNr}`, fase: "knockout",
+                        })),
+                    ];
+                    return (
+                      <div className="space-y-2">
+                        {poule.deelnemers.map((d) => {
+                          const naam = d.user.gebruikersnaam ?? d.user.email.split("@")[0];
+                          const pick = d.lmsPicks?.find((p) => p.rondeNr === lmsVerwerkRonde);
+                          const w = pick ? alleWedstrijdenRonde.find((x) => x.id === pick.wedstrijdId) : null;
+                          const team = w && pick ? (w.thuis.code === pick.teamCode ? w.thuis : w.uit) : null;
+                          const isEditing = lmsPickOverrideDeelnemerId === d.id;
+                          const overrideWedstrijd = alleWedstrijdenRonde.find((x) => x.id === lmsPickOverrideWedstrijdId);
+                          return (
+                            <div key={d.id}>
+                              <div className="flex items-center gap-3 text-sm">
+                                <span className="text-zinc-600 w-4 text-center flex-shrink-0">
+                                  {(d.lmsActief ?? true) ? "🟢" : "💀"}
+                                </span>
+                                <span className="text-zinc-400 flex-1 truncate">{naam}</span>
+                                {pick && team ? (
+                                  <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded border ${
+                                    pick.uitkomst === "win"
+                                      ? "bg-green-500/10 border-green-500/30 text-green-400"
+                                      : pick.uitkomst === "verlies" || pick.uitkomst === "gelijk"
+                                      ? "bg-red-500/10 border-red-500/30 text-red-400"
+                                      : "bg-zinc-800 border-zinc-700 text-zinc-300"
+                                  }`}>
+                                    {team.vlag} {team.naam}
+                                    {pick.uitkomst === "win" && " ✓"}
+                                    {(pick.uitkomst === "verlies" || pick.uitkomst === "gelijk") && " ✗"}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-zinc-700 italic">geen pick</span>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    if (isEditing) {
+                                      setLmsPickOverrideDeelnemerId(null);
+                                    } else {
+                                      setLmsPickOverrideDeelnemerId(d.id);
+                                      setLmsPickOverrideWedstrijdId("");
+                                      setLmsPickOverrideTeamCode("");
+                                    }
+                                  }}
+                                  className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex-shrink-0"
+                                >
+                                  {isEditing ? "Annuleer" : "Aanpassen"}
+                                </button>
+                              </div>
+                              {isEditing && (
+                                <div className="mt-2 ml-7 flex flex-col gap-2">
+                                  <select
+                                    value={lmsPickOverrideWedstrijdId}
+                                    onChange={(e) => { setLmsPickOverrideWedstrijdId(e.target.value); setLmsPickOverrideTeamCode(""); }}
+                                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-green-500"
+                                  >
+                                    <option value="">Kies wedstrijd...</option>
+                                    {alleWedstrijdenRonde.map((wx) => (
+                                      <option key={wx.id} value={wx.id}>{wx.thuis.vlag} {wx.thuis.naam} vs {wx.uit.naam} {wx.uit.vlag}</option>
+                                    ))}
+                                  </select>
+                                  {overrideWedstrijd && (
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={() => setLmsPickOverrideTeamCode(overrideWedstrijd.thuis.code)}
+                                        className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${lmsPickOverrideTeamCode === overrideWedstrijd.thuis.code ? "bg-green-500/20 border-green-500/40 text-green-400" : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}
+                                      >
+                                        {overrideWedstrijd.thuis.vlag} {overrideWedstrijd.thuis.naam}
+                                      </button>
+                                      <button
+                                        onClick={() => setLmsPickOverrideTeamCode(overrideWedstrijd.uit.code)}
+                                        className={`flex-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${lmsPickOverrideTeamCode === overrideWedstrijd.uit.code ? "bg-green-500/20 border-green-500/40 text-green-400" : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}
+                                      >
+                                        {overrideWedstrijd.uit.vlag} {overrideWedstrijd.uit.naam}
+                                      </button>
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={() => slaLmsPickOverrideOp(d.id, lmsVerwerkRonde)}
+                                    disabled={!lmsPickOverrideWedstrijdId || !lmsPickOverrideTeamCode || lmsPickOverrideBezig}
+                                    className="bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black font-bold text-xs px-4 py-1.5 rounded-lg transition-colors self-start"
+                                  >
+                                    {lmsPickOverrideBezig ? "Opslaan..." : "Pick opslaan"}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
 
                   {lmsVerwerkResultaat && (
                     <p className="text-xs text-green-400 font-medium">

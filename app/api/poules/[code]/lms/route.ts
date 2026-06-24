@@ -86,3 +86,61 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
 
   return NextResponse.json({ success: true, pick });
 }
+
+// PATCH: admin-only — stel handmatig een pick in voor een deelnemer, omzeilt deadline
+export async function PATCH(req: Request, { params }: { params: Promise<{ code: string }> }) {
+  const authUser = await getAuthUser();
+  if (!authUser) return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+
+  const { code } = await params;
+  const { deelnemerId, rondeNr, teamCode, wedstrijdId } = await req.json();
+
+  if (!deelnemerId || !rondeNr || !teamCode || !wedstrijdId) {
+    return NextResponse.json({ error: "deelnemerId, rondeNr, teamCode en wedstrijdId zijn verplicht" }, { status: 400 });
+  }
+
+  const poule = await prisma.poule.findUnique({ where: { code } });
+  if (!poule || poule.soort !== "lms") {
+    return NextResponse.json({ error: "Niet gevonden of geen LMS poule" }, { status: 404 });
+  }
+  if (poule.organisatorId !== authUser.id) {
+    return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
+  }
+
+  // Verify wedstrijd belongs to this round
+  const hardcodedWedstrijden = getWedstrijdenVoorRonde(rondeNr);
+  const lmsWedstrijden = hardcodedWedstrijden.length === 0
+    ? await prisma.lmsWedstrijd.findMany({ where: { rondeNr } })
+    : [];
+  const geldig =
+    hardcodedWedstrijden.find((w) => w.id === wedstrijdId) ||
+    lmsWedstrijden.find((w) => w.id === wedstrijdId);
+  if (!geldig) {
+    return NextResponse.json({ error: "Wedstrijd hoort niet bij deze ronde" }, { status: 400 });
+  }
+
+  // Verify deelnemer belongs to this poule
+  const deelnemer = await prisma.deelnemer.findUnique({
+    where: { id: deelnemerId },
+    include: { lmsPicks: true },
+  });
+  if (!deelnemer || deelnemer.pouleId !== poule.id) {
+    return NextResponse.json({ error: "Deelnemer niet gevonden in deze poule" }, { status: 404 });
+  }
+
+  // Check: team not already used in a different round
+  const gebruiktTeams = deelnemer.lmsPicks
+    .filter((p) => p.rondeNr !== rondeNr)
+    .map((p) => p.teamCode);
+  if (gebruiktTeams.includes(teamCode)) {
+    return NextResponse.json({ error: "Dit team is al eerder gebruikt door deze deelnemer" }, { status: 400 });
+  }
+
+  const pick = await prisma.lmsPick.upsert({
+    where: { deelnemerId_rondeNr: { deelnemerId, rondeNr } },
+    update: { teamCode, wedstrijdId, uitkomst: null },
+    create: { deelnemerId, rondeNr, teamCode, wedstrijdId, uitkomst: null },
+  });
+
+  return NextResponse.json({ success: true, pick });
+}
