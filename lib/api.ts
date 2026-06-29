@@ -45,6 +45,7 @@ export async function saveVoorspellingen(
     eersteDoelpuntenmakerVoorspelling?: string | null;
     eersteDoelpuntenminuutVoorspelling?: number | null;
     cornersVoorspelling?: number | null;
+    schotenOpDoelVoorspelling?: number | null;
   }
 ): Promise<void> {
   const res = await fetch(`/api/poules/${code}/deelnemers/${deelnemerId}/voorspellingen`, {
@@ -78,12 +79,15 @@ export async function updatePouleInstellingen(
     eersteDoelpuntenmakerActief?: boolean;
     eersteDoelpuntenminuutActief?: boolean;
     cornersActief?: boolean;
+    schotenOpDoelActief?: boolean;
+    uitslagActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
     toernooiwinaarResultaat?: string | null;
     eersteDoelpuntenmakerResultaat?: string | null;
     eersteDoelpuntenminuutResultaat?: number | null;
     cornersResultaat?: number | null;
+    schotenOpDoelResultaat?: number | null;
   }
 ): Promise<void> {
   const res = await fetch(`/api/poules/${code}`, {

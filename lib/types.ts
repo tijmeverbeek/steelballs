@@ -39,6 +39,7 @@ export interface Deelnemer {
   eersteDoelpuntenmakerVoorspelling?: string | null;
   eersteDoelpuntenminuutVoorspelling?: number | null;
   cornersVoorspelling?: number | null;
+  schotenOpDoelVoorspelling?: number | null;
   lmsActief?: boolean;
   lmsUitgeschakeldRonde?: number | null;
   lmsPicks?: LmsPick[];
@@ -66,6 +67,9 @@ export interface Poule {
   eersteDoelpuntenminuutResultaat?: number | null;
   cornersActief: boolean;
   cornersResultaat?: number | null;
+  schotenOpDoelActief: boolean;
+  schotenOpDoelResultaat?: number | null;
+  uitslagActief: boolean;
   wkWedstrijdId?: string | null;
   afgerond: boolean;
   winnaarId?: string | null;

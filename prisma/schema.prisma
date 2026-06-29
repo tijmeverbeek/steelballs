@@ -39,6 +39,9 @@ model Poule {
   eersteDoelpuntenminuutResultaat    Int?
   cornersActief                      Boolean  @default(false)
   cornersResultaat                   Int?
+  schotenOpDoelActief                Boolean  @default(false)
+  schotenOpDoelResultaat             Int?
+  uitslagActief                      Boolean  @default(true)
   wkWedstrijdId                      String?
   afgerond                           Boolean  @default(false)
   winnaarId                          String?
@@ -59,6 +62,7 @@ model Deelnemer {
   eersteDoelpuntenmakerVoorspelling    String?
   eersteDoelpuntenminuutVoorspelling   Int?
   cornersVoorspelling                  Int?
+  schotenOpDoelVoorspelling            Int?
   lmsPicks                LmsPick[]
   lmsActief               Boolean        @default(true)
   lmsUitgeschakeldRonde   Int?

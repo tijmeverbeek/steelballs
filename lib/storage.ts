@@ -11,8 +11,9 @@ export const CL_WINNAAR_PUNTEN = 5;       // correct winnaar (niet exact)
 export const CL_DOELPUNTENMAKER_PUNTEN = 3; // eerste doelpuntenmaker
 // minuut = tiebreaker (geen punten)
 
-// Enkelvoudig poule extra
+// Enkelvoudig poule extra — uitslag, corners en schoten op doel zijn gelijkwaardig
 export const ENKELVOUDIG_CORNERS_PUNTEN = 3;
+export const ENKELVOUDIG_SCHOTEN_PUNTEN = 3;
 
 function normaliseer(s: string): string {
   return s
@@ -46,6 +47,7 @@ export function berekenPunten(
     eersteDoelpuntenmakerVoorspelling?: string | null;
     eersteDoelpuntenminuutVoorspelling?: number | null;
     cornersVoorspelling?: number | null;
+    schotenOpDoelVoorspelling?: number | null;
   },
   poule?: {
     soort?: string;
@@ -55,12 +57,15 @@ export function berekenPunten(
     eersteDoelpuntenmakerActief?: boolean;
     eersteDoelpuntenminuutActief?: boolean;
     cornersActief?: boolean;
+    schotenOpDoelActief?: boolean;
+    uitslagActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
     toernooiwinaarResultaat?: string | null;
     eersteDoelpuntenmakerResultaat?: string | null;
     eersteDoelpuntenminuutResultaat?: number | null;
     cornersResultaat?: number | null;
+    schotenOpDoelResultaat?: number | null;
   }
 ): number {
   const isClFinale = poule?.soort === "cl_finale";
@@ -68,12 +73,17 @@ export function berekenPunten(
   const isEnkelvoudig = poule?.soort === "enkelvoudig";
   let punten = 0;
 
+  // Voor enkelvoudig is uitslag standaard actief, maar kan worden uitgeschakeld
+  const uitslagTelt = !isEnkelvoudig || (poule?.uitslagActief !== false);
+
   for (const vp of voorspellingen) {
     const resultaat = resultaten[vp.wedstrijdId];
     if (!resultaat || vp.thuis === null) continue;
     if (isOefenwedstrijd) {
       // Totaal corners: exact = 3 pt
       if (vp.thuis === resultaat.thuis) punten += 3;
+    } else if (isEnkelvoudig && !uitslagTelt) {
+      // Uitslag uitgeschakeld voor deze enkelvoudig poule
     } else {
       if (vp.uit === null) continue;
       if (vp.thuis === resultaat.thuis && vp.uit === resultaat.uit) {
@@ -106,6 +116,11 @@ export function berekenPunten(
     && deelnemer?.cornersVoorspelling != null
     && deelnemer.cornersVoorspelling === poule.cornersResultaat) {
     punten += ENKELVOUDIG_CORNERS_PUNTEN;
+  }
+  if (isEnkelvoudig && poule?.schotenOpDoelActief && poule.schotenOpDoelResultaat != null
+    && deelnemer?.schotenOpDoelVoorspelling != null
+    && deelnemer.schotenOpDoelVoorspelling === poule.schotenOpDoelResultaat) {
+    punten += ENKELVOUDIG_SCHOTEN_PUNTEN;
   }
 
   return punten;

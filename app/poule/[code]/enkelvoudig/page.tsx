@@ -50,9 +50,11 @@ export default function EnkelvoudigPagina() {
   const [doelpuntenmaker, setDoelpuntenmaker] = useState("");
   const [minuut, setMinuut] = useState<number | null>(null);
   const [corners, setCorners] = useState<number | null>(null);
+  const [schoten, setSchoten] = useState<number | null>(null);
   const doelpuntenmakerRef = useRef("");
   const minuutRef = useRef<number | null>(null);
   const cornersRef = useRef<number | null>(null);
+  const schotenRef = useRef<number | null>(null);
 
   const wedstrijd = poule?.wkWedstrijdId
     ? getWedstrijdenVoorSoort("wk").find((w) => w.id === poule.wkWedstrijdId) ?? null
@@ -86,9 +88,11 @@ export default function EnkelvoudigPagina() {
       const edm = deelnemer.eersteDoelpuntenmakerVoorspelling ?? "";
       const edmin = deelnemer.eersteDoelpuntenminuutVoorspelling ?? null;
       const corn = deelnemer.cornersVoorspelling ?? null;
+      const shot = deelnemer.schotenOpDoelVoorspelling ?? null;
       setDoelpuntenmaker(edm); doelpuntenmakerRef.current = edm;
       setMinuut(edmin); minuutRef.current = edmin;
       setCorners(corn); cornersRef.current = corn;
+      setSchoten(shot); schotenRef.current = shot;
     }
     load();
   }, [code, router]);
@@ -104,6 +108,7 @@ export default function EnkelvoudigPagina() {
           eersteDoelpuntenmakerVoorspelling: doelpuntenmakerRef.current || null,
           eersteDoelpuntenminuutVoorspelling: minuutRef.current,
           cornersVoorspelling: cornersRef.current,
+          schotenOpDoelVoorspelling: schotenRef.current,
         }
       );
       setSaveStatus("saved");
@@ -137,6 +142,11 @@ export default function EnkelvoudigPagina() {
 
   function setCornersVal(val: number | null) {
     setCorners(val); cornersRef.current = val;
+    scheduleSave();
+  }
+
+  function setSchotenVal(val: number | null) {
+    setSchoten(val); schotenRef.current = val;
     scheduleSave();
   }
 
@@ -194,28 +204,30 @@ export default function EnkelvoudigPagina() {
         </div>
 
         {/* Uitslag */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-5 text-center">Uitslag</p>
-          {resultaat ? (
-            <div className="flex items-center justify-center gap-8">
-              <div className="text-center">
-                <div className="text-2xl font-black text-white">{resultaat.thuis}</div>
-                <div className="text-xs text-zinc-500 mt-1">{wedstrijd.thuis.vlag}</div>
+        {poule.uitslagActief !== false && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-5 text-center">Uitslag</p>
+            {resultaat ? (
+              <div className="flex items-center justify-center gap-8">
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">{resultaat.thuis}</div>
+                  <div className="text-xs text-zinc-500 mt-1">{wedstrijd.thuis.vlag}</div>
+                </div>
+                <div className="text-zinc-600">—</div>
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">{resultaat.uit}</div>
+                  <div className="text-xs text-zinc-500 mt-1">{wedstrijd.uit.vlag}</div>
+                </div>
               </div>
-              <div className="text-zinc-600">—</div>
-              <div className="text-center">
-                <div className="text-2xl font-black text-white">{resultaat.uit}</div>
-                <div className="text-xs text-zinc-500 mt-1">{wedstrijd.uit.vlag}</div>
+            ) : (
+              <div className="flex items-center justify-center gap-8">
+                <Stepper value={thuis} onChange={(v) => setScore("thuis", v)} disabled={isGesloten} />
+                <div className="text-zinc-600 text-xl font-bold">—</div>
+                <Stepper value={uit} onChange={(v) => setScore("uit", v)} disabled={isGesloten} />
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-8">
-              <Stepper value={thuis} onChange={(v) => setScore("thuis", v)} disabled={isGesloten} />
-              <div className="text-zinc-600 text-xl font-bold">—</div>
-              <Stepper value={uit} onChange={(v) => setScore("uit", v)} disabled={isGesloten} />
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Eerste doelpuntenmaker */}
         {poule.eersteDoelpuntenmakerActief && (
@@ -276,6 +288,28 @@ export default function EnkelvoudigPagina() {
                 className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-40 disabled:cursor-not-allowed"
               />
               <span className="text-sm text-zinc-500">corners</span>
+            </div>
+          </div>
+        )}
+
+        {/* Schoten op doel */}
+        {poule.schotenOpDoelActief && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-4 text-center">Totaal schoten op doel</p>
+            {poule.schotenOpDoelResultaat != null && (
+              <p className="text-center text-sm text-green-400 font-semibold mb-3">Antwoord: {poule.schotenOpDoelResultaat} schoten</p>
+            )}
+            <div className="flex items-center justify-center gap-3">
+              <input
+                type="number"
+                min={0}
+                value={schoten ?? ""}
+                onChange={(e) => setSchotenVal(e.target.value === "" ? null : parseInt(e.target.value))}
+                disabled={isGesloten}
+                placeholder="bijv. 8"
+                className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-40 disabled:cursor-not-allowed"
+              />
+              <span className="text-sm text-zinc-500">schoten</span>
             </div>
           </div>
         )}

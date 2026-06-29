@@ -107,7 +107,7 @@ export default function InstellingenPagina() {
     setTimeout(() => setOpgeslagen(false), 2000);
   }
 
-  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief" | "toernooiwinaarActief" | "eersteDoelpuntenmakerActief" | "eersteDoelpuntenminuutActief" | "cornersActief", waarde: boolean) {
+  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief" | "toernooiwinaarActief" | "eersteDoelpuntenmakerActief" | "eersteDoelpuntenminuutActief" | "cornersActief" | "schotenOpDoelActief" | "uitslagActief", waarde: boolean) {
     if (!poule) return;
     setPoule({ ...poule, [key]: waarde });
     try {
@@ -401,9 +401,9 @@ export default function InstellingenPagina() {
               <div className="flex items-center justify-between mb-1">
                 <div>
                   <p className="text-sm font-semibold text-white">Uitslag</p>
-                  <p className="text-xs text-zinc-500">Altijd actief — deelnemers voorspellen de eindstand</p>
+                  <p className="text-xs text-zinc-500">Deelnemers voorspellen de eindstand (10 pt exact, 5 pt winnaar)</p>
                 </div>
-                <span className="text-xs text-zinc-600 font-mono">altijd aan</span>
+                <Toggle aan={poule.uitslagActief !== false} onChange={(v) => toggleInstelling("uitslagActief", v)} />
               </div>
               {Object.entries(poule.resultaten ?? {}).map(([id, r]) => id === poule.wkWedstrijdId && (
                 <p key={id} className="text-xs text-green-400 mt-1">Eindstand ingevoerd: {r.thuis}–{r.uit}</p>
@@ -453,7 +453,7 @@ export default function InstellingenPagina() {
               <div className="flex items-center justify-between mb-1">
                 <div>
                   <p className="text-sm font-semibold text-white">Totaal aantal corners</p>
-                  <p className="text-xs text-zinc-500">Deelnemers raden het totale aantal corners in de wedstrijd</p>
+                  <p className="text-xs text-zinc-500">Deelnemers raden het totale aantal corners in de wedstrijd (3 pt)</p>
                 </div>
                 <Toggle aan={poule.cornersActief} onChange={(v) => toggleInstelling("cornersActief", v)} />
               </div>
@@ -481,6 +481,38 @@ export default function InstellingenPagina() {
                     {clBezig ? "Opslaan..." : "Opslaan"}
                   </button>
                   {clFout && <p className="text-red-400 text-xs">{clFout}</p>}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-zinc-800" />
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-white">Totaal schoten op doel</p>
+                  <p className="text-xs text-zinc-500">Deelnemers raden het totale aantal schoten op doel (3 pt)</p>
+                </div>
+                <Toggle aan={poule.schotenOpDoelActief} onChange={(v) => toggleInstelling("schotenOpDoelActief", v)} />
+              </div>
+              {poule.schotenOpDoelActief && (
+                <div className="mt-2 flex gap-2 items-center">
+                  <input
+                    type="number"
+                    min={0}
+                    value={poule.schotenOpDoelResultaat ?? ""}
+                    onChange={async (e) => {
+                      const val = e.target.value === "" ? null : parseInt(e.target.value);
+                      setPoule((p) => p ? { ...p, schotenOpDoelResultaat: val } : p);
+                      try {
+                        await updatePouleInstellingen(code, { schotenOpDoelResultaat: val });
+                        toonOpgeslagen();
+                      } catch { /* silent */ }
+                    }}
+                    placeholder="bijv. 8"
+                    className="w-24 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center"
+                  />
+                  <span className="text-xs text-zinc-500">schoten</span>
                 </div>
               )}
             </div>
