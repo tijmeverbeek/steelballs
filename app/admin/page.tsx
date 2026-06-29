@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createPoule } from "@/lib/api";
 import { SPECIALS_CATEGORIEEN } from "@/lib/specials";
 import { getWedstrijdenVoorSoort } from "@/lib/matches";
+import { LMS_RONDES } from "@/lib/lms";
 
 interface AdminStats {
   gebruikers: number;
@@ -61,9 +62,16 @@ export default function AdminDashboard() {
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState("");
   const [createSuccess, setCreateSuccess] = useState("");
+  const [knockoutWedstrijden, setKnockoutWedstrijden] = useState<Array<{
+    id: string; rondeNr: number; thuisCode: string; thuisNaam: string; thuisVlag: string;
+    uitCode: string; uitNaam: string; uitVlag: string; datum: string | null; tijd: string | null;
+  }>>([]);
 
-  const alleWkWedstrijden = getWedstrijdenVoorSoort("wk");
+  const vandaag = new Date().toISOString().split("T")[0];
+  const alleWkWedstrijden = getWedstrijdenVoorSoort("wk").filter((w) => w.datum >= vandaag);
   const wkGroepen = [...new Set(alleWkWedstrijden.map((w) => w.groep))].sort();
+  const toekomstigeKnockout = knockoutWedstrijden.filter((w) => w.datum && w.datum >= vandaag);
+  const knockoutRondes = [...new Set(toekomstigeKnockout.map((w) => w.rondeNr))].sort((a, b) => a - b);
 
   // Specials resultaten
   const [specialsResultaten, setSpecialsResultaten] = useState<Record<string, string>>({});
@@ -88,6 +96,10 @@ export default function AdminDashboard() {
     fetch("/api/admin/specials-resultaten")
       .then((res) => res.ok ? res.json() : {})
       .then((data) => setSpecialsResultaten(data));
+
+    fetch("/api/lms/wedstrijden")
+      .then((res) => res.ok ? res.json() : { wedstrijden: [] })
+      .then((data) => setKnockoutWedstrijden(data.wedstrijden ?? []));
   }, [router]);
 
   async function handleCreatePoule(e: React.FormEvent) {
@@ -266,7 +278,24 @@ export default function AdminDashboard() {
                         ))}
                     </optgroup>
                   ))}
+                  {knockoutRondes.map((nr) => {
+                    const rondeNaam = LMS_RONDES.find((r) => r.nr === nr)?.naam ?? `Ronde ${nr}`;
+                    return (
+                      <optgroup key={nr} label={rondeNaam}>
+                        {toekomstigeKnockout
+                          .filter((w) => w.rondeNr === nr)
+                          .map((w) => (
+                            <option key={w.id} value={w.id}>
+                              {w.thuisVlag} {w.thuisNaam} vs {w.uitNaam} {w.uitVlag} · {w.datum}
+                            </option>
+                          ))}
+                      </optgroup>
+                    );
+                  })}
                 </select>
+                {alleWkWedstrijden.length === 0 && toekomstigeKnockout.length === 0 && (
+                  <p className="text-xs text-zinc-500 mt-1.5">Geen toekomstige wedstrijden gevonden. Voeg knockout wedstrijden toe via de LMS instellingen.</p>
+                )}
               </div>
             )}
             {createError && <p className="text-red-400 text-xs">{createError}</p>}
