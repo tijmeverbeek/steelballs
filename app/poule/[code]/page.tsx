@@ -386,6 +386,7 @@ function PoulePagina() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const [poule, setPoule] = useState<Poule | null>(null);
+  const [enkelvoudigWedstrijdDb, setEnkelvoudigWedstrijdDb] = useState<{ datum: string; tijd: string } | null>(null);
   const [mijnUserId, setMijnUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [gedeeld, setGedeeld] = useState(false);
@@ -402,9 +403,19 @@ function PoulePagina() {
         }).catch(() => {});
       }
     });
-    getPoule(code).then((p) => {
+    getPoule(code).then(async (p) => {
       if (!p) { router.push("/"); return; }
       setPoule(p);
+      // Als enkelvoudig en de wedstrijd niet in de hardcoded lijst staat, haal hem op uit de DB
+      if (p.soort === "enkelvoudig" && p.wkWedstrijdId) {
+        const inHardcoded = getWedstrijdenVoorSoort("wk").some((w) => w.id === p.wkWedstrijdId);
+        if (!inHardcoded) {
+          fetch("/api/lms/wedstrijden").then((r) => r.json()).then((data) => {
+            const kw = (data.wedstrijden ?? []).find((w: { id: string }) => w.id === p.wkWedstrijdId);
+            if (kw) setEnkelvoudigWedstrijdDb({ datum: kw.datum ?? "", tijd: kw.tijd ?? "" });
+          }).catch(() => {});
+        }
+      }
       if (p.afgerond) {
         const gezienKey = `eindstand-gezien-${p.code}`;
         if (!localStorage.getItem(gezienKey)) {
@@ -470,17 +481,20 @@ function PoulePagina() {
   const enkelvoudigWedstrijd = isEnkelvoudig && poule.wkWedstrijdId
     ? getWedstrijdenVoorSoort("wk").find((w) => w.id === poule.wkWedstrijdId) ?? null
     : null;
+  // Gebruik DB-wedstrijd als fallback voor knockout matches
+  const enkelvoudigWedstrijdInfo = enkelvoudigWedstrijd ?? enkelvoudigWedstrijdDb;
   const pouleWedstrijden = isEnkelvoudig
     ? (enkelvoudigWedstrijd ? [enkelvoudigWedstrijd] : [])
     : getWedstrijdenVoorSoort(poule.soort ?? "wk");
-  const aantalWedstrijden = pouleWedstrijden.length;
+  const aantalWedstrijden = isEnkelvoudig ? 1 : pouleWedstrijden.length;
   const jouwIngevuld = huidigDeelnemer?.voorspellingen.filter((v) => v.thuis !== null && v.uit !== null).length ?? 0;
 
   function isGestart(w: { datum: string; tijd: string }): boolean {
+    if (!w.datum || !w.tijd) return false;
     return new Date() >= new Date(`${w.datum}T${w.tijd}:00+02:00`);
   }
   const oefGestart = poule.soort === "oefenwedstrijd" && isGestart(OEF_NED_ALG);
-  const enkelvoudigGestart = isEnkelvoudig && enkelvoudigWedstrijd ? isGestart(enkelvoudigWedstrijd) : false;
+  const enkelvoudigGestart = isEnkelvoudig && enkelvoudigWedstrijdInfo ? isGestart(enkelvoudigWedstrijdInfo) : false;
   const toonVoorspellingen = poule.afgerond || oefGestart || enkelvoudigGestart;
 
   const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief || poule.cornersActief || poule.schotenOpDoelActief;

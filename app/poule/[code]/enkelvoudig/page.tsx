@@ -6,7 +6,7 @@ import Link from "next/link";
 import { getPoule, saveVoorspellingen } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { getWedstrijdenVoorSoort } from "@/lib/matches";
-import { Poule } from "@/lib/types";
+import { Poule, Wedstrijd } from "@/lib/types";
 import { SpelerAutocomplete } from "@/components/SpelerAutocomplete";
 
 type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
@@ -37,6 +37,7 @@ export default function EnkelvoudigPagina() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const [poule, setPoule] = useState<Poule | null>(null);
+  const [wedstrijd, setWedstrijd] = useState<Wedstrijd | null>(null);
   const [deelnemerId, setDeelnemerId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -56,10 +57,6 @@ export default function EnkelvoudigPagina() {
   const cornersRef = useRef<number | null>(null);
   const schotenRef = useRef<number | null>(null);
 
-  const wedstrijd = poule?.wkWedstrijdId
-    ? getWedstrijdenVoorSoort("wk").find((w) => w.id === poule.wkWedstrijdId) ?? null
-    : null;
-
   const teamCodes = wedstrijd ? [wedstrijd.thuis.code, wedstrijd.uit.code] : undefined;
 
   useEffect(() => {
@@ -71,6 +68,29 @@ export default function EnkelvoudigPagina() {
       const geladen = await getPoule(code);
       if (!geladen || geladen.soort !== "enkelvoudig") { router.push("/"); return; }
       setPoule(geladen);
+
+      // Zoek de wedstrijd: eerst hardcoded groepsfase, dan LMS knockout DB
+      if (geladen.wkWedstrijdId) {
+        const hardcoded = getWedstrijdenVoorSoort("wk").find((w) => w.id === geladen.wkWedstrijdId);
+        if (hardcoded) {
+          setWedstrijd(hardcoded);
+        } else {
+          const lmsRes = await fetch("/api/lms/wedstrijden");
+          const lmsData = await lmsRes.json();
+          const kw = (lmsData.wedstrijden ?? []).find((w: { id: string }) => w.id === geladen.wkWedstrijdId);
+          if (kw) {
+            setWedstrijd({
+              id: kw.id,
+              thuis: { code: kw.thuisCode, naam: kw.thuisNaam, vlag: kw.thuisVlag },
+              uit: { code: kw.uitCode, naam: kw.uitNaam, vlag: kw.uitVlag },
+              datum: kw.datum ?? "",
+              tijd: kw.tijd ?? "",
+              groep: `Ronde ${kw.rondeNr}`,
+              fase: "knockout",
+            });
+          }
+        }
+      }
 
       const deelnemer = geladen.deelnemers.find((d) => d.userId === user.id);
       if (!deelnemer) { router.push(`/poule/${code}`); return; }
