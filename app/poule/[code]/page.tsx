@@ -86,30 +86,70 @@ function EindstandModal({
   stand,
   mijnUserId,
   onSluit,
+  enkelvoudigThuisNaam,
+  enkelvoudigUitNaam,
 }: {
   poule: Poule;
   stand: StandItem[];
   mijnUserId: string | null;
   onSluit: () => void;
+  enkelvoudigThuisNaam?: string | null;
+  enkelvoudigUitNaam?: string | null;
 }) {
   const isWinnaar = mijnUserId !== null && poule.winnaarId === mijnUserId;
   const winnaar = stand[0];
-  const clResultaat = poule.resultaten["CL1"];
+  const isEnkelvoudig = poule.soort === "enkelvoudig";
+  const isClFinale = poule.soort === "cl_finale";
+  const matchId = isEnkelvoudig
+    ? (poule.wkWedstrijdId ?? null)
+    : isClFinale
+    ? "CL1"
+    : null;
+  const matchResultaat = matchId ? poule.resultaten[matchId] : null;
 
   function keuzeRegel(deelnemer: StandItem) {
-    const vp = deelnemer.voorspellingen.find((v) => v.wedstrijdId === "CL1");
+    const vp = matchId ? deelnemer.voorspellingen.find((v) => v.wedstrijdId === matchId) : null;
     const punten = deelnemer.punten;
+    const uitslagTelt = !isEnkelvoudig || poule.uitslagActief !== false;
     return (
       <div className="space-y-1.5">
-        {clResultaat && vp?.thuis != null && vp?.uit != null && (
+        {matchResultaat && vp?.thuis != null && vp?.uit != null && uitslagTelt && (
           <div className="flex items-center gap-2 text-sm">
-            <span className={vp.thuis === clResultaat.thuis && vp.uit === clResultaat.uit ? "text-green-400" : "text-zinc-400"}>
-              {vp.thuis === clResultaat.thuis && vp.uit === clResultaat.uit ? "✓" : "○"}
+            <span className={vp.thuis === matchResultaat.thuis && vp.uit === matchResultaat.uit ? "text-green-400" : "text-zinc-400"}>
+              {vp.thuis === matchResultaat.thuis && vp.uit === matchResultaat.uit ? "✓" : "○"}
             </span>
             <span className="text-zinc-300">
-              PSG {vp.thuis}–{vp.uit} Arsenal
-              {clResultaat && (
-                <span className="text-zinc-600 ml-1">(werkelijk: {clResultaat.thuis}–{clResultaat.uit})</span>
+              {isEnkelvoudig
+                ? `${enkelvoudigThuisNaam ?? "Thuis"} ${vp.thuis}–${vp.uit} ${enkelvoudigUitNaam ?? "Uit"}`
+                : `PSG ${vp.thuis}–${vp.uit} Arsenal`}
+              {matchResultaat && (
+                <span className="text-zinc-600 ml-1">(werkelijk: {matchResultaat.thuis}–{matchResultaat.uit})</span>
+              )}
+            </span>
+          </div>
+        )}
+        {isEnkelvoudig && poule.cornersActief && deelnemer.cornersVoorspelling != null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className={deelnemer.cornersVoorspelling === poule.cornersResultaat ? "text-green-400" : "text-zinc-400"}>
+              {deelnemer.cornersVoorspelling === poule.cornersResultaat ? "✓" : "○"}
+            </span>
+            <span className="text-zinc-300">
+              {deelnemer.cornersVoorspelling} corners
+              {poule.cornersResultaat != null && (
+                <span className="text-zinc-600 ml-1">(werkelijk: {poule.cornersResultaat})</span>
+              )}
+            </span>
+          </div>
+        )}
+        {isEnkelvoudig && poule.schotenOpDoelActief && deelnemer.schotenOpDoelVoorspelling != null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className={deelnemer.schotenOpDoelVoorspelling === poule.schotenOpDoelResultaat ? "text-green-400" : "text-zinc-400"}>
+              {deelnemer.schotenOpDoelVoorspelling === poule.schotenOpDoelResultaat ? "✓" : "○"}
+            </span>
+            <span className="text-zinc-300">
+              {deelnemer.schotenOpDoelVoorspelling} schoten op doel
+              {poule.schotenOpDoelResultaat != null && (
+                <span className="text-zinc-600 ml-1">(werkelijk: {poule.schotenOpDoelResultaat})</span>
               )}
             </span>
           </div>
@@ -386,7 +426,7 @@ function PoulePagina() {
   const { code } = useParams<{ code: string }>();
   const router = useRouter();
   const [poule, setPoule] = useState<Poule | null>(null);
-  const [enkelvoudigWedstrijdDb, setEnkelvoudigWedstrijdDb] = useState<{ datum: string; tijd: string } | null>(null);
+  const [enkelvoudigWedstrijdDb, setEnkelvoudigWedstrijdDb] = useState<{ datum: string; tijd: string; thuisNaam?: string; uitNaam?: string } | null>(null);
   const [mijnUserId, setMijnUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [gedeeld, setGedeeld] = useState(false);
@@ -412,7 +452,7 @@ function PoulePagina() {
         if (!inHardcoded) {
           fetch("/api/lms/wedstrijden").then((r) => r.json()).then((data) => {
             const kw = (data.wedstrijden ?? []).find((w: { id: string }) => w.id === p.wkWedstrijdId);
-            if (kw) setEnkelvoudigWedstrijdDb({ datum: kw.datum ?? "", tijd: kw.tijd ?? "" });
+            if (kw) setEnkelvoudigWedstrijdDb({ datum: kw.datum ?? "", tijd: kw.tijd ?? "", thuisNaam: kw.thuisNaam, uitNaam: kw.uitNaam });
           }).catch(() => {});
         }
       }
@@ -483,6 +523,8 @@ function PoulePagina() {
     : null;
   // Gebruik DB-wedstrijd als fallback voor knockout matches
   const enkelvoudigWedstrijdInfo = enkelvoudigWedstrijd ?? enkelvoudigWedstrijdDb;
+  const enkelvoudigThuisNaam = enkelvoudigWedstrijd?.thuis.naam ?? enkelvoudigWedstrijdDb?.thuisNaam ?? null;
+  const enkelvoudigUitNaam = enkelvoudigWedstrijd?.uit.naam ?? enkelvoudigWedstrijdDb?.uitNaam ?? null;
   const pouleWedstrijden = isEnkelvoudig
     ? (enkelvoudigWedstrijd ? [enkelvoudigWedstrijd] : [])
     : getWedstrijdenVoorSoort(poule.soort ?? "wk");
@@ -539,6 +581,8 @@ function PoulePagina() {
           stand={stand}
           mijnUserId={mijnUserId}
           onSluit={sluitEindstand}
+          enkelvoudigThuisNaam={enkelvoudigThuisNaam}
+          enkelvoudigUitNaam={enkelvoudigUitNaam}
         />
       )}
 
