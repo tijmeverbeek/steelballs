@@ -14,7 +14,7 @@ export const CL_DOELPUNTENMAKER_PUNTEN = 3; // eerste doelpuntenmaker
 // Enkelvoudig poule extra — uitslag, corners en schoten op doel zijn gelijkwaardig
 export const ENKELVOUDIG_CORNERS_PUNTEN = 3;
 export const ENKELVOUDIG_SCHOTEN_PUNTEN = 3;
-export const ENKELVOUDIG_EERSTE_KAART_PUNTEN = 3;
+export const ENKELVOUDIG_EERSTE_KAART_PUNTEN = 5;
 export const ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN = 3;
 
 function normaliseer(s: string): string {
