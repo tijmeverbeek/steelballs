@@ -4,7 +4,7 @@ import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule } from "@/lib/api";
-import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, ENKELVOUDIG_CORNERS_PUNTEN, ENKELVOUDIG_SCHOTEN_PUNTEN, ENKELVOUDIG_EERSTE_KAART_PUNTEN, ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN } from "@/lib/storage";
+import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, ENKELVOUDIG_CORNERS_PUNTEN, ENKELVOUDIG_SCHOTEN_PUNTEN, ENKELVOUDIG_EERSTE_KAART_PUNTEN } from "@/lib/storage";
 import { getWedstrijdenVoorSoort, CL_FINALE, OEF_NED_ALG } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer, LmsPick } from "@/lib/types";
@@ -77,6 +77,7 @@ type StandItem = {
   schotenOpDoelVoorspelling?: number | null;
   eersteKaartSpelerVoorspelling?: string | null;
   eersteKaartMinuutVoorspelling?: number | null;
+  eersteKaartMinuutAfstand: number;
   topscorerVoorspelling?: string | null;
   geleKaartenVoorspelling?: string | null;
   toernooiwinaarVoorspelling?: string | null;
@@ -171,13 +172,13 @@ function EindstandModal({
         )}
         {isEnkelvoudig && poule.eersteKaartMinuutActief && deelnemer.eersteKaartMinuutVoorspelling != null && (
           <div className="flex items-center gap-2 text-sm">
-            <span className={deelnemer.eersteKaartMinuutVoorspelling === poule.eersteKaartMinuutResultaat ? "text-green-400" : "text-zinc-400"}>
-              {deelnemer.eersteKaartMinuutVoorspelling === poule.eersteKaartMinuutResultaat ? "✓" : "○"}
-            </span>
+            <span className="text-zinc-400">⏱</span>
             <span className="text-zinc-300">
               🟨 minuut {deelnemer.eersteKaartMinuutVoorspelling}
               {poule.eersteKaartMinuutResultaat != null && (
-                <span className="text-zinc-600 ml-1">(werkelijk: {poule.eersteKaartMinuutResultaat})</span>
+                <span className="text-zinc-600 ml-1">
+                  (werkelijk: {poule.eersteKaartMinuutResultaat}{deelnemer.eersteKaartMinuutAfstand < Infinity ? `, ±${deelnemer.eersteKaartMinuutAfstand}` : ""})
+                </span>
               )}
             </span>
           </div>
@@ -586,6 +587,7 @@ function PoulePagina() {
       schotenOpDoelVoorspelling: d.schotenOpDoelVoorspelling,
       eersteKaartSpelerVoorspelling: d.eersteKaartSpelerVoorspelling,
       eersteKaartMinuutVoorspelling: d.eersteKaartMinuutVoorspelling,
+      eersteKaartMinuutAfstand: berekenMinuutAfstand(d.eersteKaartMinuutVoorspelling, poule.eersteKaartMinuutResultaat),
       topscorerVoorspelling: d.topscorerVoorspelling,
       geleKaartenVoorspelling: d.geleKaartenVoorspelling,
       toernooiwinaarVoorspelling: d.toernooiwinaarVoorspelling,
@@ -595,7 +597,8 @@ function PoulePagina() {
       if (poule.afgerond) {
         if (b.punten !== a.punten) return b.punten - a.punten;
         if (a.correctDoelpuntenmaker !== b.correctDoelpuntenmaker) return a.correctDoelpuntenmaker ? -1 : 1;
-        return a.minuutAfstand - b.minuutAfstand;
+        if (a.minuutAfstand !== b.minuutAfstand) return a.minuutAfstand - b.minuutAfstand;
+        return a.eersteKaartMinuutAfstand - b.eersteKaartMinuutAfstand;
       }
       return b.ingevuld - a.ingevuld;
     });
@@ -938,7 +941,7 @@ function PoulePagina() {
                       {huidigDeelnemer.eersteKaartMinuutVoorspelling != null
                         ? <span className="text-zinc-300">minuut {huidigDeelnemer.eersteKaartMinuutVoorspelling}</span>
                         : "Nog niet ingevuld"}
-                      {" · "}{ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN} pt
+                      {" · "}tiebreaker
                     </p>
                   </div>
                   <Link href={`/poule/${code}/enkelvoudig`} className="text-xs text-green-400 hover:text-green-300 font-medium">

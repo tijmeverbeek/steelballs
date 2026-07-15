@@ -15,7 +15,7 @@ export const CL_DOELPUNTENMAKER_PUNTEN = 3; // eerste doelpuntenmaker
 export const ENKELVOUDIG_CORNERS_PUNTEN = 3;
 export const ENKELVOUDIG_SCHOTEN_PUNTEN = 3;
 export const ENKELVOUDIG_EERSTE_KAART_PUNTEN = 5;
-export const ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN = 3;
+// eersteKaartMinuut is een tiebreaker (geen punten) — dichtstbij wint
 
 function normaliseer(s: string): string {
   return s
@@ -135,12 +135,6 @@ export function berekenPunten(
     && matchNaam(poule.eersteKaartSpelerResultaat, deelnemer.eersteKaartSpelerVoorspelling)) {
     punten += ENKELVOUDIG_EERSTE_KAART_PUNTEN;
   }
-  if (isEnkelvoudig && poule?.eersteKaartMinuutActief && poule.eersteKaartMinuutResultaat != null
-    && deelnemer?.eersteKaartMinuutVoorspelling != null
-    && deelnemer.eersteKaartMinuutVoorspelling === poule.eersteKaartMinuutResultaat) {
-    punten += ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN;
-  }
-
   return punten;
 }
 

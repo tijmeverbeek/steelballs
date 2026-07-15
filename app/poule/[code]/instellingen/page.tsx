@@ -553,7 +553,7 @@ export default function InstellingenPagina() {
               <div className="flex items-center justify-between mb-1">
                 <div>
                   <p className="text-sm font-semibold text-white">Minuut eerste kaart</p>
-                  <p className="text-xs text-zinc-500">Deelnemers raden in welke minuut de eerste kaart valt (3 pt)</p>
+                  <p className="text-xs text-zinc-500">Deelnemers raden in welke minuut de eerste kaart valt (tiebreaker — dichtstbij wint)</p>
                 </div>
                 <Toggle aan={poule.eersteKaartMinuutActief} onChange={(v) => toggleInstelling("eersteKaartMinuutActief", v)} />
               </div>
