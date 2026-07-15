@@ -64,6 +64,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
       ...(body.eersteDoelpuntenminuutActief !== undefined && { eersteDoelpuntenminuutActief: body.eersteDoelpuntenminuutActief }),
       ...(body.cornersActief !== undefined && { cornersActief: body.cornersActief }),
       ...(body.schotenOpDoelActief !== undefined && { schotenOpDoelActief: body.schotenOpDoelActief }),
+      ...(body.eersteKaartActief !== undefined && { eersteKaartActief: body.eersteKaartActief }),
+      ...(body.eersteKaartMinuutActief !== undefined && { eersteKaartMinuutActief: body.eersteKaartMinuutActief }),
       ...(body.uitslagActief !== undefined && { uitslagActief: body.uitslagActief }),
       ...(body.topscorerResultaat !== undefined && { topscorerResultaat: body.topscorerResultaat || null }),
       ...(body.geleKaartenResultaat !== undefined && { geleKaartenResultaat: body.geleKaartenResultaat || null }),
@@ -72,6 +74,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ code: 
       ...(body.eersteDoelpuntenminuutResultaat !== undefined && { eersteDoelpuntenminuutResultaat: body.eersteDoelpuntenminuutResultaat ?? null }),
       ...(body.cornersResultaat !== undefined && { cornersResultaat: body.cornersResultaat ?? null }),
       ...(body.schotenOpDoelResultaat !== undefined && { schotenOpDoelResultaat: body.schotenOpDoelResultaat ?? null }),
+      ...(body.eersteKaartSpelerResultaat !== undefined && { eersteKaartSpelerResultaat: body.eersteKaartSpelerResultaat || null }),
+      ...(body.eersteKaartMinuutResultaat !== undefined && { eersteKaartMinuutResultaat: body.eersteKaartMinuutResultaat ?? null }),
     },
   });
 

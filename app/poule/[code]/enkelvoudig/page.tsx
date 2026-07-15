@@ -52,10 +52,14 @@ export default function EnkelvoudigPagina() {
   const [minuut, setMinuut] = useState<number | null>(null);
   const [corners, setCorners] = useState<number | null>(null);
   const [schoten, setSchoten] = useState<number | null>(null);
+  const [eersteKaartSpeler, setEersteKaartSpeler] = useState("");
+  const [eersteKaartMinuut, setEersteKaartMinuut] = useState<number | null>(null);
   const doelpuntenmakerRef = useRef("");
   const minuutRef = useRef<number | null>(null);
   const cornersRef = useRef<number | null>(null);
   const schotenRef = useRef<number | null>(null);
+  const eersteKaartSpelerRef = useRef("");
+  const eersteKaartMinuutRef = useRef<number | null>(null);
 
   const teamCodes = wedstrijd ? [wedstrijd.thuis.code, wedstrijd.uit.code] : undefined;
 
@@ -109,10 +113,14 @@ export default function EnkelvoudigPagina() {
       const edmin = deelnemer.eersteDoelpuntenminuutVoorspelling ?? null;
       const corn = deelnemer.cornersVoorspelling ?? null;
       const shot = deelnemer.schotenOpDoelVoorspelling ?? null;
+      const eks = deelnemer.eersteKaartSpelerVoorspelling ?? "";
+      const ekm = deelnemer.eersteKaartMinuutVoorspelling ?? null;
       setDoelpuntenmaker(edm); doelpuntenmakerRef.current = edm;
       setMinuut(edmin); minuutRef.current = edmin;
       setCorners(corn); cornersRef.current = corn;
       setSchoten(shot); schotenRef.current = shot;
+      setEersteKaartSpeler(eks); eersteKaartSpelerRef.current = eks;
+      setEersteKaartMinuut(ekm); eersteKaartMinuutRef.current = ekm;
     }
     load();
   }, [code, router]);
@@ -129,6 +137,8 @@ export default function EnkelvoudigPagina() {
           eersteDoelpuntenminuutVoorspelling: minuutRef.current,
           cornersVoorspelling: cornersRef.current,
           schotenOpDoelVoorspelling: schotenRef.current,
+          eersteKaartSpelerVoorspelling: eersteKaartSpelerRef.current || null,
+          eersteKaartMinuutVoorspelling: eersteKaartMinuutRef.current,
         }
       );
       setSaveStatus("saved");
@@ -167,6 +177,16 @@ export default function EnkelvoudigPagina() {
 
   function setSchotenVal(val: number | null) {
     setSchoten(val); schotenRef.current = val;
+    scheduleSave();
+  }
+
+  function setEersteKaartSpelerVal(val: string) {
+    setEersteKaartSpeler(val); eersteKaartSpelerRef.current = val;
+    scheduleSave();
+  }
+
+  function setEersteKaartMinuutVal(val: number | null) {
+    setEersteKaartMinuut(val); eersteKaartMinuutRef.current = val;
     scheduleSave();
   }
 
@@ -330,6 +350,47 @@ export default function EnkelvoudigPagina() {
                 className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-40 disabled:cursor-not-allowed"
               />
               <span className="text-sm text-zinc-500">schoten</span>
+            </div>
+          </div>
+        )}
+
+        {/* Eerste kaart speler */}
+        {poule.eersteKaartActief && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-1 text-center">Eerste kaart speler</p>
+            {poule.eersteKaartSpelerResultaat && (
+              <p className="text-center text-sm text-green-400 font-semibold mb-3">{poule.eersteKaartSpelerResultaat}</p>
+            )}
+            <SpelerAutocomplete
+              soort="wk"
+              teamCodes={teamCodes}
+              value={eersteKaartSpeler}
+              onChange={setEersteKaartSpelerVal}
+              placeholder="Kies een speler..."
+              ringColor="yellow"
+            />
+          </div>
+        )}
+
+        {/* Minuut eerste kaart */}
+        {poule.eersteKaartMinuutActief && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-4 text-center">Minuut eerste kaart</p>
+            {poule.eersteKaartMinuutResultaat != null && (
+              <p className="text-center text-sm text-green-400 font-semibold mb-3">Antwoord: minuut {poule.eersteKaartMinuutResultaat}</p>
+            )}
+            <div className="flex items-center justify-center gap-3">
+              <input
+                type="number"
+                min={1}
+                max={120}
+                value={eersteKaartMinuut ?? ""}
+                onChange={(e) => setEersteKaartMinuutVal(e.target.value === "" ? null : parseInt(e.target.value))}
+                disabled={isGesloten}
+                placeholder="bijv. 27"
+                className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-center text-lg font-bold text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 disabled:opacity-40 disabled:cursor-not-allowed"
+              />
+              <span className="text-sm text-zinc-500">minuut</span>
             </div>
           </div>
         )}

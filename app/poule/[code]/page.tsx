@@ -4,7 +4,7 @@ import { Component, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPoule } from "@/lib/api";
-import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, ENKELVOUDIG_CORNERS_PUNTEN, ENKELVOUDIG_SCHOTEN_PUNTEN } from "@/lib/storage";
+import { berekenPunten, berekenMinuutAfstand, heeftCorrectEersteDoelpuntenmaker, TOPSCORER_PUNTEN, GELE_KAARTEN_PUNTEN, TOERNOOIWINNAAR_PUNTEN, EERSTE_DOELPUNTENMAKER_PUNTEN, CL_SCORE_PUNTEN, CL_DOELPUNTENMAKER_PUNTEN, ENKELVOUDIG_CORNERS_PUNTEN, ENKELVOUDIG_SCHOTEN_PUNTEN, ENKELVOUDIG_EERSTE_KAART_PUNTEN, ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN } from "@/lib/storage";
 import { getWedstrijdenVoorSoort, CL_FINALE, OEF_NED_ALG } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/client";
 import { Poule, Deelnemer, LmsPick } from "@/lib/types";
@@ -75,6 +75,8 @@ type StandItem = {
   eersteDoelpuntenminuutVoorspelling?: number | null;
   cornersVoorspelling?: number | null;
   schotenOpDoelVoorspelling?: number | null;
+  eersteKaartSpelerVoorspelling?: string | null;
+  eersteKaartMinuutVoorspelling?: number | null;
   topscorerVoorspelling?: string | null;
   geleKaartenVoorspelling?: string | null;
   toernooiwinaarVoorspelling?: string | null;
@@ -150,6 +152,32 @@ function EindstandModal({
               {deelnemer.schotenOpDoelVoorspelling} schoten op doel
               {poule.schotenOpDoelResultaat != null && (
                 <span className="text-zinc-600 ml-1">(werkelijk: {poule.schotenOpDoelResultaat})</span>
+              )}
+            </span>
+          </div>
+        )}
+        {isEnkelvoudig && poule.eersteKaartActief && deelnemer.eersteKaartSpelerVoorspelling && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className={deelnemer.eersteKaartSpelerVoorspelling === poule.eersteKaartSpelerResultaat ? "text-green-400" : "text-zinc-400"}>
+              {deelnemer.eersteKaartSpelerVoorspelling === poule.eersteKaartSpelerResultaat ? "✓" : "○"}
+            </span>
+            <span className="text-zinc-300">
+              🟨 {deelnemer.eersteKaartSpelerVoorspelling}
+              {poule.eersteKaartSpelerResultaat && (
+                <span className="text-zinc-600 ml-1">(werkelijk: {poule.eersteKaartSpelerResultaat})</span>
+              )}
+            </span>
+          </div>
+        )}
+        {isEnkelvoudig && poule.eersteKaartMinuutActief && deelnemer.eersteKaartMinuutVoorspelling != null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className={deelnemer.eersteKaartMinuutVoorspelling === poule.eersteKaartMinuutResultaat ? "text-green-400" : "text-zinc-400"}>
+              {deelnemer.eersteKaartMinuutVoorspelling === poule.eersteKaartMinuutResultaat ? "✓" : "○"}
+            </span>
+            <span className="text-zinc-300">
+              🟨 minuut {deelnemer.eersteKaartMinuutVoorspelling}
+              {poule.eersteKaartMinuutResultaat != null && (
+                <span className="text-zinc-600 ml-1">(werkelijk: {poule.eersteKaartMinuutResultaat})</span>
               )}
             </span>
           </div>
@@ -539,7 +567,7 @@ function PoulePagina() {
   const enkelvoudigGestart = isEnkelvoudig && enkelvoudigWedstrijdInfo ? isGestart(enkelvoudigWedstrijdInfo) : false;
   const toonVoorspellingen = poule.afgerond || oefGestart || enkelvoudigGestart;
 
-  const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief || poule.cornersActief || poule.schotenOpDoelActief;
+  const heeftBonusCategorieen = poule.topscorerActief || poule.geleKaartenActief || poule.toernooiwinaarActief || poule.eersteDoelpuntenmakerActief || poule.eersteDoelpuntenminuutActief || poule.cornersActief || poule.schotenOpDoelActief || poule.eersteKaartActief || poule.eersteKaartMinuutActief;
 
   const stand: StandItem[] = poule.deelnemers
     .map((d) => ({
@@ -556,6 +584,8 @@ function PoulePagina() {
       eersteDoelpuntenminuutVoorspelling: d.eersteDoelpuntenminuutVoorspelling,
       cornersVoorspelling: d.cornersVoorspelling,
       schotenOpDoelVoorspelling: d.schotenOpDoelVoorspelling,
+      eersteKaartSpelerVoorspelling: d.eersteKaartSpelerVoorspelling,
+      eersteKaartMinuutVoorspelling: d.eersteKaartMinuutVoorspelling,
       topscorerVoorspelling: d.topscorerVoorspelling,
       geleKaartenVoorspelling: d.geleKaartenVoorspelling,
       toernooiwinaarVoorspelling: d.toernooiwinaarVoorspelling,
@@ -884,6 +914,38 @@ function PoulePagina() {
                   </Link>
                 </div>
               )}
+              {poule.eersteKaartActief && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Eerste kaart speler</p>
+                    <p className="text-xs text-zinc-500">
+                      {huidigDeelnemer.eersteKaartSpelerVoorspelling
+                        ? <span className="text-zinc-300">{huidigDeelnemer.eersteKaartSpelerVoorspelling}</span>
+                        : "Nog niet ingevuld"}
+                      {" · "}{ENKELVOUDIG_EERSTE_KAART_PUNTEN} pt
+                    </p>
+                  </div>
+                  <Link href={`/poule/${code}/enkelvoudig`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+                    {huidigDeelnemer.eersteKaartSpelerVoorspelling ? "Wijzig →" : "Invullen →"}
+                  </Link>
+                </div>
+              )}
+              {poule.eersteKaartMinuutActief && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Minuut eerste kaart</p>
+                    <p className="text-xs text-zinc-500">
+                      {huidigDeelnemer.eersteKaartMinuutVoorspelling != null
+                        ? <span className="text-zinc-300">minuut {huidigDeelnemer.eersteKaartMinuutVoorspelling}</span>
+                        : "Nog niet ingevuld"}
+                      {" · "}{ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN} pt
+                    </p>
+                  </div>
+                  <Link href={`/poule/${code}/enkelvoudig`} className="text-xs text-green-400 hover:text-green-300 font-medium">
+                    {huidigDeelnemer.eersteKaartMinuutVoorspelling != null ? "Wijzig →" : "Invullen →"}
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -960,6 +1022,9 @@ function PoulePagina() {
                         )}
                         {isEnkelvoudig && poule.schotenOpDoelActief && d.schotenOpDoelVoorspelling != null && (
                           <span className="text-xs text-zinc-400">🎯 {d.schotenOpDoelVoorspelling} schoten</span>
+                        )}
+                        {isEnkelvoudig && poule.eersteKaartActief && d.eersteKaartSpelerVoorspelling && (
+                          <span className="text-xs text-zinc-400">🟨 {d.eersteKaartSpelerVoorspelling}{d.eersteKaartMinuutVoorspelling != null ? ` (${d.eersteKaartMinuutVoorspelling}')` : ""}</span>
                         )}
                         {poule.eersteDoelpuntenmakerActief && d.eersteDoelpuntenmakerVoorspelling && (
                           <span className="text-xs text-zinc-400">🥅 {d.eersteDoelpuntenmakerVoorspelling}{d.eersteDoelpuntenminuutVoorspelling != null ? ` (${d.eersteDoelpuntenminuutVoorspelling}')` : ""}</span>

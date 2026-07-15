@@ -107,7 +107,7 @@ export default function InstellingenPagina() {
     setTimeout(() => setOpgeslagen(false), 2000);
   }
 
-  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief" | "toernooiwinaarActief" | "eersteDoelpuntenmakerActief" | "eersteDoelpuntenminuutActief" | "cornersActief" | "schotenOpDoelActief" | "uitslagActief", waarde: boolean) {
+  async function toggleInstelling(key: "topscorerActief" | "geleKaartenActief" | "toernooiwinaarActief" | "eersteDoelpuntenmakerActief" | "eersteDoelpuntenminuutActief" | "cornersActief" | "schotenOpDoelActief" | "eersteKaartActief" | "eersteKaartMinuutActief" | "uitslagActief", waarde: boolean) {
     if (!poule) return;
     setPoule({ ...poule, [key]: waarde });
     try {
@@ -513,6 +513,69 @@ export default function InstellingenPagina() {
                     className="w-24 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500 text-center"
                   />
                   <span className="text-xs text-zinc-500">schoten</span>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-zinc-800" />
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-white">Eerste kaart speler</p>
+                  <p className="text-xs text-zinc-500">Deelnemers raden wie de eerste kaart krijgt (3 pt)</p>
+                </div>
+                <Toggle aan={poule.eersteKaartActief} onChange={(v) => toggleInstelling("eersteKaartActief", v)} />
+              </div>
+              {poule.eersteKaartActief && (
+                <div className="mt-2">
+                  <SpelerAutocomplete
+                    soort="wk"
+                    teamCodes={enkelvoudigTeamCodes}
+                    value={poule.eersteKaartSpelerResultaat ?? ""}
+                    onChange={async (naam) => {
+                      setPoule((p) => p ? { ...p, eersteKaartSpelerResultaat: naam || null } : p);
+                      try {
+                        await updatePouleInstellingen(code, { eersteKaartSpelerResultaat: naam || null });
+                        toonOpgeslagen();
+                      } catch { /* silent */ }
+                    }}
+                    placeholder="Voer werkelijke speler in..."
+                    ringColor="yellow"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-zinc-800" />
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-white">Minuut eerste kaart</p>
+                  <p className="text-xs text-zinc-500">Deelnemers raden in welke minuut de eerste kaart valt (3 pt)</p>
+                </div>
+                <Toggle aan={poule.eersteKaartMinuutActief} onChange={(v) => toggleInstelling("eersteKaartMinuutActief", v)} />
+              </div>
+              {poule.eersteKaartMinuutActief && (
+                <div className="mt-2 flex gap-2 items-center">
+                  <input
+                    type="number"
+                    min={1}
+                    max={120}
+                    value={poule.eersteKaartMinuutResultaat ?? ""}
+                    onChange={async (e) => {
+                      const val = e.target.value === "" ? null : parseInt(e.target.value);
+                      setPoule((p) => p ? { ...p, eersteKaartMinuutResultaat: val } : p);
+                      try {
+                        await updatePouleInstellingen(code, { eersteKaartMinuutResultaat: val });
+                        toonOpgeslagen();
+                      } catch { /* silent */ }
+                    }}
+                    placeholder="bijv. 27"
+                    className="w-24 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-center"
+                  />
+                  <span className="text-xs text-zinc-500">minuut</span>
                 </div>
               )}
             </div>

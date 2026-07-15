@@ -14,6 +14,8 @@ export const CL_DOELPUNTENMAKER_PUNTEN = 3; // eerste doelpuntenmaker
 // Enkelvoudig poule extra — uitslag, corners en schoten op doel zijn gelijkwaardig
 export const ENKELVOUDIG_CORNERS_PUNTEN = 3;
 export const ENKELVOUDIG_SCHOTEN_PUNTEN = 3;
+export const ENKELVOUDIG_EERSTE_KAART_PUNTEN = 3;
+export const ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN = 3;
 
 function normaliseer(s: string): string {
   return s
@@ -48,6 +50,8 @@ export function berekenPunten(
     eersteDoelpuntenminuutVoorspelling?: number | null;
     cornersVoorspelling?: number | null;
     schotenOpDoelVoorspelling?: number | null;
+    eersteKaartSpelerVoorspelling?: string | null;
+    eersteKaartMinuutVoorspelling?: number | null;
   },
   poule?: {
     soort?: string;
@@ -58,6 +62,10 @@ export function berekenPunten(
     eersteDoelpuntenminuutActief?: boolean;
     cornersActief?: boolean;
     schotenOpDoelActief?: boolean;
+    eersteKaartActief?: boolean;
+    eersteKaartSpelerResultaat?: string | null;
+    eersteKaartMinuutActief?: boolean;
+    eersteKaartMinuutResultaat?: number | null;
     uitslagActief?: boolean;
     topscorerResultaat?: string | null;
     geleKaartenResultaat?: string | null;
@@ -121,6 +129,16 @@ export function berekenPunten(
     && deelnemer?.schotenOpDoelVoorspelling != null
     && deelnemer.schotenOpDoelVoorspelling === poule.schotenOpDoelResultaat) {
     punten += ENKELVOUDIG_SCHOTEN_PUNTEN;
+  }
+  if (isEnkelvoudig && poule?.eersteKaartActief && poule.eersteKaartSpelerResultaat
+    && deelnemer?.eersteKaartSpelerVoorspelling
+    && matchNaam(poule.eersteKaartSpelerResultaat, deelnemer.eersteKaartSpelerVoorspelling)) {
+    punten += ENKELVOUDIG_EERSTE_KAART_PUNTEN;
+  }
+  if (isEnkelvoudig && poule?.eersteKaartMinuutActief && poule.eersteKaartMinuutResultaat != null
+    && deelnemer?.eersteKaartMinuutVoorspelling != null
+    && deelnemer.eersteKaartMinuutVoorspelling === poule.eersteKaartMinuutResultaat) {
+    punten += ENKELVOUDIG_EERSTE_KAART_MINUUT_PUNTEN;
   }
 
   return punten;
