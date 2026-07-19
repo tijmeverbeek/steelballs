@@ -12,7 +12,7 @@ export const CL_DOELPUNTENMAKER_PUNTEN = 3; // eerste doelpuntenmaker
 // minuut = tiebreaker (geen punten)
 
 // Enkelvoudig poule extra — uitslag, corners en schoten op doel zijn gelijkwaardig
-export const ENKELVOUDIG_CORNERS_PUNTEN = 3;
+export const ENKELVOUDIG_CORNERS_PUNTEN = 5;
 export const ENKELVOUDIG_SCHOTEN_PUNTEN = 3;
 export const ENKELVOUDIG_EERSTE_KAART_PUNTEN = 5;
 // eersteKaartMinuut is een tiebreaker (geen punten) — dichtstbij wint
