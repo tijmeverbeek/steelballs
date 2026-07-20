@@ -7,6 +7,7 @@ import { createPoule } from "@/lib/api";
 import { SPECIALS_CATEGORIEEN } from "@/lib/specials";
 import { getWedstrijdenVoorSoort } from "@/lib/matches";
 import { LMS_RONDES } from "@/lib/lms";
+import { LandSpelerPicker } from "@/components/LandSpelerPicker";
 
 interface AdminStats {
   gebruikers: number;
@@ -328,17 +329,27 @@ export default function AdminDashboard() {
                   {cat.label}
                   {cat.prijsNaam && <span className="text-purple-400 ml-2">· {cat.prijsNaam}</span>}
                 </label>
-                <input
-                  type={cat.type === "nummer" ? "number" : "text"}
-                  min={cat.type === "nummer" ? 0 : undefined}
-                  value={specialsResultaten[cat.key] ?? ""}
-                  onChange={(e) => {
-                    setSpecialsResultaten((prev) => ({ ...prev, [cat.key]: e.target.value }));
-                    setSpecialsSaveStatus("idle");
-                  }}
-                  placeholder={cat.type === "nummer" ? "0" : "Vul winnaar in..."}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+                {cat.type === "speler" ? (
+                  <LandSpelerPicker
+                    value={specialsResultaten[cat.key] ?? ""}
+                    onChange={(naam) => {
+                      setSpecialsResultaten((prev) => ({ ...prev, [cat.key]: naam }));
+                      setSpecialsSaveStatus("idle");
+                    }}
+                  />
+                ) : (
+                  <input
+                    type={cat.type === "nummer" ? "number" : "text"}
+                    min={cat.type === "nummer" ? 0 : undefined}
+                    value={specialsResultaten[cat.key] ?? ""}
+                    onChange={(e) => {
+                      setSpecialsResultaten((prev) => ({ ...prev, [cat.key]: e.target.value }));
+                      setSpecialsSaveStatus("idle");
+                    }}
+                    placeholder={cat.type === "nummer" ? "0" : "Vul winnaar in..."}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                )}
               </div>
             ))}
           </div>
