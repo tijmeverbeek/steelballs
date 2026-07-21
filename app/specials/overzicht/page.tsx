@@ -51,7 +51,7 @@ export default async function SpecialsOverzicht() {
   const teamPerSpelerNaam = new Map(alleSpelers.map((s) => [s.naam.toLowerCase(), s.team]));
 
   // Winnaars per categorie bepalen: exacte match voor speler/tekst, dichtstbij voor nummer
-  interface Winnaar { id: string; naam: string; antwoord: string }
+  interface Winnaar { id: string; userId: string; naam: string; antwoord: string }
   const winnaarsPerCat: Record<string, Winnaar[]> = {};
   for (const cat of SPECIALS_CATEGORIEEN) {
     if (GECOMBINEERDE_KEYS.has(cat.key)) {
@@ -80,7 +80,7 @@ export default async function SpecialsOverzicht() {
       }
       winnaarsPerCat[cat.key] = kandidaten
         .filter((k) => k.afstand === minAfstand)
-        .map((k) => ({ id: k.v.id, naam: k.v.user.gebruikersnaam ?? k.v.user.naam ?? "Onbekend", antwoord: k.antwoord }));
+        .map((k) => ({ id: k.v.id, userId: k.v.userId, naam: k.v.user.gebruikersnaam ?? k.v.user.naam ?? "Onbekend", antwoord: k.antwoord }));
     } else {
       winnaarsPerCat[cat.key] = voorspellingen
         .filter((v) => {
@@ -89,13 +89,14 @@ export default async function SpecialsOverzicht() {
         })
         .map((v) => ({
           id: v.id,
+          userId: v.userId,
           naam: v.user.gebruikersnaam ?? v.user.naam ?? "Onbekend",
           antwoord: (v.antwoorden as Record<string, string>)[cat.key],
         }));
     }
   }
   // Gecombineerde paren: speler moet exact goed zijn, anders val terug op juiste team; daarbinnen dichtstbij op aantal
-  interface GecombineerdWinnaar { id: string; naam: string; antwoordSpeler: string; antwoordAantal: string }
+  interface GecombineerdWinnaar { id: string; userId: string; naam: string; antwoordSpeler: string; antwoordAantal: string }
   interface GecombineerdResultaat {
     uitslagSpeler: string | null;
     uitslagAantal: string | null;
@@ -147,6 +148,7 @@ export default async function SpecialsOverzicht() {
       .filter((k) => k.afstand === minAfstand)
       .map((k) => ({
         id: k.v.id,
+        userId: k.v.userId,
         naam: k.v.user.gebruikersnaam ?? k.v.user.naam ?? "Onbekend",
         antwoordSpeler: (k.v.antwoorden as Record<string, string>)[paar.spelerKey],
         antwoordAantal: k.antwoordAantal,
@@ -208,9 +210,13 @@ export default async function SpecialsOverzicht() {
                           <>
                             <div className="flex flex-wrap gap-1.5">
                               {info.winnaars.map((w) => (
-                                <span key={w.id} className="text-xs bg-green-500/10 text-green-400 border border-green-500/30 rounded-full px-2.5 py-1">
+                                <Link
+                                  key={w.id}
+                                  href={`/speler/${encodeURIComponent(w.userId)}`}
+                                  className="text-xs bg-green-500/10 text-green-400 border border-green-500/30 rounded-full px-2.5 py-1 hover:bg-green-500/20 transition-colors"
+                                >
                                   {w.naam}
-                                </span>
+                                </Link>
                               ))}
                             </div>
                             {info.viaTeam && (
@@ -247,9 +253,13 @@ export default async function SpecialsOverzicht() {
                       ) : (
                         <div className="flex flex-wrap gap-1.5">
                           {winnaars.map((w) => (
-                            <span key={w.id} className="text-xs bg-green-500/10 text-green-400 border border-green-500/30 rounded-full px-2.5 py-1">
+                            <Link
+                              key={w.id}
+                              href={`/speler/${encodeURIComponent(w.userId)}`}
+                              className="text-xs bg-green-500/10 text-green-400 border border-green-500/30 rounded-full px-2.5 py-1 hover:bg-green-500/20 transition-colors"
+                            >
                               {w.naam}
-                            </span>
+                            </Link>
                           ))}
                         </div>
                       )}
