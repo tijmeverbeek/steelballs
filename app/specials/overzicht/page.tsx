@@ -6,6 +6,12 @@ import { SPECIALS_CATEGORIEEN } from "@/lib/specials";
 
 const SLUITINGSTIJD = new Date("2026-06-11T19:00:00Z");
 
+const GECOMBINEERDE_PAREN: { spelerKey: string; aantalKey: string; label: string; prijsNaam?: string; eenheid: string }[] = [
+  { spelerKey: "topscorer", aantalKey: "topscorer_doelpunten", label: "Topscorer", eenheid: "doelpunten" },
+  { spelerKey: "meeste_gele_kaarten", aantalKey: "gele_kaarten_aantal", label: "Meeste gele kaarten", prijsNaam: "Tommy Beugelsdijk prijs", eenheid: "gele kaarten" },
+];
+const GECOMBINEERDE_KEYS = new Set(GECOMBINEERDE_PAREN.flatMap((p) => [p.spelerKey, p.aantalKey]));
+
 export default async function SpecialsOverzicht() {
   const user = await getAuthUser();
   if (!user) redirect("/login");
@@ -40,10 +46,19 @@ export default async function SpecialsOverzicht() {
     uitslagPerCat[row.type.replace("special_", "")] = row.waarde;
   }
 
+  // Spelerslijst ophalen zodat we van elke gekozen speler het team kennen
+  const alleSpelers = await prisma.speler.findMany({ where: { soort: "wk" }, select: { naam: true, team: true } });
+  const teamPerSpelerNaam = new Map(alleSpelers.map((s) => [s.naam.toLowerCase(), s.team]));
+
   // Winnaars per categorie bepalen: exacte match voor speler/tekst, dichtstbij voor nummer
   interface Winnaar { id: string; naam: string; antwoord: string }
   const winnaarsPerCat: Record<string, Winnaar[]> = {};
   for (const cat of SPECIALS_CATEGORIEEN) {
+    if (GECOMBINEERDE_KEYS.has(cat.key)) {
+      winnaarsPerCat[cat.key] = [];
+      continue;
+    }
+
     const uitslag = uitslagPerCat[cat.key]?.trim();
     if (!uitslag) {
       winnaarsPerCat[cat.key] = [];
@@ -79,9 +94,76 @@ export default async function SpecialsOverzicht() {
         }));
     }
   }
+  // Gecombineerde paren: speler moet exact goed zijn, anders val terug op juiste team; daarbinnen dichtstbij op aantal
+  interface GecombineerdWinnaar { id: string; naam: string; antwoordSpeler: string; antwoordAantal: string }
+  interface GecombineerdResultaat {
+    uitslagSpeler: string | null;
+    uitslagAantal: string | null;
+    winnaars: GecombineerdWinnaar[];
+    viaTeam: boolean;
+  }
+  const gecombineerdPerPaar: Record<string, GecombineerdResultaat> = {};
+
+  for (const paar of GECOMBINEERDE_PAREN) {
+    const uitslagSpeler = uitslagPerCat[paar.spelerKey]?.trim() || null;
+    const uitslagAantalRaw = uitslagPerCat[paar.aantalKey]?.trim() || null;
+    const uitslagAantal = uitslagAantalRaw ? parseFloat(uitslagAantalRaw) : NaN;
+
+    if (!uitslagSpeler || Number.isNaN(uitslagAantal)) {
+      gecombineerdPerPaar[paar.spelerKey] = { uitslagSpeler, uitslagAantal: uitslagAantalRaw, winnaars: [], viaTeam: false };
+      continue;
+    }
+
+    const uitslagTeam = teamPerSpelerNaam.get(uitslagSpeler.toLowerCase()) ?? null;
+
+    let kandidaten = voorspellingen.filter((v) => {
+      const antwoordSpeler = (v.antwoorden as Record<string, string>)[paar.spelerKey]?.trim();
+      return antwoordSpeler && antwoordSpeler.toLowerCase() === uitslagSpeler.toLowerCase();
+    });
+    let viaTeam = false;
+
+    if (kandidaten.length === 0 && uitslagTeam) {
+      kandidaten = voorspellingen.filter((v) => {
+        const antwoordSpeler = (v.antwoorden as Record<string, string>)[paar.spelerKey]?.trim();
+        if (!antwoordSpeler) return false;
+        return teamPerSpelerNaam.get(antwoordSpeler.toLowerCase()) === uitslagTeam;
+      });
+      viaTeam = kandidaten.length > 0;
+    }
+
+    let minAfstand = Infinity;
+    const metAfstand: { v: (typeof voorspellingen)[number]; afstand: number; antwoordAantal: string }[] = [];
+    for (const v of kandidaten) {
+      const antwoordAantalRaw = (v.antwoorden as Record<string, string>)[paar.aantalKey]?.trim();
+      if (!antwoordAantalRaw) continue;
+      const num = parseFloat(antwoordAantalRaw);
+      if (Number.isNaN(num)) continue;
+      const afstand = Math.abs(num - uitslagAantal);
+      metAfstand.push({ v, afstand, antwoordAantal: antwoordAantalRaw });
+      if (afstand < minAfstand) minAfstand = afstand;
+    }
+
+    const winnaars = metAfstand
+      .filter((k) => k.afstand === minAfstand)
+      .map((k) => ({
+        id: k.v.id,
+        naam: k.v.user.gebruikersnaam ?? k.v.user.naam ?? "Onbekend",
+        antwoordSpeler: (k.v.antwoorden as Record<string, string>)[paar.spelerKey],
+        antwoordAantal: k.antwoordAantal,
+      }));
+
+    gecombineerdPerPaar[paar.spelerKey] = { uitslagSpeler, uitslagAantal: uitslagAantalRaw, winnaars, viaTeam: winnaars.length > 0 && viaTeam };
+  }
+
   const winnaarIdsPerCat: Record<string, Set<string>> = {};
   for (const cat of SPECIALS_CATEGORIEEN) {
+    if (GECOMBINEERDE_KEYS.has(cat.key)) continue;
     winnaarIdsPerCat[cat.key] = new Set(winnaarsPerCat[cat.key].map((w) => w.id));
+  }
+  for (const paar of GECOMBINEERDE_PAREN) {
+    const ids = new Set(gecombineerdPerPaar[paar.spelerKey].winnaars.map((w) => w.id));
+    winnaarIdsPerCat[paar.spelerKey] = ids;
+    winnaarIdsPerCat[paar.aantalKey] = ids;
   }
 
   return (
@@ -103,6 +185,48 @@ export default async function SpecialsOverzicht() {
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">Uitslagen & winnaars</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {SPECIALS_CATEGORIEEN.map((cat) => {
+              const paar = GECOMBINEERDE_PAREN.find((p) => p.spelerKey === cat.key);
+              if (paar) {
+                const info = gecombineerdPerPaar[paar.spelerKey];
+                return (
+                  <div key={paar.spelerKey} className="bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4">
+                    <div className="text-xs font-semibold uppercase tracking-widest text-purple-400 mb-0.5">
+                      {paar.prijsNaam ?? paar.label}
+                    </div>
+                    <div className="text-sm font-bold text-white mb-2">{paar.label}</div>
+                    {!info.uitslagSpeler || !info.uitslagAantal ? (
+                      <p className="text-xs text-zinc-600">Nog geen uitslag bekend</p>
+                    ) : (
+                      <>
+                        <div className="text-sm text-white mb-2">
+                          Uitslag: <span className="font-semibold text-green-400">{info.uitslagSpeler}</span>
+                          <span className="text-zinc-500"> · {info.uitslagAantal} {paar.eenheid}</span>
+                        </div>
+                        {info.winnaars.length === 0 ? (
+                          <p className="text-xs text-zinc-600">Niemand had dit goed</p>
+                        ) : (
+                          <>
+                            <div className="flex flex-wrap gap-1.5">
+                              {info.winnaars.map((w) => (
+                                <span key={w.id} className="text-xs bg-green-500/10 text-green-400 border border-green-500/30 rounded-full px-2.5 py-1">
+                                  {w.naam}
+                                </span>
+                              ))}
+                            </div>
+                            {info.viaTeam && (
+                              <p className="text-xs text-zinc-500 mt-1.5">
+                                Niemand had de juiste speler — winnaar(s) op basis van juiste team + aantal.
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              }
+              if (GECOMBINEERDE_KEYS.has(cat.key)) return null;
+
               const uitslag = uitslagPerCat[cat.key];
               const winnaars = winnaarsPerCat[cat.key];
               return (
